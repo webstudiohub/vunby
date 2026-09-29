@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Seu orçamento — VUNBY</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="icons/favicon-32.png" />
+</head>
+<body>
+  <div class="container" style="max-width:560px;">
+    <div class="logo-mark" style="text-align:center;margin:20px 0;">VUNBY<span class="dot">.</span></div>
+    <div id="conteudo" class="card">Carregando…</div>
+  </div>
+
+  <script>
+    const token = new URLSearchParams(location.search).get('token');
+    let quoteData = null;
+
+    function brl(v) {
+      return (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+    }
+
+    async function carregar() {
+      const res = await fetch(`/api/public/quotes/${token}`);
+      if (!res.ok) {
+        document.getElementById('conteudo').innerHTML = '<p>Orçamento não encontrado.</p>';
+        return;
+      }
+      quoteData = await res.json();
+      render();
+      iniciarRastreamentoDeVisualizacao();
+    }
+
+    function render() {
+      const q = quoteData;
+      const el = document.getElementById('conteudo');
+
+      if (q.decidido === 'Aprovado') {
+        el.innerHTML = `<h2>Orçamento aprovado ✔</h2><p>Obrigado! O prestador foi avisado e vai entrar em contato para os próximos passos.</p>`;
+        return;
+      }
+      if (q.decidido === 'Recusado') {
+        el.innerHTML = `<h2>Orçamento recusado</h2><p>Tudo bem — se mudar de ideia, é só falar com ${esc(q.prestadorNome)}.</p>`;
+        return;
+      }
+      if (q.expirado) {
+        el.innerHTML = `
+          <h2>${esc(q.servico)}</h2>
+          <p><strong>Este orçamento expirou.</strong> Entre em contato com ${esc(q.prestadorNome)} para solicitar uma nova proposta.</p>
+        `;
+        return;
+      }
+
+      const itensHtml = q.itens.length
+        ? `<h3>Itens</h3><ul>${q.itens.map((i) => `<li>${Number(i.quantidade)}x ${esc(i.descricao)} — ${brl(i.subtotal)}</li>`).join('')}</ul>`
+        : '';
+
+      const temPacotes = q.pacotes.length > 0;
+      const pacotesHtml = temPacotes
+        ? `<h3>Escolha um pacote</h3>${q.pacotes
+            .map(
+              (p) => `
+            <label style="display:block;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;font-weight:400;cursor:pointer;">
+              <input type="radio" name="pacote" value="${p.id}" style="width:auto;" onchange="atualizarBotaoAceitar()" />
+              <strong>${esc(p.nome)}</strong> ${p.destaque ? '<span class="flag-followup">mais escolhido</span>' : ''} — ${brl(p.preco)}
+              <div class="muted">${esc(p.conteudo || '')}</div>
+            </label>`
+            )
+            .join('')}
+          <p class="muted" id="pacote-aviso">Selecione um pacote para poder aceitar.</p>`
+        : '';
+
+      el.innerHTML = `
+        <h2>Olá! Seu orçamento está pronto.</h2>
+        <p class="muted">Enviado por ${esc(q.prestadorNome)}</p>
+        <h3>${esc(q.servico)}</h3>
+        <p style="font-size:24px;font-weight:800;color:var(--navy);">${brl(q.valor)}</p>
+        ${q.observacoes ? `<p>${esc(q.observacoes)}</p>` : ''}
+        ${q.validade ? `<p class="muted">Válido até ${esc(q.validade)}</p>` : ''}
+        ${itensHtml}
+        ${pacotesHtml}
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn-primary" id="btn-aceitar" onclick="decidir('aprovado')" ${temPacotes ? 'disabled' : ''}>Aceitar orçamento</button>
+          <button class="btn-outline" onclick="decidir('recusado')">Recusar</button>
+        </div>
+        <div id="pub-msg" class="error"></div>
+      `;
+    }
+
+    /** Enquanto houver pacotes, "Aceitar" só habilita depois de uma escolha
+     * (Ponto 1 da correção) — reforça no front o que o backend já exige. */
+    function atualizarBotaoAceitar() {
+      const selecionado = document.querySelector('input[name="pacote"]:checked');
+      document.getElementById('btn-aceitar').disabled = !selecionado;
+      const aviso = document.getElementById('pacote-aviso');
+      if (aviso) aviso.style.display = selecionado ? 'none' : 'block';
+    }
+
+    async function decidir(decisao) {
+      const selecionado = document.querySelector('input[name="pacote"]:checked');
+      if (decisao === 'aprovado' && quoteData.pacotes.length > 0 && !selecionado) {
+        document.getElementById('pub-msg').textContent = 'Selecione um pacote antes de aceitar.';
+        return;
+      }
+      const body = { decisao };
+      if (selecionado) body.quotePackageId = selecionado.value;
+      try {
+        const res = await fetch(`/api/public/quotes/${token}/decidir`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        quoteData.decidido = data.status;
+        render();
+      } catch (e) {
+        document.getElementById('pub-msg').textContent = e.message;
+      }
+    }
+
+    /**
+     * Rastreamento de "Visualizado" (Seção 9 da spec).
+     * Só dispara o evento de visualização humana depois que a página fica
+     * aberta pelo tempo mínimo configurado, OU antes disso se o usuário
+     * realmente interagir (rolar a página ou clicar em algo). Um crawler
+     * de prévia do WhatsApp/Facebook normalmente nem executa este script
+     * — então nunca chega a disparar nenhum dos dois eventos.
+     */
+    function iniciarRastreamentoDeVisualizacao() {
+      let enviado = false;
+      const inicio = Date.now();
+
+      function enviar(interagiu) {
+        if (enviado) return;
+        enviado = true;
+        fetch(`/api/public/quotes/${token}/view`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tempoNaPaginaMs: Date.now() - inicio, interagiu }),
+        }).catch(() => {});
+      }
+
+      const onInteracao = () => enviar(true);
+      window.addEventListener('scroll', onInteracao, { once: true, passive: true });
+      window.addEventListener('click', onInteracao, { once: true });
+
+      setTimeout(() => enviar(false), 2600);
+    }
+
+    carregar();
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VUNBY — Minha conta</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003D6B" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="top"></div>
+  <div class="container">
+    <h2>Minha conta</h2>
+
+    <div class="card" id="dados-conta">Carregando…</div>
+
+    <div class="card" style="border-color:#F3D6D6;">
+      <h3 style="color:var(--danger);">Excluir minha conta</h3>
+      <p class="muted">Isso remove permanentemente o acesso à sua conta VUNBY. Para confirmar, digite sua senha atual.</p>
+      <label>Senha atual</label>
+      <input type="password" id="senha-confirmacao" />
+      <div style="margin-top:14px;">
+        <button class="btn-danger" onclick="excluirConta()">Excluir minha conta definitivamente</button>
+      </div>
+      <div id="msg" class="error"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    async function excluirConta() {
+      const senha = document.getElementById('senha-confirmacao').value;
+      const msg = document.getElementById('msg');
+      if (!confirm('Tem certeza? Esta ação não pode ser desfeita.')) return;
+      try {
+        await api('/api/auth/excluir-conta', { method: 'POST', body: { senha } });
+        window.location.href = '/index.html';
+      } catch (e) {
+        msg.textContent = e.message;
+      }
+    }
+
+    (async () => {
+      const session = await requireSession();
+      if (!session) return;
+      document.getElementById('top').innerHTML = topbar('conta.html');
+      wireLogout();
+
+      document.getElementById('dados-conta').innerHTML = `
+        <p><strong>Nome:</strong> ${esc(session.nome)}</p>
+        <p><strong>Empresa:</strong> ${esc(session.empresa || '—')}</p>
+        <p><strong>E-mail:</strong> ${esc(session.email)}</p>
+        <p><strong>Telefone:</strong> ${esc(session.telefone)} ${session.telefoneVerificado ? '<span class="badge badge-Aprovado">verificado</span>' : '<span class="badge badge-Sem-resposta">não verificado</span>'}</p>
+      `;
+    })();
+  </script>
+</body>
+</html>

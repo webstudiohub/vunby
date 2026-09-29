@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VUNBY — Verificar telefone</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003D6B" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="center-page">
+    <div class="card" id="conteudo">Carregando…</div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    async function reenviar() {
+      const msg = document.getElementById('msg');
+      msg.className = 'muted';
+      msg.textContent = 'Enviando novo código…';
+      try {
+        const res = await api('/api/auth/phone/reenviar', { method: 'POST' });
+        msg.textContent = res.codigoDev
+          ? `Código reenviado. (Ambiente de dev — código: ${res.codigoDev})`
+          : 'Código reenviado por SMS/WhatsApp.';
+      } catch (e) {
+        msg.className = 'error';
+        msg.textContent = e.message;
+      }
+    }
+
+    async function confirmar() {
+      const codigo = document.getElementById('codigo').value;
+      const msg = document.getElementById('msg');
+      try {
+        const res = await api('/api/auth/phone/confirmar', { method: 'POST', body: { codigo } });
+        msg.className = 'success-msg';
+        msg.textContent = res.mensagem;
+        setTimeout(() => (window.location.href = '/dashboard.html'), 1500);
+      } catch (e) {
+        msg.className = 'error';
+        msg.textContent = e.message;
+      }
+    }
+
+    (async () => {
+      const session = await requireSession();
+      if (!session) return;
+
+      const el = document.getElementById('conteudo');
+      if (session.telefoneVerificado) {
+        el.innerHTML = `
+          <div class="logo-mark">VUNBY<span class="dot">.</span></div>
+          <h3>Telefone já verificado ✔</h3>
+          <p class="muted">Tudo certo com o seu número ${session.telefone}.</p>
+          <a class="btn btn-secondary" href="/dashboard.html">Ir para o Dashboard</a>
+        `;
+        return;
+      }
+
+      el.innerHTML = `
+        <div class="logo-mark">VUNBY<span class="dot">.</span></div>
+        <h3>Confirme seu telefone</h3>
+        <p class="muted">Enviamos um código de 6 dígitos para ${session.telefone}. Isso é o que garante que o período de teste grátis seja usado uma única vez por número.</p>
+        <label>Código de verificação</label>
+        <input type="text" id="codigo" maxlength="6" inputmode="numeric" placeholder="000000" />
+        <div style="margin-top:14px;display:flex;gap:10px;">
+          <button class="btn-primary" onclick="confirmar()">Confirmar</button>
+          <button class="btn-outline" onclick="reenviar()">Reenviar código</button>
+        </div>
+        <p id="msg" class="muted" style="margin-top:10px;"></p>
+        <p class="muted" style="margin-top:10px;"><a href="/dashboard.html">Verificar depois</a></p>
+      `;
+    })();
+  </script>
+</body>
+</html>

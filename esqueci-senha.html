@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VUNBY — Recuperar senha</title>
+<link rel="stylesheet" href="style.css" />
+<link rel="icon" href="icons/favicon-32.png" />
+</head>
+<body>
+  <div class="center-page">
+    <div class="card">
+      <div class="logo-mark">VUNBY<span class="dot">.</span></div>
+      <h3>Recuperar senha</h3>
+      <p class="muted">Informe seu e-mail. Se ele estiver cadastrado, enviaremos instruções.</p>
+      <label>E-mail</label>
+      <input type="email" id="email" />
+      <div style="margin-top:14px;">
+        <button class="btn-primary" onclick="enviar()">Enviar instruções</button>
+      </div>
+      <p id="msg" class="muted" style="margin-top:12px;"></p>
+      <p class="muted" style="margin-top:14px;"><a href="index.html">Voltar para o login</a></p>
+    </div>
+  </div>
+
+  <script>
+    async function enviar() {
+      const email = document.getElementById('email').value;
+      const msg = document.getElementById('msg');
+      try {
+        const res = await fetch('/api/auth/recuperar-senha', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        msg.className = 'success-msg';
+        msg.textContent = data.mensagem;
+        if (data.tokenDev) {
+          msg.textContent += ` (Ambiente de dev — link: /redefinir-senha.html?token=${data.tokenDev})`;
+        }
+      } catch (e) {
+        msg.className = 'error';
+        msg.textContent = 'Não foi possível processar o pedido agora.';
+      }
+    }
+  </script>
+</body>
+</html>

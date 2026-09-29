@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VUNBY — Entrar</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003D6B" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="center-page">
+    <div class="card">
+      <div class="logo-mark">VUNBY<span class="dot">.</span></div>
+      <p class="muted">Controle de orçamentos e vendas para prestadores de serviço.</p>
+
+      <div id="login-form">
+        <h3>Entrar</h3>
+        <label>E-mail</label>
+        <input type="email" id="login-email" />
+        <label>Senha</label>
+        <input type="password" id="login-senha" />
+        <div style="margin-top:16px;">
+          <button id="submit-login" class="btn-primary" onclick="doLogin()">Entrar</button>
+        </div>
+        <p class="muted" style="margin-top:14px;">
+          <a href="esqueci-senha.html">Esqueceu sua senha?</a>
+        </p>
+        <p class="muted">Não tem conta? <a id="toggle-link" href="#" onclick="toggle()">Criar conta</a></p>
+      </div>
+
+      <div id="register-form" style="display:none;">
+        <h3>Criar conta</h3>
+        <label>Seu nome</label>
+        <input type="text" id="reg-nome" />
+        <label>Empresa (opcional)</label>
+        <input type="text" id="reg-empresa" />
+        <label>E-mail</label>
+        <input type="email" id="reg-email" />
+        <label>Telefone/WhatsApp</label>
+        <input type="tel" id="reg-telefone" placeholder="11987654321" />
+        <label>Senha (mínimo 6 caracteres)</label>
+        <input type="password" id="reg-senha" />
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;margin-top:14px;">
+          <input type="checkbox" id="reg-termos" style="width:auto;margin-top:3px;" />
+          <span>Li e concordo com os <a href="termos.html" target="_blank">Termos de Uso</a> e a
+          <a href="privacidade.html" target="_blank">Política de Privacidade</a>.</span>
+        </label>
+        <div style="margin-top:16px;">
+          <button id="submit-register" class="btn-primary" onclick="doRegister()">Criar conta</button>
+        </div>
+        <p class="muted" style="margin-top:14px;">Já tem conta? <a href="#" onclick="toggle()">Entrar</a></p>
+      </div>
+
+      <div id="msg" class="error"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    function toggle() {
+      const l = document.getElementById('login-form');
+      const r = document.getElementById('register-form');
+      l.style.display = l.style.display === 'none' ? 'block' : 'none';
+      r.style.display = r.style.display === 'none' ? 'block' : 'none';
+      document.getElementById('msg').textContent = '';
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('login-email').value;
+      const senha = document.getElementById('login-senha').value;
+      try {
+        await api('/api/auth/login', { method: 'POST', body: { email, senha } });
+        window.location.href = '/dashboard.html';
+      } catch (e) {
+        document.getElementById('msg').textContent = e.message;
+      }
+    }
+
+    async function doRegister() {
+      const nome = document.getElementById('reg-nome').value;
+      const empresa = document.getElementById('reg-empresa').value;
+      const email = document.getElementById('reg-email').value;
+      const telefone = document.getElementById('reg-telefone').value;
+      const senha = document.getElementById('reg-senha').value;
+      const aceitouTermos = document.getElementById('reg-termos').checked;
+      try {
+        await api('/api/auth/register', { method: 'POST', body: { nome, empresa, email, telefone, senha, aceitouTermos } });
+        window.location.href = '/verificar-telefone.html';
+      } catch (e) {
+        document.getElementById('msg').textContent = e.message;
+      }
+    }
+  </script>
+</body>
+</html>

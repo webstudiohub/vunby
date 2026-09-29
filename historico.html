@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VUNBY — Histórico</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003D6B" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="top"></div>
+  <div class="container">
+    <h2>Histórico de Orçamentos</h2>
+    <div class="card">
+      <div class="table-scroll"><table>
+        <thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Valor</th><th>Status</th><th></th></tr></thead>
+        <tbody id="lista"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    (async () => {
+      const session = await requireSession();
+      if (!session) return;
+      document.getElementById('top').innerHTML = topbar('historico.html');
+      wireLogout();
+
+      const itens = await api('/api/quotes');
+      const body = document.getElementById('lista');
+      itens.forEach((q) => {
+        const data = new Date(q.createdAt).toLocaleDateString('pt-BR');
+        body.innerHTML += `<tr>
+          <td>${data}</td>
+          <td>${esc(q.clienteNome)}</td>
+          <td>${esc(q.servico)}</td>
+          <td>${brl(q.valor)}</td>
+          <td><span class="${badgeClass(q.status)}">${q.status}</span>${q.precisaFollowUp ? '<span class="flag-followup">follow-up</span>' : ''}</td>
+          <td><a href="orcamento-detalhe.html?id=${q.id}">ver</a></td>
+        </tr>`;
+      });
+    })();
+  </script>
+</body>
+</html>

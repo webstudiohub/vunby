@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>VUNBY — Radar de Vendas</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#003D6B" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<link rel="icon" href="icons/favicon-32.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="top"></div>
+  <div class="container">
+    <h2>Radar de Vendas</h2>
+    <p class="muted">Só o que já aconteceu — sem adivinhar o que o cliente está pensando.</p>
+    <div class="card">
+      <div class="table-scroll"><table>
+        <thead><tr><th>Cliente</th><th>Serviço</th><th>Valor</th><th>Status</th><th>Sinal</th><th>Ação sugerida</th><th></th></tr></thead>
+        <tbody id="lista"></tbody>
+      </table></div>
+      <p class="muted" id="vazio" style="display:none;">Nenhum orçamento em aberto no momento.</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    (async () => {
+      const session = await requireSession();
+      if (!session) return;
+      document.getElementById('top').innerHTML = topbar('radar.html');
+      wireLogout();
+
+      const itens = await api('/api/radar');
+      const body = document.getElementById('lista');
+      if (itens.length === 0) document.getElementById('vazio').style.display = 'block';
+
+      itens.forEach((q) => {
+        body.innerHTML += `<tr>
+          <td>${esc(q.clienteNome)}</td>
+          <td>${esc(q.servico)}</td>
+          <td>${brl(q.valor)}</td>
+          <td><span class="${badgeClass(q.status)}">${q.status}</span>${q.precisaFollowUp ? '<span class="flag-followup">follow-up</span>' : ''}</td>
+          <td class="muted">${esc(q.sinal)}</td>
+          <td class="muted">${esc(q.acaoSugerida)}</td>
+          <td><a href="orcamento-detalhe.html?id=${q.id}">ver / follow-up</a></td>
+        </tr>`;
+      });
+    })();
+  </script>
+</body>
+</html>
