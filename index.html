@@ -68,6 +68,13 @@
       document.getElementById('msg').textContent = '';
     }
 
+    // /cadastro e /entrar servem este mesmo arquivo (ver lib/http.js) —
+    // aqui só decidimos qual painel mostrar primeiro, sem duplicar nenhuma
+    // lógica de autenticação que já existe.
+    if (window.location.pathname === '/cadastro') {
+      toggle();
+    }
+
     async function doLogin() {
       const email = document.getElementById('login-email').value;
       const senha = document.getElementById('login-senha').value;

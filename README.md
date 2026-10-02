@@ -58,6 +58,39 @@ segurança, não use isso como deploy real):
 NODE_ENV=production SESSION_SECRET=um-valor-bem-longo-e-aleatorio node server.js
 ```
 
+## Entrada: landing pública + rotas /entrar e /cadastro
+
+A rota raiz (`/`) deixou de servir direto a tela de login e passou a servir
+uma landing page pública (`public/landing.html`), explicando o produto
+antes do visitante chegar na autenticação:
+
+```
+/          → landing.html (pública, sem exigir sessão)
+/entrar    → index.html (mesmo arquivo de sempre, mostrando o painel de login)
+/cadastro  → index.html (mesmo arquivo, mostrando o painel de cadastro)
+/index.html → continua funcionando diretamente, sem mudança (nada foi removido)
+```
+
+`/entrar` e `/cadastro` **não duplicam lógica** — ambos servem o mesmo
+`index.html` que já existia (login+cadastro já estavam juntos nesse
+arquivo, alternando por `toggle()`); só adicionei um `if` de 3 linhas que
+olha `window.location.pathname` para decidir qual painel mostrar primeiro.
+O roteamento em si é feito em `lib/http.js` (servidor de arquivos estático,
+sem framework de rotas).
+
+**Nota sobre a imagem do hero:** a landing usa uma simulação ilustrada em
+CSS (um "mockup" de conversa de WhatsApp) no lugar da foto profissional
+pedida — não há acesso à internet neste ambiente para buscar uma imagem de
+banco de imagens real. O bloco está claramente demarcado no HTML
+(`public/landing.html`, comentário "Espaço reservado para foto real") para
+troca futura por uma foto de verdade.
+
+Teste dedicado: `node landing-test.js` cobre os 10 pontos pedidos (landing
+sem sessão, CTAs levando às rotas certas, login/cadastro/dashboard
+continuando a funcionar, bloqueio de área privada sem sessão, 401 da API
+sem sessão, responsividade mobile, e `/index.html` direto continuando
+acessível).
+
 ## PWA (Progressive Web App)
 
 Decisão de arquitetura: uma única aplicação web responsiva, instalável como
