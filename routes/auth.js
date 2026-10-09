@@ -1,6 +1,7 @@
 'use strict';
 const { query } = require('../lib/db');
-const { hashPassword, verifyPassword, generateSessionToken, verifySessionToken, hashToken, hashesMatch } = require('../lib/auth');
+const { hashPassword, verifyPassword, hashesMatch } = require('../lib/auth');
+const { generateSessionToken, verifySessionToken, hashToken } = require('../lib/tokens');
 const { generateCode } = require('../lib/tokens');
 const { ok, created, badRequest, unauthorized, notFound, conflict, serverError, readBody, parseSession, setSessionCookie, clearSessionCookie } = require('../lib/http');
 const { isEmail, isPhone, isNonEmpty } = require('../lib/validate');
