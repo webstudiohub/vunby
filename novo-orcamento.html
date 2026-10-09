@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>VUNBY — Novo Orçamento</title>
+<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container">
+  <div class="card">
+    <h2>Novo Orçamento</h2>
+    <label>Cliente</label>
+    <select id="q-client"><option value="">Selecione ou crie abaixo…</option></select>
+    <details style="margin-top:8px">
+      <summary style="font-size:13px;color:#003D6B;cursor:pointer;font-weight:600">+ Novo cliente</summary>
+      <div style="margin-top:10px">
+        <label>Nome</label><input id="nc-nome"/>
+        <label>Telefone (WhatsApp)</label><input id="nc-tel" type="tel" placeholder="+55 11 99999-9999"/>
+        <button class="btn-outline btn-sm" style="margin-top:10px;width:auto" onclick="criarCliente()">Salvar cliente</button>
+        <div id="nc-msg" class="error"></div>
+      </div>
+    </details>
+
+    <label>Serviço / descrição</label>
+    <input id="q-servico" placeholder="Ex: Mudança residencial — 2 quartos"/>
+    <label>Valor (R$)</label>
+    <input id="q-valor" type="number" step="0.01" min="0"/>
+    <label>Validade</label>
+    <input id="q-validade" type="date"/>
+    <label>Observações (opcional)</label>
+    <textarea id="q-obs" rows="2"></textarea>
+
+    <label>Pacotes (opcional)</label>
+    <div id="pacotes-lista" class="grid" style="margin-top:4px"></div>
+
+    <div style="margin-top:6px">
+      <label style="display:flex;align-items:center;gap:8px;text-transform:none">
+        <input type="checkbox" id="q-followup" style="width:auto"/>
+        Marcar para follow-up
+      </label>
+    </div>
+
+    <div style="margin-top:20px"><button class="btn-primary btn-gold" onclick="criarOrcamento()">Criar e abrir WhatsApp</button></div>
+    <div id="q-msg" class="error"></div>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+let clientes=[],pacotes=[];
+const selectedPkgs=new Set();
+
+async function criarCliente(){
+  const nome=document.getElementById('nc-nome').value;
+  const telefone=document.getElementById('nc-tel').value;
+  const msg=document.getElementById('nc-msg');
+  msg.textContent='';
+  try{
+    const c=await api('/api/clients',{method:'POST',body:{nome,telefone}});
+    clientes.push(c);
+    const sel=document.getElementById('q-client');
+    sel.innerHTML+=`<option value="${c.id}" selected>${esc(c.nome)} — ${esc(c.telefone)}</option>`;
+    sel.value=String(c.id);
+  }catch(e){msg.textContent=e.message;}
+}
+
+function renderPacotes(){
+  const el=document.getElementById('pacotes-lista');
+  if(!pacotes.length){el.innerHTML='<p class="muted" style="font-size:13px">Nenhum modelo cadastrado. <a href="pacotes.html">Criar modelos</a></p>';return;}
+  el.innerHTML=pacotes.map(p=>`
+    <label style="display:flex;align-items:center;gap:8px;font-size:14px;text-transform:none;border:1.5px solid #E5E5EA;padding:10px;border-radius:10px;cursor:pointer">
+      <input type="checkbox" style="width:auto" data-id="${p.id}" onchange="togglePkg(${p.id})"/>
+      <span><strong>${esc(p.nome)}</strong> — ${brl(p.preco)}</span>
+    </label>`).join('');
+}
+
+function togglePkg(id){if(selectedPkgs.has(id))selectedPkgs.delete(id);else selectedPkgs.add(id);}
+
+async function criarOrcamento(){
+  const clientId=document.getElementById('q-client').value;
+  const servico=document.getElementById('q-servico').value;
+  const valor=document.getElementById('q-valor').value;
+  const validade=document.getElementById('q-validade').value;
+  const observacoes=document.getElementById('q-obs').value;
+  const precisaFollowUp=document.getElementById('q-followup').checked;
+  const msg=document.getElementById('q-msg');
+  msg.textContent='';
+  try{
+    const r=await api('/api/quotes',{method:'POST',body:{clientId:parseInt(clientId),servico,valor,validade,observacoes,pacoteIds:[...selectedPkgs],precisaFollowUp}});
+    window.open(r.whatsappLink,'_blank');
+    location.href='orcamento-detalhe.html?id='+r.id;
+  }catch(e){msg.textContent=e.message;}
+}
+
+(async()=>{
+  const session=await requireSession();if(!session)return;
+  document.getElementById('top').innerHTML=topbar('');wireLogout();
+  [clientes,pacotes]=await Promise.all([api('/api/clients'),api('/api/packages')]);
+  const sel=document.getElementById('q-client');
+  clientes.forEach(c=>{sel.innerHTML+=`<option value="${c.id}">${esc(c.nome)} — ${esc(c.telefone)}</option>`;});
+  // Validade padrão: 7 dias
+  const d=new Date();d.setDate(d.getDate()+7);
+  document.getElementById('q-validade').value=d.toISOString().split('T')[0];
+  renderPacotes();
+})();
+</script>
+</body></html>

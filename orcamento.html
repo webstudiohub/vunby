@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Orçamento</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body style="background:#F2F2F7">
+<div style="max-width:520px;margin:0 auto;padding:0 0 40px">
+  <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
+</div>
+<script>
+// NÃO referencia app.js, manifest, SW — página pública do cliente
+const token=new URLSearchParams(location.search).get('token');
+
+function brl(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function api(path,opts={}){
+  const res=await fetch(path,{...opts,headers:{'Content-Type':'application/json'}});
+  const d=await res.json().catch(()=>({}));
+  if(!res.ok)throw new Error(d.error||'Erro');
+  return d;
+}
+
+async function acao(tipo){
+  const obs=document.getElementById('obs-acao')?.value||'';
+  try{
+    await api(`/api/public/quote/${encodeURIComponent(token)}/${tipo==='aceitar'?'accept':'reject'}`,{method:'POST',body:JSON.stringify({observacao:obs})});
+    document.getElementById('acao-area').innerHTML=`<div style="background:${tipo==='aceitar'?'#D4FBDC':'#F2F2F7'};padding:20px;border-radius:12px;text-align:center">
+      <div style="font-size:32px">${tipo==='aceitar'?'🎉':'👍'}</div>
+      <p style="font-weight:700;margin-top:8px">${tipo==='aceitar'?'Orçamento aprovado!':'Resposta registrada.'}</p>
+    </div>`;
+  }catch(e){alert(e.message);}
+}
+
+(async()=>{
+  if(!token){document.getElementById('content').innerHTML='<div class="card"><p class="error">Link inválido.</p></div>';return;}
+
+  let q;
+  try{q=await api(`/api/public/quote/${encodeURIComponent(token)}`);}
+  catch(e){document.getElementById('content').innerHTML=`<div style="padding:40px;text-align:center"><p class="error">${e.message}</p></div>`;return;}
+
+  // Confirma visualização real (JS carregou)
+  fetch(`/api/public/quote/${encodeURIComponent(token)}/view-confirmed`,{method:'POST',headers:{'Content-Type':'application/json'}}).catch(()=>{});
+
+  const final=['Aprovado','Recusado'].includes(q.status);
+  const pkgsHtml=q.pacotes.length?`
+    <div style="margin-top:20px">
+      <div style="font-size:13px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Opções de serviço</div>
+      ${q.pacotes.map(p=>`
+        <div class="pkg-card${p.destaque?' destaque':''}">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <strong>${esc(p.nome)}</strong> ${p.destaque?'<span class="pkg-badge">mais escolhido</span>':''}
+          </div>
+          ${p.conteudo?`<p style="font-size:14px;color:#8E8E93;margin-top:4px">${esc(p.conteudo)}</p>`:''}
+          <div style="font-size:20px;font-weight:800;color:#003D6B;margin-top:6px">${brl(p.preco)}</div>
+        </div>`).join('')}
+    </div>`:'';
+
+  const acaoHtml=final?`
+    <div style="background:${q.status==='Aprovado'?'#D4FBDC':'#F2F2F7'};padding:20px;border-radius:12px;text-align:center;margin-top:20px">
+      <p style="font-weight:700">${q.status==='Aprovado'?'✅ Aprovado':'❌ Recusado'}</p>
+    </div>`:
+    q.expirado?`<div style="background:#FFE8D6;padding:16px;border-radius:12px;margin-top:20px"><p style="font-weight:600;color:#C04A00">⏰ Este orçamento está expirado. Entre em contato para renovar.</p></div>`:
+    `<div id="acao-area" style="margin-top:20px">
+      <textarea id="obs-acao" style="width:100%;padding:12px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;margin-bottom:12px;resize:none;font-family:inherit" rows="2" placeholder="Comentário (opcional)"></textarea>
+      <div class="action-btns">
+        <button class="btn-accept" onclick="acao('aceitar')">✓ Aprovar</button>
+        <button class="btn-reject" onclick="acao('recusar')">✗ Recusar</button>
+      </div>
+    </div>`;
+
+  document.getElementById('content').innerHTML=`
+    <div class="quote-card">
+      <div class="quote-header">
+        <div style="font-size:12px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Orçamento</div>
+        <h1>${esc(q.servico)}</h1>
+        <div style="font-size:14px;opacity:.8">Para: ${esc(q.clienteNome)}</div>
+      </div>
+      <div class="quote-body">
+        <div style="font-size:13px;color:#8E8E93;text-transform:uppercase;font-weight:700;letter-spacing:.05em;margin-bottom:4px">Valor</div>
+        <div class="valor-grande">${brl(q.valor)}</div>
+        ${q.validade?`<p style="font-size:13px;color:#8E8E93;margin-top:6px">Válido até ${new Date(q.validade+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
+        ${q.observacoes?`<div style="background:#F2F2F7;border-radius:10px;padding:14px;margin-top:16px"><p style="font-size:14px">${esc(q.observacoes)}</p></div>`:''}
+        ${pkgsHtml}
+        ${acaoHtml}
+      </div>
+    </div>`;
+})();
+</script>
+</body></html>

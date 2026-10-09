@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>VUNBY — Minha Conta</title>
+<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container">
+  <div class="card" id="perfil-card">
+    <h3>Meus dados</h3>
+    <div id="perfil"><p class="muted">Carregando…</p></div>
+  </div>
+  <div class="card" style="border:1.5px solid #FFE0DE">
+    <h3 style="color:#C0392B">Excluir conta</h3>
+    <p class="muted" style="margin-bottom:12px">Esta ação é irreversível. Todos os seus dados serão apagados.</p>
+    <button class="btn-outline" style="color:#FF3B30;border-color:#FF3B30" onclick="excluirConta()">Excluir minha conta</button>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+async function excluirConta(){
+  if(!confirm('Tem certeza? Esta ação não pode ser desfeita.'))return;
+  if(!confirm('Confirme: TODOS os seus dados serão apagados permanentemente.'))return;
+  try{
+    await api('/api/auth/account',{method:'DELETE'});
+    location.href='/';
+  }catch(e){alert(e.message);}
+}
+(async()=>{
+  const session=await requireSession();if(!session)return;
+  document.getElementById('top').innerHTML=topbar('');wireLogout();
+  const u=await api('/api/auth/me');
+  document.getElementById('perfil').innerHTML=`
+    <p><strong>Nome:</strong> ${esc(u.nome)}</p>
+    <p><strong>E-mail:</strong> ${esc(u.email)}</p>
+    <p><strong>Telefone:</strong> ${esc(u.telefone)} ${u.telefoneVerificado?'<span class="badge badge-aprovado">verificado</span>':'<span class="badge badge-enviado">pendente</span>'}</p>
+    <p><strong>Trial:</strong> ${u.trialConcedido?'Ativo':'Não concedido'}</p>`;
+})();
+</script>
+</body></html>

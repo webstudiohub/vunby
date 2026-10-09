@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>VUNBY — Radar de Vendas</title>
+<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container">
+  <div class="card" style="background:var(--navy);color:#fff">
+    <div style="font-size:13px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em">Valor em aberto</div>
+    <div id="valor-aberto" style="font-size:36px;font-weight:800;color:#F5C000">—</div>
+    <div id="total-aberto" class="muted" style="color:rgba(255,255,255,.6);font-size:14px">orçamentos em aberto</div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <h3 style="margin:0">Em aberto</h3>
+      <select id="filtro-status" onchange="renderLista()" style="width:auto;padding:6px 10px;font-size:13px">
+        <option value="">Todos</option>
+        <option value="Enviado">Enviado</option>
+        <option value="Visualizado">Visualizado</option>
+        <option value="Sem resposta">Sem resposta</option>
+      </select>
+    </div>
+    <div id="lista"></div>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+let data=[];
+function renderLista(){
+  const f=document.getElementById('filtro-status').value;
+  const items=f?data.filter(q=>q.status===f):data;
+  const el=document.getElementById('lista');
+  if(!items.length){el.innerHTML='<p class="muted">Nenhum orçamento '+( f?'com este status':'')+' em aberto.</p>';return;}
+  el.innerHTML=items.map(q=>`
+    <a href="orcamento-detalhe.html?id=${q.id}" style="text-decoration:none;color:inherit">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F2F2F7">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;color:#003D6B">${esc(q.servico)}</div>
+        <div style="font-size:13px;color:#8E8E93">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
+        ${q.precisa_follow_up?'<span class="flag-followup">follow-up</span>':''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;margin-left:12px">
+        <div style="font-weight:800">${brl(q.valor)}</div>
+        <span class="${badgeClass(q.status)}">${q.status}</span>
+      </div>
+    </div></a>`).join('');
+}
+
+(async()=>{
+  const session=await requireSession();if(!session)return;
+  document.getElementById('top').innerHTML=topbar('radar.html');wireLogout();
+  const r=await api('/api/radar');
+  data=r.quotes||[];
+  document.getElementById('valor-aberto').textContent=brl(r.valorEmAberto);
+  document.getElementById('total-aberto').textContent=`${r.total} orçamento${r.total!==1?'s':''} em aberto`;
+  renderLista();
+})();
+</script>
+</body></html>
