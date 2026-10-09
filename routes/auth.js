@@ -6,6 +6,7 @@ const { ok, created, badRequest, unauthorized, notFound, conflict, serverError, 
 const { isEmail, isPhone, isNonEmpty } = require('../lib/validate');
 const { normalizePhone } = require('../lib/phone');
 const { rateLimit } = require('../lib/rateLimit');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('../lib/email');
 
 async function getSession(req) {
   const token = parseSession(req);
@@ -55,16 +56,33 @@ async function handle(req, res) {
     );
     const userId = result.rows[0].id;
 
-    // Gera código de verificação de telefone
+    // Gera código de verificação de e-mail
     const code = generateCode(6);
     const codeHash = hashToken(code);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-    await query('INSERT INTO phone_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [userId, codeHash, expiresAt]);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await query('INSERT INTO email_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [userId, codeHash, expiresAt]);
 
-    // TODO: enviar SMS/WhatsApp com o código
-    console.log(`[DEV] Código de verificação para ${telNorm}: ${code}`);
+    // Envia e-mail com código
+    await sendVerificationEmail(email.trim(), code);
 
-    return created(res, { message: 'Conta criada. Verifique seu telefone.', requiresVerification: true });
+    return created(res, { message: 'Conta criada. Verifique seu e-mail.', requiresVerification: true });
+  }
+
+  // POST /api/auth/verify-email
+  if (req.method === 'POST' && path === '/api/auth/verify-email') {
+    let body;
+    try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
+    const { email, code } = body;
+    if (!email || !code) return badRequest(res, 'Dados inválidos.');
+    const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
+    if (!userRes.rows[0]) return notFound(res, 'Usuário não encontrado.');
+    const user = userRes.rows[0];
+    const vRes = await query('SELECT * FROM email_verifications WHERE user_id = $1 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1', [user.id]);
+    if (!vRes.rows[0]) return badRequest(res, 'Código expirado. Solicite novo código.');
+    if (!hashesMatch(code, vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
+    await query('UPDATE users SET email_verificado = true WHERE id = $1', [user.id]);
+    await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
+    return ok(res, { message: 'E-mail verificado com sucesso!' });
   }
 
   // POST /api/auth/verify-phone
@@ -72,7 +90,7 @@ async function handle(req, res) {
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { email, code } = body;
-    if (!isEmail(email) || !code) return badRequest(res, 'Dados inválidos.');
+    if (!email || !code) return badRequest(res, 'Dados inválidos.');
     const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
     if (!userRes.rows[0]) return notFound(res, 'Usuário não encontrado.');
     const user = userRes.rows[0];
@@ -145,8 +163,8 @@ async function handle(req, res) {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await query('DELETE FROM password_resets WHERE user_id = $1', [userId]);
     await query('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1,$2,$3)', [userId, codeHash, expiresAt]);
-    // TODO: enviar e-mail com link de recuperação contendo o token
-    console.log(`[DEV] Token de recuperação para ${email}: ${code}`);
+    const link = `${process.env.BASE_URL}/redefinir-senha?token=${code}`;
+    await sendPasswordResetEmail(email.trim(), link);
     return ok(res, { message: 'Se o e-mail existir, um link será enviado.' });
   }
 
