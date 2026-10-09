@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>VUNBY — Pacotes</title>
+<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container">
+  <div class="card">
+    <h3>Novo modelo de pacote</h3>
+    <p class="muted" style="font-size:13px;margin-bottom:12px">Crie uma vez, use em vários orçamentos. Editar aqui não muda orçamentos já enviados.</p>
+    <label>Nome (ex: Básico, Completo, Premium)</label><input id="p-nome"/>
+    <label>Descrição / itens incluídos</label><textarea id="p-conteudo" rows="2" placeholder="Ex: 2 funcionários, caminhão 3/4, até 50km…"></textarea>
+    <label>Preço (R$)</label><input id="p-preco" type="number" step="0.01" min="0"/>
+    <label style="display:flex;align-items:center;gap:8px;text-transform:none"><input type="checkbox" id="p-destaque" style="width:auto"/> Marcar como "mais escolhido"</label>
+    <div style="margin-top:14px;"><button class="btn-primary" onclick="criarPacote()">Salvar modelo</button></div>
+    <div id="msg" class="error"></div>
+  </div>
+  <div class="card">
+    <h3>Meus modelos</h3>
+    <div id="lista"><p class="muted">Carregando…</p></div>
+  </div>
+</div>
+<script src="app.js"></script>
+<script>
+async function criarPacote(){
+  const nome=document.getElementById('p-nome').value;
+  const conteudo=document.getElementById('p-conteudo').value;
+  const preco=document.getElementById('p-preco').value;
+  const destaque=document.getElementById('p-destaque').checked;
+  const msg=document.getElementById('msg');msg.textContent='';
+  try{
+    await api('/api/packages',{method:'POST',body:{nome,conteudo,preco,destaque}});
+    document.getElementById('p-nome').value='';
+    document.getElementById('p-conteudo').value='';
+    document.getElementById('p-preco').value='';
+    document.getElementById('p-destaque').checked=false;
+    await renderLista();
+  }catch(e){msg.textContent=e.message;}
+}
+
+async function excluir(id){
+  if(!confirm('Excluir este modelo?'))return;
+  await api('/api/packages/'+id,{method:'DELETE'});
+  await renderLista();
+}
+
+async function renderLista(){
+  const pacotes=await api('/api/packages');
+  const el=document.getElementById('lista');
+  if(!pacotes.length){el.innerHTML='<p class="muted">Nenhum modelo ainda.</p>';return;}
+  el.innerHTML=pacotes.map(p=>`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F2F2F7">
+      <div>
+        <strong>${esc(p.nome)}</strong> ${p.destaque?'<span class="flag-followup">mais escolhido</span>':''}
+        <div class="muted" style="font-size:13px">${esc(p.conteudo||'')}</div>
+        <div style="font-size:18px;font-weight:800;color:#003D6B;margin-top:4px">${brl(p.preco)}</div>
+      </div>
+      <button onclick="excluir(${p.id})" style="background:none;border:none;color:#FF3B30;font-size:20px;cursor:pointer">🗑</button>
+    </div>`).join('');
+}
+
+(async()=>{
+  const session=await requireSession();if(!session)return;
+  document.getElementById('top').innerHTML=topbar('pacotes.html');wireLogout();
+  await renderLista();
+})();
+</script>
+</body></html>
