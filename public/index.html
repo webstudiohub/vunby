@@ -53,7 +53,7 @@ async function login(){
     const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha}),credentials:'same-origin'});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
-    if(d.telefoneVerificado===false){location.href='/verificar-telefone.html?email='+encodeURIComponent(email);return;}
+    if(d.telefoneVerificado===false){location.href='/verificar-email.html?email='+encodeURIComponent(email);return;}
     location.href='/dashboard.html';
   }catch(e){msg.textContent=e.message;}
 }
@@ -69,7 +69,7 @@ async function register(){
     const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,telefone,senha})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
-    location.href='/verificar-telefone.html?email='+encodeURIComponent(email);
+    location.href='/verificar-email.html?email='+encodeURIComponent(email);
   }catch(e){msg.textContent=e.message;}
 }
 </script>
