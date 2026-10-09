@@ -9,7 +9,7 @@ async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
   const user = await requireAuth(req, res);
-  if (!user) return true;
+  if (!user) return;
 
   // --- CLIENTES ---
   // GET /api/clients
