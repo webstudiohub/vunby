@@ -37,7 +37,15 @@ async function handle(req, res) {
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { nome, email, senha, telefone } = body;
-    if (!isNonEmpty(nome)) return badRequest(res, 'Nome é obrigatório.');
+
+    // Validação de nome: mínimo 2 palavras, só letras e espaços, sem números/símbolos
+    const nomeClean = (nome || '').trim();
+    if (!nomeClean) return badRequest(res, 'Nome completo é obrigatório.');
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+(\s+[A-Za-zÀ-ÖØ-öø-ÿ]+)+$/.test(nomeClean))
+      return badRequest(res, 'Informe seu nome completo (nome e sobrenome, apenas letras).');
+    if (nomeClean.length < 5) return badRequest(res, 'Nome muito curto. Informe nome e sobrenome.');
+    if (nomeClean.length > 80) return badRequest(res, 'Nome muito longo (máximo 80 caracteres).');
+
     if (!isEmail(email)) return badRequest(res, 'E-mail inválido.');
     if (!senha || senha.length < 8) return badRequest(res, 'Senha deve ter ao menos 8 caracteres.');
     const telNorm = normalizePhone(telefone);
@@ -53,7 +61,7 @@ async function handle(req, res) {
     const senhaHash = await hashPassword(senha);
     const result = await query(
       'INSERT INTO users (nome, email, senha_hash, telefone, trial_concedido, telefone_verificado) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
-      [nome.trim(), email.trim().toLowerCase(), senhaHash, telNorm, trialConcedido, false]
+      [nomeClean, email.trim().toLowerCase(), senhaHash, telNorm, trialConcedido, false]
     );
     const userId = result.rows[0].id;
 

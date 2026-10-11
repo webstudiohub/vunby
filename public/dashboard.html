@@ -10,19 +10,19 @@
 </head><body>
 <div id="top"></div>
 <div class="container">
-  <div class="page-header">
-    <h1 id="greeting">Olá 👋</h1>
-    <p>Veja como seus orçamentos estão indo</p>
+  <div class="page-header anim">
+    <h1 id="greeting">Carregando…</h1>
+    <p>Resumo dos seus orçamentos</p>
   </div>
 
   <div id="stats-area" class="stat-grid">
-    <div class="stat-card"><div class="stat-label">Carregando</div><div class="stat-value">—</div></div>
-    <div class="stat-card"><div class="stat-label">Carregando</div><div class="stat-value">—</div></div>
-    <div class="stat-card"><div class="stat-label">Carregando</div><div class="stat-value">—</div></div>
-    <div class="stat-card"><div class="stat-label">Carregando</div><div class="stat-value">—</div></div>
+    <div class="stat-card anim anim-1"><div class="stat-label">Em aberto</div><div class="stat-value">—</div></div>
+    <div class="stat-card anim anim-2"><div class="stat-label">Follow-ups</div><div class="stat-value">—</div></div>
+    <div class="stat-card anim anim-3"><div class="stat-label">Visualizados</div><div class="stat-value">—</div></div>
+    <div class="stat-card anim anim-4"><div class="stat-label">Aprovados</div><div class="stat-value">—</div></div>
   </div>
 
-  <div class="card" id="recent-area">
+  <div class="card anim anim-5" id="recent-area">
     <h3>Orçamentos recentes</h3>
     <div id="recent-list"><p class="muted">Carregando…</p></div>
   </div>
@@ -36,10 +36,10 @@
   document.getElementById('nav').innerHTML=bottomNav('dashboard.html');
   wireLogout();
 
-  const nome=session.nome||'';
+  const primeiroNome=(session.nome||'').split(' ')[0];
   const hora=new Date().getHours();
   const saudacao=hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
-  document.getElementById('greeting').textContent=`${saudacao}, ${nome.split(' ')[0]} 👋`;
+  document.getElementById('greeting').textContent=`${saudacao}, ${primeiroNome}`;
 
   const [dash,quotes]=await Promise.all([api('/api/dashboard'),api('/api/quotes')]);
   const s=dash.stats||{};
@@ -47,26 +47,32 @@
   const apr=(s['Aprovado']||{count:0});
 
   document.getElementById('stats-area').innerHTML=`
-    <div class="stat-card accent-navy">
+    <div class="stat-card accent-navy anim anim-1">
       <div class="stat-label">Em aberto</div>
       <div class="stat-value navy">${brl(dash.valorEmAberto)}</div>
     </div>
-    <div class="stat-card accent-gold">
+    <div class="stat-card accent-gold anim anim-2">
       <div class="stat-label">Follow-ups</div>
       <div class="stat-value gold">${dash.pendentesFollowUp}</div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card anim anim-3">
       <div class="stat-label">Visualizados</div>
       <div class="stat-value">${vis.count}</div>
     </div>
-    <div class="stat-card accent-green">
+    <div class="stat-card accent-green anim anim-4">
       <div class="stat-label">Aprovados</div>
       <div class="stat-value green">${apr.count}</div>
     </div>`;
 
   const recentes=quotes.slice(0,5);
   if(!recentes.length){
-    document.getElementById('recent-list').innerHTML='<p class="muted">Nenhum orçamento ainda. Toque em <strong>+</strong> para criar o primeiro!</p>';
+    document.getElementById('recent-list').innerHTML=`
+      <div style="text-align:center;padding:var(--sp-6) 0">
+        <div style="font-size:40px;margin-bottom:var(--sp-3)">📄</div>
+        <p style="font-weight:600;color:var(--dark);margin-bottom:var(--sp-2)">Nenhum orçamento ainda</p>
+        <p class="muted" style="font-size:13px;margin-bottom:var(--sp-5)">Crie o primeiro e comece a fechar negócios.</p>
+        <a href="novo-orcamento.html"><button class="btn-primary btn-gold" style="width:auto;padding:0 var(--sp-6)">Criar primeiro orçamento</button></a>
+      </div>`;
     return;
   }
   document.getElementById('recent-list').innerHTML=recentes.map(q=>`
