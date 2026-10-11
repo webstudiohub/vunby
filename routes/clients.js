@@ -8,8 +8,10 @@ const { normalizePhone } = require('../lib/phone');
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
+  // Só trata as próprias rotas; o resto segue para os outros handlers (ex.: /api/public, sem login)
+  if (!path.startsWith('/api/clients') && !path.startsWith('/api/packages')) return null;
   const user = await requireAuth(req, res);
-  if (!user) return;
+  if (!user) return true;
 
   // --- CLIENTES ---
   // GET /api/clients

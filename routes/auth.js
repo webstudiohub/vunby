@@ -4,10 +4,10 @@ const { query } = require('../lib/db');
 const { hashPassword, verifyPassword, hashesMatch } = require('../lib/auth');
 const { generateSessionToken, verifySessionToken, hashToken } = require('../lib/tokens');
 const { generateCode } = require('../lib/tokens');
-const { ok, created, badRequest, unauthorized, notFound, conflict, serverError, readBody, parseSession, setSessionCookie, clearSessionCookie } = require('../lib/http');
+const { json, ok, created, badRequest, unauthorized, notFound, conflict, serverError, readBody, parseSession, setSessionCookie, clearSessionCookie } = require('../lib/http');
 const { isEmail, isPhone, isNonEmpty } = require('../lib/validate');
 const { normalizePhone } = require('../lib/phone');
-const { rateLimit } = require('../lib/rateLimit');
+const { rateLimit, resetLimit } = require('../lib/rateLimit');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../lib/email');
 
 async function getSession(req) {
@@ -16,7 +16,7 @@ async function getSession(req) {
   const raw = verifySessionToken(token);
   if (!raw) return null;
   const tokenHash = hashToken(raw);
-  const res = await query('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW()', [tokenHash]);
+  const res = await query('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
   return res.rows[0] || null;
 }
 
@@ -26,6 +26,29 @@ async function requireAuth(req, res) {
   return user;
 }
 
+// Gera e envia um novo código de verificação de e-mail (invalida os anteriores)
+async function sendNewEmailCode(user) {
+  const code = generateCode(6);
+  const codeHash = hashToken(code);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
+  await query('INSERT INTO email_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [user.id, codeHash, expiresAt]);
+  return sendVerificationEmail(user.email, code);
+}
+
+// Cria sessão (mantém no máximo 3 por usuário: as 2 mais recentes + a nova) e grava o cookie
+async function createSession(res, userId) {
+  const oldSessions = await query('SELECT token_hash FROM sessions WHERE user_id = $1 ORDER BY created_at DESC OFFSET 2', [userId]);
+  for (const s of oldSessions.rows) {
+    await query('DELETE FROM sessions WHERE token_hash = $1', [s.token_hash]);
+  }
+  const token = generateSessionToken();
+  const tokenHash = hashToken(token);
+  const expiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000);
+  await query('INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ($1,$2,$3)', [userId, tokenHash, expiresAt]);
+  setSessionCookie(res, token);
+}
+
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
@@ -33,7 +56,7 @@ async function handle(req, res) {
 
   // POST /api/auth/register
   if (req.method === 'POST' && path === '/api/auth/register') {
-    if (!rateLimit(`register:${ip}`, 5, 60_000)) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
+    if (!(await rateLimit(`register:${ip}`, 5, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { nome, email, senha, telefone } = body;
@@ -64,12 +87,7 @@ async function handle(req, res) {
       [nomeClean, email.trim().toLowerCase(), senhaHash, telNorm, trialConcedido, false]
     );
     const userId = result.rows[0].id;
-
-    const code = generateCode(6);
-    const codeHash = hashToken(code);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    await query('INSERT INTO email_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [userId, codeHash, expiresAt]);
-    await sendVerificationEmail(email.trim(), code);
+    await sendNewEmailCode({ id: userId, email: email.trim().toLowerCase() });
 
     return created(res, { message: 'Conta criada. Verifique seu e-mail.', requiresVerification: true });
   }
@@ -79,15 +97,23 @@ async function handle(req, res) {
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { email, code } = body;
-    if (!email || !code) return badRequest(res, 'Dados inválidos.');
-    const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
-    if (!userRes.rows[0]) return notFound(res, 'Usuário não encontrado.');
+    if (!isEmail(email) || !code) return badRequest(res, 'Dados inválidos.');
+    const emailNorm = email.trim().toLowerCase();
+    // Máx. 5 tentativas por e-mail a cada 15 min (impede chutar o código de 6 dígitos)
+    if (!(await rateLimit(`verify-email:${emailNorm}`, 5, 15 * 60_000))) return badRequest(res, 'Muitas tentativas. Solicite um novo código daqui a alguns minutos.');
+    if (!(await rateLimit(`verify-email-ip:${ip}`, 20, 15 * 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde alguns minutos.');
+    const userRes = await query('SELECT * FROM users WHERE email = $1', [emailNorm]);
+    if (!userRes.rows[0]) return badRequest(res, 'Código incorreto.');
     const user = userRes.rows[0];
+    if (user.email_verificado) return badRequest(res, 'E-mail já verificado. Faça login.');
     const vRes = await query('SELECT * FROM email_verifications WHERE user_id = $1 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1', [user.id]);
     if (!vRes.rows[0]) return badRequest(res, 'Código expirado. Solicite novo código.');
-    if (!hashesMatch(code, vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
+    if (!hashesMatch(String(code).trim(), vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
     await query('UPDATE users SET email_verificado = true WHERE id = $1', [user.id]);
     await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
+    await resetLimit(`verify-email:${emailNorm}`);
+    // Já entra direto: o usuário provou ter acesso ao e-mail
+    await createSession(res, user.id);
     return ok(res, { message: 'E-mail verificado com sucesso!' });
   }
 
@@ -114,28 +140,26 @@ async function handle(req, res) {
 
   // POST /api/auth/login
   if (req.method === 'POST' && path === '/api/auth/login') {
-    if (!rateLimit(`login:${ip}`, 10, 60_000)) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
+    if (!(await rateLimit(`login:${ip}`, 10, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { email, senha } = body;
     if (!isEmail(email) || !senha) return badRequest(res, 'E-mail e senha são obrigatórios.');
-    const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
+    const emailNorm = email.trim().toLowerCase();
+    if (!(await rateLimit(`login-email:${emailNorm}`, 10, 15 * 60_000))) return badRequest(res, 'Muitas tentativas para este e-mail. Aguarde alguns minutos.');
+    const userRes = await query('SELECT * FROM users WHERE email = $1', [emailNorm]);
     const user = userRes.rows[0];
     if (!user) return unauthorized(res, 'E-mail ou senha incorretos.');
     const ok2 = await verifyPassword(senha, user.senha_hash);
     if (!ok2) return unauthorized(res, 'E-mail ou senha incorretos.');
-    // Cleanup old sessions (keep last 3 plus the new one)
-    const oldSessions = await query('SELECT token_hash FROM sessions WHERE user_id = $1 ORDER BY created_at DESC OFFSET 2', [user.id]);
-    for (const s of oldSessions.rows) {
-      await query('DELETE FROM sessions WHERE token_hash = $1', [s.token_hash]);
+    await resetLimit(`login-email:${emailNorm}`);
+    // E-mail ainda não confirmado: não cria sessão; reenvia o código (no máx. 3 por 10 min) e manda verificar
+    if (!user.email_verificado) {
+      if (await rateLimit(`login-resend:${emailNorm}`, 3, 10 * 60_000)) await sendNewEmailCode(user);
+      return json(res, 403, { error: 'Confirme seu e-mail para entrar. Enviamos um código para você.', emailVerificado: false });
     }
-    const token = generateSessionToken();
-    const [raw] = token.split('.');
-    const tokenHash = hashToken(raw);
-    const expiresAt = new Date(Date.now() + 30 * 24 * 3600 * 1000);
-    await query('INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ($1,$2,$3)', [user.id, tokenHash, expiresAt]);
-    setSessionCookie(res, token);
-    return ok(res, { message: 'Login realizado.', nome: user.nome, telefoneVerificado: user.telefone_verificado });
+    await createSession(res, user.id);
+    return ok(res, { message: 'Login realizado.', nome: user.nome, emailVerificado: true });
   }
 
   // POST /api/auth/logout
@@ -156,12 +180,12 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/auth/me') {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
-    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
   }
 
   // POST /api/auth/resend-verification
   if (req.method === 'POST' && path === '/api/auth/resend-verification') {
-    if (!rateLimit(`resend-verification:${ip}`, 3, 60_000)) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
+    if (!(await rateLimit(`resend-verification:${ip}`, 3, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { email } = body;
@@ -170,18 +194,13 @@ async function handle(req, res) {
     const user = userRes.rows[0];
     if (!user) return ok(res, { message: 'Se o e-mail existir, um novo código será enviado.' });
     if (user.email_verificado) return badRequest(res, 'E-mail já verificado.');
-    const code = generateCode(6);
-    const codeHash = hashToken(code);
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
-    await query('INSERT INTO email_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [user.id, codeHash, expiresAt]);
-    await sendVerificationEmail(email.trim(), code);
+    await sendNewEmailCode(user);
     return ok(res, { message: 'Novo código enviado.' });
   }
 
   // POST /api/auth/forgot-password
   if (req.method === 'POST' && path === '/api/auth/forgot-password') {
-    if (!rateLimit(`forgot:${ip}`, 3, 60_000)) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
+    if (!(await rateLimit(`forgot:${ip}`, 3, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { email } = body;
@@ -205,11 +224,13 @@ async function handle(req, res) {
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { token, senha } = body;
     if (!token || !senha || senha.length < 8) return badRequest(res, 'Token e senha (mín. 8 caracteres) são obrigatórios.');
-    const rows = await query('SELECT * FROM password_resets WHERE expires_at > NOW()', []);
-    const match = rows.rows.find(r => hashesMatch(token, r.token_hash));
+    if (!(await rateLimit(`reset:${ip}`, 10, 15 * 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde alguns minutos.');
+    const rows = await query('SELECT * FROM password_resets WHERE token_hash = $1 AND expires_at > NOW()', [hashToken(String(token))]);
+    const match = rows.rows[0];
     if (!match) return badRequest(res, 'Link inválido ou expirado.');
     const senhaHash = await hashPassword(senha);
-    await query('UPDATE users SET senha_hash = $1 WHERE id = $2', [senhaHash, match.user_id]);
+    // Quem abriu o link do e-mail provou ser dono dele: confirma o e-mail também
+    await query('UPDATE users SET senha_hash = $1, email_verificado = true WHERE id = $2', [senhaHash, match.user_id]);
     await query('DELETE FROM password_resets WHERE user_id = $1', [match.user_id]);
     await query('DELETE FROM sessions WHERE user_id = $1', [match.user_id]);
     return ok(res, { message: 'Senha redefinida com sucesso.' });
@@ -218,7 +239,7 @@ async function handle(req, res) {
   // PUT /api/auth/password
   if (req.method === 'PUT' && path === '/api/auth/password') {
     const user = await requireAuth(req, res);
-    if (!user) return;
+    if (!user) return true;
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { senhaAtual, senhaNova } = body;
@@ -243,7 +264,7 @@ async function handle(req, res) {
   // DELETE /api/auth/account
   if (req.method === 'DELETE' && path === '/api/auth/account') {
     const user = await requireAuth(req, res);
-    if (!user) return;
+    if (!user) return true;
     await query('DELETE FROM sessions WHERE user_id = $1', [user.id]);
     await query('DELETE FROM users WHERE id = $1', [user.id]);
     clearSessionCookie(res);

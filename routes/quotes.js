@@ -21,6 +21,8 @@ async function getQuoteForUser(quoteId, userId) {
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
+  // Só trata /api/quotes...; o resto (ex.: /api/public, sem login) segue para os outros handlers
+  if (!path.startsWith('/api/quotes')) return null;
   const user = await requireAuth(req, res);
   if (!user) return true;
 

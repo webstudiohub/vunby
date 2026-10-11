@@ -172,17 +172,45 @@ CREATE TRIGGER trg_quotes_updated_at
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ─────────────────────────────────────────────
--- ROW LEVEL SECURITY (recomendado no Supabase)
--- Desabilita o RLS do Supabase pois usamos
--- nossa própria autenticação via Node.js
+-- ADIÇÕES POSTERIORES (já aplicadas no Supabase)
 -- ─────────────────────────────────────────────
-ALTER TABLE users               DISABLE ROW LEVEL SECURITY;
-ALTER TABLE sessions            DISABLE ROW LEVEL SECURITY;
-ALTER TABLE phone_verifications DISABLE ROW LEVEL SECURITY;
-ALTER TABLE verified_trial_phones DISABLE ROW LEVEL SECURITY;
-ALTER TABLE password_resets     DISABLE ROW LEVEL SECURITY;
-ALTER TABLE clients             DISABLE ROW LEVEL SECURITY;
-ALTER TABLE package_templates   DISABLE ROW LEVEL SECURITY;
-ALTER TABLE quotes              DISABLE ROW LEVEL SECURITY;
-ALTER TABLE quote_packages      DISABLE ROW LEVEL SECURITY;
-ALTER TABLE follow_ups          DISABLE ROW LEVEL SECURITY;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verificado BOOLEAN DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS email_verifications (
+  id         SERIAL PRIMARY KEY,
+  user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  code_hash  TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Rate limit persistente (lib/rateLimit.js)
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key          TEXT PRIMARY KEY,
+  count        INTEGER NOT NULL DEFAULT 0,
+  window_start TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_window_start ON rate_limits(window_start);
+
+ALTER FUNCTION update_updated_at() SET search_path = '';
+
+-- ─────────────────────────────────────────────
+-- ROW LEVEL SECURITY
+-- LIGADO em todas as tabelas, SEM políticas. Isso bloqueia o acesso pela API
+-- pública do Supabase (roles anon/authenticated). O servidor Node conecta como
+-- "postgres" (dono das tabelas, com BYPASSRLS), então não é afetado.
+-- Atenção: se um dia o servidor passar a conectar com outro usuário, ele
+-- precisa ser dono das tabelas ou ter BYPASSRLS, senão o app para.
+-- ─────────────────────────────────────────────
+ALTER TABLE users                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sessions              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE phone_verifications   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE verified_trial_phones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_resets       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE package_templates     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quotes                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quote_packages        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE follow_ups            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE email_verifications   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rate_limits           ENABLE ROW LEVEL SECURITY;

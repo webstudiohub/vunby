@@ -83,9 +83,10 @@ async function login(){
   btn.disabled=true; btn.textContent='Entrando…';
   try{
     const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha}),credentials:'same-origin'});
-    const d=await r.json();
+    const d=await r.json().catch(()=>({}));
+    // E-mail ainda não confirmado: o servidor já reenviou o código
+    if(d.emailVerificado===false){location.href='/verificar-email.html?reenviado=1&email='+encodeURIComponent(email.trim());return;}
     if(!r.ok)throw new Error(d.error||'Erro');
-    if(d.telefoneVerificado===false){location.href='/verificar-email.html?email='+encodeURIComponent(email);return;}
     location.href='/dashboard.html';
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Entrar';}
 }

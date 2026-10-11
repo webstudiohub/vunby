@@ -38,6 +38,11 @@ body { background: var(--navy); padding-bottom: 0; }
 <script>
 const params=new URLSearchParams(location.search);
 const email=params.get('email')||'';
+if(params.get('reenviado')){
+  const ok=document.getElementById('ok');
+  ok.textContent='Seu e-mail ainda não foi confirmado. Enviamos um novo código para '+email+'.';
+  ok.style.display='block';
+}
 
 async function verificar(){
   const code=document.getElementById('code').value;
@@ -50,7 +55,8 @@ async function verificar(){
     const r=await fetch('/api/auth/verify-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
-    location.href='/entrar';
+    // O servidor já abre a sessão ao confirmar o e-mail
+    location.href='/dashboard.html';
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Confirmar';}
 }
 
