@@ -32,19 +32,31 @@ function wireLogout() {
 
 // ─── Topbar ───────────────────────────────────────────────────
 function topbar(active) {
-  const links = [
-    ['dashboard.html', 'Início'],
-    ['radar.html', 'Radar'],
-    ['historico.html', 'Histórico'],
-    ['pacotes.html', 'Pacotes'],
-  ];
   return `<nav class="topbar">
     <a class="topbar-logo" href="dashboard.html">VUN<span>BY</span></a>
-    <div class="topbar-nav">
-      ${links.map(([href, label]) => `<a href="${href}" class="${href === active ? 'active' : ''}">${label}</a>`).join('')}
-      <button id="btn-logout">Sair</button>
-    </div>
+    <button id="btn-logout">Sair</button>
   </nav>`;
+}
+
+// ─── Bottom Nav (mobile) ──────────────────────────────────────
+function bottomNav(active) {
+  const items = [
+    ['dashboard.html', '🏠', 'Início'],
+    ['radar.html',     '🎯', 'Radar'],
+    ['historico.html', '📋', 'Histórico'],
+    ['pacotes.html',   '📦', 'Pacotes'],
+  ];
+  const navItems = items.map(([href, icon, label]) => `
+    <a href="${href}" class="${href === active ? 'active' : ''}">
+      <span class="nav-icon">${icon}</span>
+      <span>${label}</span>
+    </a>`).join('');
+  const cta = `
+    <a href="novo-orcamento.html" class="nav-cta">
+      <span class="nav-icon-wrap">＋</span>
+      <span>Orçar</span>
+    </a>`;
+  return `<nav class="bottom-nav">${navItems}${cta}</nav>`;
 }
 
 // ─── Formatação ───────────────────────────────────────────────

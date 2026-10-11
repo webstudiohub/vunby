@@ -1,61 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>VUNBY — Radar de Vendas</title>
-<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<title>VUNBY — Radar</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#003D6B"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
 </head><body>
 <div id="top"></div>
 <div class="container">
-  <div class="card" style="background:var(--navy);color:#fff">
-    <div style="font-size:13px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em">Valor em aberto</div>
-    <div id="valor-aberto" style="font-size:36px;font-weight:800;color:#F5C000">—</div>
-    <div id="total-aberto" class="muted" style="color:rgba(255,255,255,.6);font-size:14px">orçamentos em aberto</div>
+  <div class="page-header">
+    <h1>Radar de Vendas 🎯</h1>
+    <p>Orçamentos aguardando resposta</p>
   </div>
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h3 style="margin:0">Em aberto</h3>
-      <select id="filtro-status" onchange="renderLista()" style="width:auto;padding:6px 10px;font-size:13px">
-        <option value="">Todos</option>
-        <option value="Enviado">Enviado</option>
-        <option value="Visualizado">Visualizado</option>
-        <option value="Sem resposta">Sem resposta</option>
-      </select>
-    </div>
-    <div id="lista"></div>
+
+  <div class="hero-card">
+    <div class="hero-card-label">Valor total em aberto</div>
+    <div id="valor-aberto" class="hero-card-value">—</div>
+    <div id="total-aberto" class="hero-card-sub">carregando…</div>
+  </div>
+
+  <div class="filter-row" id="filtro-row">
+    <button class="filter-chip active" data-v="" onclick="setFiltro(this,'')">Todos</button>
+    <button class="filter-chip" data-v="Enviado" onclick="setFiltro(this,'Enviado')">Enviado</button>
+    <button class="filter-chip" data-v="Visualizado" onclick="setFiltro(this,'Visualizado')">Visualizado</button>
+    <button class="filter-chip" data-v="Sem resposta" onclick="setFiltro(this,'Sem resposta')">Sem resposta</button>
+  </div>
+
+  <div class="card" style="padding-top:var(--sp-3)">
+    <div id="lista"><p class="muted">Carregando…</p></div>
   </div>
 </div>
+<div id="nav"></div>
 <script src="app.js"></script>
 <script>
-let data=[];
+let data=[], filtroAtual='';
+
+function setFiltro(el, val){
+  filtroAtual=val;
+  document.querySelectorAll('#filtro-row .filter-chip').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderLista();
+}
+
 function renderLista(){
-  const f=document.getElementById('filtro-status').value;
-  const items=f?data.filter(q=>q.status===f):data;
+  const items=filtroAtual?data.filter(q=>q.status===filtroAtual):data;
   const el=document.getElementById('lista');
-  if(!items.length){el.innerHTML='<p class="muted">Nenhum orçamento '+( f?'com este status':'')+' em aberto.</p>';return;}
+  if(!items.length){
+    el.innerHTML='<p class="muted">Nenhum orçamento em aberto'+(filtroAtual?' com esse status':'')+'.</p>';
+    return;
+  }
   el.innerHTML=items.map(q=>`
-    <a href="orcamento-detalhe.html?id=${q.id}" style="text-decoration:none;color:inherit">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F2F2F7">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;color:#003D6B">${esc(q.servico)}</div>
-        <div style="font-size:13px;color:#8E8E93">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
-        ${q.precisa_follow_up?'<span class="flag-followup">follow-up</span>':''}
+    <a href="orcamento-detalhe.html?id=${q.id}" class="quote-row">
+      <div class="quote-row-left">
+        <div class="quote-row-title">${esc(q.servico)}${q.precisa_follow_up?'<span class="flag-followup">follow-up</span>':''}</div>
+        <div class="quote-row-meta">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;margin-left:12px">
-        <div style="font-weight:800">${brl(q.valor)}</div>
+      <div class="quote-row-right">
+        <div class="quote-row-valor">${brl(q.valor)}</div>
         <span class="${badgeClass(q.status)}">${q.status}</span>
       </div>
-    </div></a>`).join('');
+    </a>`).join('');
 }
 
 (async()=>{
-  const session=await requireSession();if(!session)return;
-  document.getElementById('top').innerHTML=topbar('radar.html');wireLogout();
+  const session=await requireSession(); if(!session)return;
+  document.getElementById('top').innerHTML=topbar('radar.html');
+  document.getElementById('nav').innerHTML=bottomNav('radar.html');
+  wireLogout();
   const r=await api('/api/radar');
   data=r.quotes||[];
   document.getElementById('valor-aberto').textContent=brl(r.valorEmAberto);
-  document.getElementById('total-aberto').textContent=`${r.total} orçamento${r.total!==1?'s':''} em aberto`;
+  document.getElementById('total-aberto').textContent=`${r.total} orçamento${r.total!==1?'s':''} aguardando resposta`;
   renderLista();
 })();
 </script>

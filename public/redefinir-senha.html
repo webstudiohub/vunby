@@ -1,18 +1,32 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>VUNBY — Redefinir senha</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<title>VUNBY — Nova senha</title>
 <link rel="stylesheet" href="style.css"/>
+<style>
+body { background: var(--navy); padding-bottom: 0; }
+.auth-outer { background: var(--navy); }
+.auth-body { background: var(--gray); border-radius: 24px 24px 0 0; flex: 1; padding: var(--sp-6) var(--sp-5) 48px; }
+</style>
 </head><body>
-<div class="auth-container">
-  <div class="auth-logo">VUN<span>BY</span></div>
-  <div class="card">
-    <h2>Nova senha</h2>
-    <label>Nova senha (mín. 8 caracteres)</label><input id="senha" type="password"/>
-    <label>Confirmar senha</label><input id="senha2" type="password"/>
-    <div style="margin-top:18px;"><button class="btn-primary" onclick="redefinir()">Salvar nova senha</button></div>
+<div class="auth-outer">
+  <div class="auth-header">
+    <div class="auth-logo">VUN<span>BY</span></div>
+    <div class="auth-tagline">Criar nova senha</div>
+  </div>
+  <div class="auth-body">
+    <label style="margin-top:0">Nova senha</label>
+    <input id="senha" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"/>
+    <label>Confirmar nova senha</label>
+    <input id="senha2" type="password" autocomplete="new-password" placeholder="Repita a senha"/>
+    <div style="margin-top:var(--sp-5)">
+      <button class="btn-primary" onclick="redefinir()">Salvar nova senha</button>
+    </div>
     <div id="msg" class="error"></div>
-    <div id="ok" class="success" style="display:none">Senha redefinida! <a href="/entrar">Entrar</a></div>
+    <div id="ok" class="success" style="display:none">
+      Senha redefinida com sucesso! <a href="/entrar" style="font-weight:700">Entrar agora</a>
+    </div>
   </div>
 </div>
 <script>
@@ -21,14 +35,18 @@ async function redefinir(){
   const senha=document.getElementById('senha').value;
   const senha2=document.getElementById('senha2').value;
   const msg=document.getElementById('msg');
+  const btn=document.querySelector('.btn-primary');
   msg.textContent='';
   if(senha!==senha2){msg.textContent='As senhas não coincidem.';return;}
+  btn.disabled=true; btn.textContent='Salvando…';
   try{
     const r=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,senha})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
     document.getElementById('ok').style.display='block';
-  }catch(e){msg.textContent=e.message;}
+    btn.style.display='none';
+  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Salvar nova senha';}
 }
+document.addEventListener('keydown',e=>{if(e.key==='Enter')redefinir();});
 </script>
 </body></html>

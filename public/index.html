@@ -1,39 +1,70 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
 <title>VUNBY — Entrar</title>
-<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#003D6B"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
+<style>
+body { background: var(--navy); padding-bottom: 0; }
+.auth-outer { background: var(--navy); }
+.auth-header { padding: 48px var(--sp-5) 28px; }
+.auth-logo { font-size: 32px; margin-bottom: var(--sp-3); }
+.auth-tagline { font-size: 15px; }
+.auth-body { background: var(--gray); border-radius: 24px 24px 0 0; flex: 1; padding: var(--sp-6) var(--sp-5) 48px; }
+.auth-body .card { box-shadow: none; padding: 0; background: transparent; margin-bottom: 0; }
+</style>
 </head><body>
-<div class="auth-container">
-  <div class="auth-logo">VUN<span>BY</span></div>
-  <div class="auth-toggle">
-    <button id="btn-tab-login" class="active" onclick="showTab('login')">Entrar</button>
-    <button id="btn-tab-register" onclick="showTab('register')">Criar conta</button>
+<div class="auth-outer">
+  <div class="auth-header">
+    <div class="auth-logo">VUN<span>BY</span></div>
+    <div class="auth-tagline">Orçamentos e vendas para autônomos</div>
   </div>
 
-  <!-- LOGIN -->
-  <div id="tab-login" class="card">
-    <label>E-mail</label><input id="l-email" type="email" autocomplete="email" placeholder="seu@email.com"/>
-    <label>Senha</label><input id="l-senha" type="password" autocomplete="current-password"/>
-    <div style="margin-top:18px;"><button class="btn-primary" onclick="login()">Entrar</button></div>
-    <div id="l-msg" class="error"></div>
-    <p class="muted mt text-center"><a href="/esqueci-senha.html">Esqueci minha senha</a></p>
-  </div>
+  <div class="auth-body">
+    <div class="auth-toggle">
+      <button id="btn-tab-login" class="active" onclick="showTab('login')">Entrar</button>
+      <button id="btn-tab-register" onclick="showTab('register')">Criar conta</button>
+    </div>
 
-  <!-- CADASTRO -->
-  <div id="tab-register" class="card" style="display:none">
-    <label>Nome</label><input id="r-nome" autocomplete="name" placeholder="Seu nome ou empresa"/>
-    <label>E-mail</label><input id="r-email" type="email" autocomplete="email"/>
-    <label>Telefone (WhatsApp)</label><input id="r-tel" type="tel" autocomplete="tel" placeholder="+55 11 99999-9999"/>
-    <label>Senha (mín. 8 caracteres)</label><input id="r-senha" type="password" autocomplete="new-password"/>
-    <div style="margin-top:18px;"><button class="btn-primary" onclick="register()">Criar conta</button></div>
-    <div id="r-msg" class="error"></div>
-  </div>
+    <!-- LOGIN -->
+    <div id="tab-login">
+      <label>E-mail</label>
+      <input id="l-email" type="email" autocomplete="email" placeholder="seu@email.com"/>
+      <label>Senha</label>
+      <input id="l-senha" type="password" autocomplete="current-password" placeholder="••••••••"/>
+      <div style="margin-top:var(--sp-5)">
+        <button class="btn-primary" onclick="login()">Entrar</button>
+      </div>
+      <div id="l-msg" class="error"></div>
+      <p class="muted mt text-center" style="font-size:13px">
+        <a href="/esqueci-senha.html">Esqueci minha senha</a>
+      </p>
+    </div>
 
-  <p class="muted text-center mt"><a href="/">← Início</a></p>
+    <!-- CADASTRO -->
+    <div id="tab-register" style="display:none">
+      <label>Nome ou empresa</label>
+      <input id="r-nome" autocomplete="name" placeholder="João Silva"/>
+      <label>E-mail</label>
+      <input id="r-email" type="email" autocomplete="email" placeholder="seu@email.com"/>
+      <label>Telefone (WhatsApp)</label>
+      <input id="r-tel" type="tel" autocomplete="tel" placeholder="+55 11 99999-9999"/>
+      <label>Senha</label>
+      <input id="r-senha" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"/>
+      <div style="margin-top:var(--sp-5)">
+        <button class="btn-primary btn-gold" onclick="register()">Criar conta grátis</button>
+      </div>
+      <div id="r-msg" class="error"></div>
+      <p class="muted mt text-center" style="font-size:12px">
+        Ao criar conta você aceita os <a href="/termos.html">Termos</a> e a <a href="/privacidade.html">Privacidade</a>.
+      </p>
+    </div>
+  </div>
 </div>
+
 <script>
 function showTab(t){
   document.getElementById('tab-login').style.display = t==='login'?'':'none';
@@ -41,21 +72,22 @@ function showTab(t){
   document.getElementById('btn-tab-login').className = t==='login'?'active':'';
   document.getElementById('btn-tab-register').className = t==='register'?'active':'';
 }
-// Auto-switch para /cadastro
 if(location.pathname==='/cadastro') showTab('register');
 
 async function login(){
   const email=document.getElementById('l-email').value;
   const senha=document.getElementById('l-senha').value;
   const msg=document.getElementById('l-msg');
+  const btn=document.querySelector('#tab-login .btn-primary');
   msg.textContent='';
+  btn.disabled=true; btn.textContent='Entrando…';
   try{
     const r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha}),credentials:'same-origin'});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
     if(d.telefoneVerificado===false){location.href='/verificar-email.html?email='+encodeURIComponent(email);return;}
     location.href='/dashboard.html';
-  }catch(e){msg.textContent=e.message;}
+  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Entrar';}
 }
 
 async function register(){
@@ -64,13 +96,22 @@ async function register(){
   const telefone=document.getElementById('r-tel').value;
   const senha=document.getElementById('r-senha').value;
   const msg=document.getElementById('r-msg');
+  const btn=document.querySelector('#tab-register .btn-primary');
   msg.textContent='';
+  btn.disabled=true; btn.textContent='Criando conta…';
   try{
     const r=await fetch('/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,telefone,senha})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
     location.href='/verificar-email.html?email='+encodeURIComponent(email);
-  }catch(e){msg.textContent=e.message;}
+  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Criar conta grátis';}
 }
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const loginVisible=document.getElementById('tab-login').style.display!=='none';
+    if(loginVisible) login(); else register();
+  }
+});
 </script>
 </body></html>

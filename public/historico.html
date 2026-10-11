@@ -1,53 +1,81 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
 <title>VUNBY — Histórico</title>
-<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#003D6B"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
 </head><body>
 <div id="top"></div>
 <div class="container">
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <h3 style="margin:0">Todos os orçamentos</h3>
-      <select id="filtro" onchange="filtrar()" style="width:auto;padding:6px 10px;font-size:13px">
-        <option value="">Todos</option>
-        <option value="Enviado">Enviado</option>
-        <option value="Visualizado">Visualizado</option>
-        <option value="Sem resposta">Sem resposta</option>
-        <option value="Aprovado">Aprovado</option>
-        <option value="Recusado">Recusado</option>
-      </select>
-    </div>
+  <div class="page-header">
+    <h1>Histórico 📋</h1>
+    <p>Todos os seus orçamentos</p>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="busca" type="search" placeholder="Buscar por cliente ou serviço…" oninput="filtrar()" autocomplete="off"/>
+  </div>
+
+  <div class="filter-row" id="filtro-row">
+    <button class="filter-chip active" data-v="" onclick="setFiltro(this,'')">Todos</button>
+    <button class="filter-chip" data-v="Enviado" onclick="setFiltro(this,'Enviado')">Enviado</button>
+    <button class="filter-chip" data-v="Visualizado" onclick="setFiltro(this,'Visualizado')">Visualizado</button>
+    <button class="filter-chip" data-v="Sem resposta" onclick="setFiltro(this,'Sem resposta')">Sem resposta</button>
+    <button class="filter-chip" data-v="Aprovado" onclick="setFiltro(this,'Aprovado')">Aprovado</button>
+    <button class="filter-chip" data-v="Recusado" onclick="setFiltro(this,'Recusado')">Recusado</button>
+  </div>
+
+  <div class="card" style="padding-top:var(--sp-3)">
     <div id="lista"><p class="muted">Carregando…</p></div>
   </div>
 </div>
+<div id="nav"></div>
 <script src="app.js"></script>
 <script>
-let todos=[];
+let todos=[], filtroStatus='';
+
+function setFiltro(el, val){
+  filtroStatus=val;
+  document.querySelectorAll('#filtro-row .filter-chip').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  filtrar();
+}
+
 function filtrar(){
-  const f=document.getElementById('filtro').value;
-  const items=f?todos.filter(q=>q.status===f):todos;
+  const q=(document.getElementById('busca').value||'').toLowerCase().trim();
+  let items=todos;
+  if(filtroStatus) items=items.filter(x=>x.status===filtroStatus);
+  if(q) items=items.filter(x=>
+    (x.cliente_nome||'').toLowerCase().includes(q)||
+    (x.servico||'').toLowerCase().includes(q)
+  );
   const el=document.getElementById('lista');
-  if(!items.length){el.innerHTML='<p class="muted">Nenhum orçamento encontrado.</p>';return;}
+  if(!items.length){
+    el.innerHTML='<p class="muted">Nenhum orçamento encontrado.</p>';
+    return;
+  }
   el.innerHTML=items.map(q=>`
-    <a href="orcamento-detalhe.html?id=${q.id}" style="text-decoration:none;color:inherit">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid #F2F2F7">
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;color:#003D6B">${esc(q.servico)}</div>
-        <div style="font-size:13px;color:#8E8E93">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
-        ${q.precisa_follow_up?'<span class="flag-followup">follow-up</span>':''}
+    <a href="orcamento-detalhe.html?id=${q.id}" class="quote-row">
+      <div class="quote-row-left">
+        <div class="quote-row-title">${esc(q.servico)}${q.precisa_follow_up?'<span class="flag-followup">follow-up</span>':''}</div>
+        <div class="quote-row-meta">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;margin-left:12px">
-        <div style="font-weight:800">${brl(q.valor)}</div>
+      <div class="quote-row-right">
+        <div class="quote-row-valor">${brl(q.valor)}</div>
         <span class="${badgeClass(q.status)}">${q.status}</span>
       </div>
-    </div></a>`).join('');
+    </a>`).join('');
 }
+
 (async()=>{
-  const session=await requireSession();if(!session)return;
-  document.getElementById('top').innerHTML=topbar('historico.html');wireLogout();
+  const session=await requireSession(); if(!session)return;
+  document.getElementById('top').innerHTML=topbar('historico.html');
+  document.getElementById('nav').innerHTML=bottomNav('historico.html');
+  wireLogout();
   todos=await api('/api/quotes');
   filtrar();
 })();

@@ -1,24 +1,38 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
 <title>VUNBY — Verificar e-mail</title>
 <link rel="stylesheet" href="style.css"/>
+<style>
+body { background: var(--navy); padding-bottom: 0; }
+.auth-outer { background: var(--navy); }
+.auth-body { background: var(--gray); border-radius: 24px 24px 0 0; flex: 1; padding: var(--sp-6) var(--sp-5) 48px; }
+</style>
 </head><body>
-<div class="auth-container">
-  <div class="auth-logo">VUN<span>BY</span></div>
-  <div class="card">
-    <h2 style="text-align:center;margin-bottom:8px;">Verificar e-mail</h2>
-    <p class="muted text-center" style="margin-bottom:20px;">Digite o código de 6 dígitos enviado para o seu e-mail.</p>
-    <label>Código</label>
-    <input id="code" type="number" maxlength="6" placeholder="000000" inputmode="numeric" style="text-align:center;font-size:28px;font-weight:800;letter-spacing:.15em"/>
-    <div style="margin-top:18px;"><button class="btn-primary" onclick="verificar()">Verificar</button></div>
+<div class="auth-outer">
+  <div class="auth-header">
+    <div class="auth-logo">VUN<span>BY</span></div>
+    <div class="auth-tagline">Confirme seu e-mail para continuar</div>
+  </div>
+  <div class="auth-body">
+    <p class="muted" style="margin-bottom:var(--sp-5);font-size:15px;line-height:1.6;">
+      Enviamos um código de 6 dígitos para seu e-mail. Verifique a caixa de entrada e spam.
+    </p>
+    <label style="margin-top:0">Código de verificação</label>
+    <input id="code" type="number" maxlength="6" placeholder="000000" inputmode="numeric"
+      style="text-align:center;font-size:28px;font-weight:800;letter-spacing:.2em"/>
+    <div style="margin-top:var(--sp-5)">
+      <button class="btn-primary" onclick="verificar()">Confirmar</button>
+    </div>
     <div id="msg" class="error"></div>
     <div id="ok" class="success" style="display:none"></div>
-    <div style="margin-top:16px;text-align:center;">
-      <span class="muted" style="font-size:14px;">Não recebeu o código? </span>
-      <a href="#" id="btnReenviar" onclick="reenviar(event)" style="font-size:14px;color:#6C47FF;">Reenviar</a>
-      <span id="countdown" class="muted" style="font-size:13px;display:none;"> (aguarde <span id="secs">60</span>s)</span>
+    <div style="margin-top:var(--sp-5);text-align:center">
+      <span class="muted" style="font-size:14px">Não recebeu? </span>
+      <a href="#" id="btnReenviar" onclick="reenviar(event)" style="font-size:14px;font-weight:600">Reenviar código</a>
+      <span id="countdown" class="muted" style="font-size:13px;display:none"> (aguarde <span id="secs">60</span>s)</span>
     </div>
+    <p class="text-center mt" style="font-size:13px"><a href="/entrar">← Voltar ao login</a></p>
   </div>
 </div>
 <script>
@@ -28,22 +42,23 @@ const email=params.get('email')||'';
 async function verificar(){
   const code=document.getElementById('code').value;
   const msg=document.getElementById('msg');
+  const btn=document.querySelector('.btn-primary');
   msg.textContent='';
   document.getElementById('ok').style.display='none';
+  btn.disabled=true; btn.textContent='Verificando…';
   try{
     const r=await fetch('/api/auth/verify-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
     location.href='/entrar';
-  }catch(e){msg.textContent=e.message;}
+  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Confirmar';}
 }
 
 async function reenviar(e){
   e.preventDefault();
   const msg=document.getElementById('msg');
   const ok=document.getElementById('ok');
-  msg.textContent='';
-  ok.style.display='none';
+  msg.textContent=''; ok.style.display='none';
   try{
     const r=await fetch('/api/auth/resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
     const d=await r.json();
@@ -58,21 +73,15 @@ function iniciarContagem(){
   const btn=document.getElementById('btnReenviar');
   const countdown=document.getElementById('countdown');
   const secs=document.getElementById('secs');
-  btn.style.pointerEvents='none';
-  btn.style.opacity='0.4';
+  btn.style.pointerEvents='none'; btn.style.opacity='0.4';
   countdown.style.display='inline';
-  let s=60;
-  secs.textContent=s;
+  let s=60; secs.textContent=s;
   const t=setInterval(()=>{
-    s--;
-    secs.textContent=s;
-    if(s<=0){
-      clearInterval(t);
-      btn.style.pointerEvents='';
-      btn.style.opacity='';
-      countdown.style.display='none';
-    }
+    s--; secs.textContent=s;
+    if(s<=0){clearInterval(t);btn.style.pointerEvents='';btn.style.opacity='';countdown.style.display='none';}
   },1000);
 }
+
+document.addEventListener('keydown',e=>{if(e.key==='Enter')verificar();});
 </script>
 </body></html>
