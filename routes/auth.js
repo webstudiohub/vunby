@@ -1,3 +1,4 @@
+
 'use strict';
 const { query } = require('../lib/db');
 const { hashPassword, verifyPassword, hashesMatch } = require('../lib/auth');
@@ -45,7 +46,6 @@ async function handle(req, res) {
     const existing = await query('SELECT id FROM users WHERE email = $1', [email.trim().toLowerCase()]);
     if (existing.rows.length > 0) return conflict(res, 'Este e-mail já está cadastrado.');
 
-    // Verifica trial
     const telHash = hashToken(telNorm);
     const trialUsed = await query('SELECT 1 FROM verified_trial_phones WHERE phone_hash = $1', [telHash]);
     const trialConcedido = trialUsed.rows.length === 0;
@@ -57,13 +57,10 @@ async function handle(req, res) {
     );
     const userId = result.rows[0].id;
 
-    // Gera código de verificação de e-mail
     const code = generateCode(6);
     const codeHash = hashToken(code);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
     await query('INSERT INTO email_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [userId, codeHash, expiresAt]);
-
-    // Envia e-mail com código
     await sendVerificationEmail(email.trim(), code);
 
     return created(res, { message: 'Conta criada. Verifique seu e-mail.', requiresVerification: true });
@@ -147,6 +144,26 @@ async function handle(req, res) {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
     return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+  }
+
+  // POST /api/auth/resend-verification
+  if (req.method === 'POST' && path === '/api/auth/resend-verification') {
+    if (!rateLimit(`resend-verification:${ip}`, 3, 60_000)) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
+    let body;
+    try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
+    const { email } = body;
+    if (!isEmail(email)) return badRequest(res, 'E-mail inválido.');
+    const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
+    const user = userRes.rows[0];
+    if (!user) return ok(res, { message: 'Se o e-mail existir, um novo código será enviado.' });
+    if (user.email_verificado) return badRequest(res, 'E-mail já verificado.');
+    const code = generateCode(6);
+    const codeHash = hashToken(code);
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
+    await query('INSERT INTO email_verifications (user_id, code_hash, expires_at) VALUES ($1,$2,$3)', [user.id, codeHash, expiresAt]);
+    await sendVerificationEmail(email.trim(), code);
+    return ok(res, { message: 'Novo código enviado.' });
   }
 
   // POST /api/auth/forgot-password
