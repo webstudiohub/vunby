@@ -5,7 +5,12 @@
 async function api(path, { method = 'GET', body } = {}) {
   const opts = { method, headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin' };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(path, opts);
+  let res;
+  try {
+    res = await fetch(path, opts);
+  } catch {
+    throw new Error('Sem conexão. Verifique sua internet e tente novamente.');
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
   return data;
@@ -31,10 +36,11 @@ function wireLogout() {
 }
 
 // ─── Topbar ───────────────────────────────────────────────────
+const ICON_CONTA = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
 function topbar(active) {
   return `<nav class="topbar">
     <a class="topbar-logo" href="dashboard.html">VUN<span>BY</span></a>
-    <button id="btn-logout">Sair</button>
+    <a href="conta.html" class="topbar-icon${active==='conta.html'?' topbar-icon-active':''}" aria-label="Minha conta">${ICON_CONTA}</a>
   </nav>`;
 }
 
@@ -65,6 +71,22 @@ function bottomNav(active) {
       <span>Orçar</span>
     </a>`;
   return `<nav class="bottom-nav">${navItems}${cta}</nav>`;
+}
+
+// ─── Loading / erro ───────────────────────────────────────────
+function skeletonRows(n = 3) {
+  return Array.from({length: n}, () =>
+    `<div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div>`
+  ).join('');
+}
+
+function errorBlock(msg, onRetry) {
+  const id = 'retry-' + Math.random().toString(36).slice(2);
+  setTimeout(() => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', onRetry);
+  }, 0);
+  return `<div class="error-block"><p>${msg}</p><button id="${id}" class="btn-outline" style="margin-top:var(--sp-3)">Tentar novamente</button></div>`;
 }
 
 // ─── Formatação ───────────────────────────────────────────────

@@ -1,25 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
 <title>VUNBY — Minha Conta</title>
-<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#003D6B"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
 </head><body>
 <div id="top"></div>
 <div class="container">
-  <div class="card" id="perfil-card">
-    <h3>Meus dados</h3>
+  <div class="page-header anim">
+    <h1>Minha Conta</h1>
+    <p>Seus dados e configurações</p>
+  </div>
+
+  <!-- Perfil -->
+  <div class="card anim anim-1">
+    <h3>Dados pessoais</h3>
     <div id="perfil"><p class="muted">Carregando…</p></div>
   </div>
-  <div class="card" style="border:1.5px solid #FFE0DE">
-    <h3 style="color:#C0392B">Excluir conta</h3>
-    <p class="muted" style="margin-bottom:12px">Esta ação é irreversível. Todos os seus dados serão apagados.</p>
+
+  <!-- Alterar senha -->
+  <div class="card anim anim-2">
+    <h3>Alterar senha</h3>
+    <label>Senha atual</label>
+    <input id="s-atual" type="password" autocomplete="current-password" placeholder="••••••••"/>
+    <label>Nova senha</label>
+    <input id="s-nova" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"/>
+    <label>Confirmar nova senha</label>
+    <input id="s-conf" type="password" autocomplete="new-password" placeholder="Repita a nova senha"/>
+    <div style="margin-top:var(--sp-5)">
+      <button class="btn-primary" id="btn-senha" onclick="alterarSenha()">Salvar nova senha</button>
+    </div>
+    <div id="msg-senha" class="error"></div>
+  </div>
+
+  <!-- Excluir conta -->
+  <div class="card anim anim-3" style="border:1.5px solid #FFE0DE;margin-bottom:calc(var(--nav-h) + var(--sp-5))">
+    <h3 style="color:#C0392B">Zona de perigo</h3>
+    <p class="muted" style="margin-bottom:var(--sp-4)">Excluir a conta é irreversível. Todos os orçamentos, pacotes e dados serão apagados permanentemente.</p>
     <button class="btn-outline" style="color:#FF3B30;border-color:#FF3B30" onclick="excluirConta()">Excluir minha conta</button>
   </div>
 </div>
+<div id="nav"></div>
 <script src="app.js"></script>
 <script>
+async function alterarSenha(){
+  const atual=document.getElementById('s-atual').value;
+  const nova=document.getElementById('s-nova').value;
+  const conf=document.getElementById('s-conf').value;
+  const msg=document.getElementById('msg-senha');
+  const btn=document.getElementById('btn-senha');
+  msg.textContent=''; msg.className='error';
+  if(!atual||!nova||!conf){msg.textContent='Preencha todos os campos.';return;}
+  if(nova.length<8){msg.textContent='A nova senha deve ter pelo menos 8 caracteres.';return;}
+  if(nova!==conf){msg.textContent='As senhas não coincidem.';return;}
+  btn.disabled=true; btn.textContent='Salvando…';
+  try{
+    await api('/api/auth/password',{method:'PUT',body:{senhaAtual:atual,senhaNova:nova}});
+    document.getElementById('s-atual').value='';
+    document.getElementById('s-nova').value='';
+    document.getElementById('s-conf').value='';
+    msg.className=''; msg.style.color='var(--green,#27AE60)';
+    msg.textContent='Senha alterada com sucesso.';
+  }catch(e){msg.textContent=e.message;}
+  btn.disabled=false; btn.textContent='Salvar nova senha';
+}
+
 async function excluirConta(){
   if(!confirm('Tem certeza? Esta ação não pode ser desfeita.'))return;
   if(!confirm('Confirme: TODOS os seus dados serão apagados permanentemente.'))return;
@@ -28,15 +76,42 @@ async function excluirConta(){
     location.href='/';
   }catch(e){alert(e.message);}
 }
+
 (async()=>{
-  const session=await requireSession();if(!session)return;
-  document.getElementById('top').innerHTML=topbar('');wireLogout();
-  const u=await api('/api/auth/me');
-  document.getElementById('perfil').innerHTML=`
-    <p><strong>Nome:</strong> ${esc(u.nome)}</p>
-    <p><strong>E-mail:</strong> ${esc(u.email)}</p>
-    <p><strong>Telefone:</strong> ${esc(u.telefone)} ${u.telefoneVerificado?'<span class="badge badge-aprovado">verificado</span>':'<span class="badge badge-enviado">pendente</span>'}</p>
-    <p><strong>Trial:</strong> ${u.trialConcedido?'Ativo':'Não concedido'}</p>`;
+  const session=await requireSession(); if(!session)return;
+  document.getElementById('top').innerHTML=topbar('conta.html');
+  document.getElementById('nav').innerHTML=bottomNav('conta.html');
+  wireLogout();
+  try{
+    const u=await api('/api/auth/me');
+    document.getElementById('perfil').innerHTML=`
+      <div style="display:grid;gap:var(--sp-3)">
+        <div class="perfil-row">
+          <span class="perfil-label">Nome</span>
+          <span class="perfil-val">${esc(u.nome)}</span>
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">E-mail</span>
+          <span class="perfil-val">${esc(u.email)}</span>
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">Telefone</span>
+          <span class="perfil-val">${esc(u.telefone||'—')} ${u.telefoneVerificado?'<span class="badge badge-aprovado">verificado</span>':'<span class="badge badge-enviado">pendente</span>'}</span>
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">Trial</span>
+          <span class="perfil-val">${u.trialConcedido?'<span class="badge badge-aprovado">Ativo</span>':'<span class="badge badge-recusado">Não concedido</span>'}</span>
+        </div>
+      </div>`;
+  }catch(e){
+    document.getElementById('perfil').innerHTML='<p class="muted">Erro ao carregar dados.</p>';
+  }
 })();
 </script>
+<style>
+.perfil-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--gray2)}
+.perfil-row:last-child{border-bottom:none}
+.perfil-label{font-size:13px;color:var(--muted);font-weight:600;text-transform:none;min-width:72px}
+.perfil-val{font-size:14px;color:var(--dark);font-weight:500;text-align:right;flex:1;display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2);flex-wrap:wrap}
+</style>
 </body></html>

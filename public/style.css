@@ -79,6 +79,8 @@ body {
   flex-shrink: 0;
 }
 .topbar-logo span { color: var(--gold); }
+.topbar-icon { color: rgba(255,255,255,.7); display:flex; align-items:center; padding: 8px; border-radius: 8px; transition: color .15s, background .15s; text-decoration:none; }
+.topbar-icon:hover, .topbar-icon-active { color: var(--white); background: rgba(255,255,255,.13); }
 .topbar-nav {
   display: flex;
   gap: 2px;
@@ -664,3 +666,15 @@ hr { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-5) 0; }
 .text-center { text-align: center; }
 .grid-2 { display: grid; gap: var(--sp-3); }
 .divider { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-3) 0; }
+
+/* ─── Skeleton loader ─── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-row { display:flex; justify-content:space-between; align-items:center; padding: var(--sp-4) 0; border-bottom: 1px solid var(--gray2); gap: var(--sp-4); }
+.skeleton-row:last-child { border-bottom: none; }
+.skeleton-line { height: 14px; border-radius: 7px; background: linear-gradient(90deg, var(--gray2) 25%, #e8e8e8 50%, var(--gray2) 75%); background-size: 800px 14px; animation: shimmer 1.4s infinite; }
+
+/* ─── Error block ─── */
+.error-block { text-align:center; padding: var(--sp-6) var(--sp-4); color: var(--muted); }

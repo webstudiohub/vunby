@@ -124,6 +124,11 @@ async function handle(req, res) {
     if (!user) return unauthorized(res, 'E-mail ou senha incorretos.');
     const ok2 = await verifyPassword(senha, user.senha_hash);
     if (!ok2) return unauthorized(res, 'E-mail ou senha incorretos.');
+    // Cleanup old sessions (keep last 3 plus the new one)
+    const oldSessions = await query('SELECT token_hash FROM sessions WHERE user_id = $1 ORDER BY created_at DESC OFFSET 2', [user.id]);
+    for (const s of oldSessions.rows) {
+      await query('DELETE FROM sessions WHERE token_hash = $1', [s.token_hash]);
+    }
     const token = generateSessionToken();
     const [raw] = token.split('.');
     const tokenHash = hashToken(raw);
@@ -208,6 +213,31 @@ async function handle(req, res) {
     await query('DELETE FROM password_resets WHERE user_id = $1', [match.user_id]);
     await query('DELETE FROM sessions WHERE user_id = $1', [match.user_id]);
     return ok(res, { message: 'Senha redefinida com sucesso.' });
+  }
+
+  // PUT /api/auth/password
+  if (req.method === 'PUT' && path === '/api/auth/password') {
+    const user = await requireAuth(req, res);
+    if (!user) return;
+    let body;
+    try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
+    const { senhaAtual, senhaNova } = body;
+    if (!senhaAtual || !senhaNova) return badRequest(res, 'Preencha todos os campos.');
+    if (senhaNova.length < 8) return badRequest(res, 'A nova senha deve ter ao menos 8 caracteres.');
+    const match = await verifyPassword(senhaAtual, user.senha_hash);
+    if (!match) return badRequest(res, 'Senha atual incorreta.');
+    const senhaHash = await hashPassword(senhaNova);
+    await query('UPDATE users SET senha_hash = $1 WHERE id = $2', [senhaHash, user.id]);
+    // Invalidate all other sessions
+    const currentToken = parseSession(req);
+    if (currentToken) {
+      const raw = verifySessionToken(currentToken);
+      if (raw) {
+        const currentHash = hashToken(raw);
+        await query('DELETE FROM sessions WHERE user_id = $1 AND token_hash != $2', [user.id, currentHash]);
+      }
+    }
+    return ok(res, { message: 'Senha alterada com sucesso.' });
   }
 
   // DELETE /api/auth/account

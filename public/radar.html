@@ -29,7 +29,7 @@
   </div>
 
   <div class="card" style="padding-top:var(--sp-3)">
-    <div id="lista"><p class="muted">Carregando…</p></div>
+    <div id="lista"></div>
   </div>
 </div>
 <div id="nav"></div>
@@ -69,11 +69,19 @@ function renderLista(){
   document.getElementById('top').innerHTML=topbar('radar.html');
   document.getElementById('nav').innerHTML=bottomNav('radar.html');
   wireLogout();
-  const r=await api('/api/radar');
-  data=r.quotes||[];
-  document.getElementById('valor-aberto').textContent=brl(r.valorEmAberto);
-  document.getElementById('total-aberto').textContent=`${r.total} orçamento${r.total!==1?'s':''} aguardando resposta`;
-  renderLista();
+  const el=document.getElementById('lista');
+  el.innerHTML=skeletonRows(3);
+  try{
+    const r=await api('/api/radar');
+    data=r.quotes||[];
+    document.getElementById('valor-aberto').textContent=brl(r.valorEmAberto);
+    document.getElementById('total-aberto').textContent=`${r.total} orçamento${r.total!==1?'s':''} aguardando resposta`;
+    renderLista();
+  }catch(e){
+    document.getElementById('valor-aberto').textContent='—';
+    document.getElementById('total-aberto').textContent='';
+    el.innerHTML=errorBlock(e.message||'Erro ao carregar.', ()=>location.reload());
+  }
 })();
 </script>
 </body></html>

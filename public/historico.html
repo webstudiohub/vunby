@@ -30,7 +30,7 @@
   </div>
 
   <div class="card" style="padding-top:var(--sp-3)">
-    <div id="lista"><p class="muted">Carregando…</p></div>
+    <div id="lista"></div>
   </div>
 </div>
 <div id="nav"></div>
@@ -76,8 +76,14 @@ function filtrar(){
   document.getElementById('top').innerHTML=topbar('historico.html');
   document.getElementById('nav').innerHTML=bottomNav('historico.html');
   wireLogout();
-  todos=await api('/api/quotes');
-  filtrar();
+  const el=document.getElementById('lista');
+  el.innerHTML=skeletonRows(4);
+  try{
+    todos=await api('/api/quotes');
+    filtrar();
+  }catch(e){
+    el.innerHTML=errorBlock(e.message||'Erro ao carregar.', async()=>{ el.innerHTML=skeletonRows(4); try{todos=await api('/api/quotes');filtrar();}catch(e2){el.innerHTML=errorBlock(e2.message,()=>{});} });
+  }
 })();
 </script>
 </body></html>

@@ -36,7 +36,7 @@
 
   <div class="card">
     <h3>Meus modelos</h3>
-    <div id="lista"><p class="muted">Carregando…</p></div>
+    <div id="lista"></div>
   </div>
 </div>
 <div id="nav"></div>
@@ -69,8 +69,11 @@ async function excluir(id){
 }
 
 async function renderLista(){
-  const pacotes=await api('/api/packages');
   const el=document.getElementById('lista');
+  el.innerHTML=skeletonRows(2);
+  let pacotes;
+  try{ pacotes=await api('/api/packages'); }
+  catch(e){ el.innerHTML=errorBlock(e.message||'Erro ao carregar.',renderLista); return; }
   if(!pacotes.length){
     el.innerHTML='<p class="muted">Nenhum modelo ainda. Crie o primeiro acima!</p>';
     return;
