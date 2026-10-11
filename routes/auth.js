@@ -78,7 +78,7 @@ async function handle(req, res) {
     const vRes = await query('SELECT * FROM email_verifications WHERE user_id = $1 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1', [user.id]);
     if (!vRes.rows[0]) return badRequest(res, 'Código expirado. Solicite novo código.');
     if (!hashesMatch(code, vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
-    await query('UPDATE users SET email_verificado = true WHERE id = $1', [user.id]);
+    await query('UPDATE users SET email_confirmed_at = NOW() WHERE id = $1', [user.id]);
     await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
     return ok(res, { message: 'E-mail verificado com sucesso!' });
   }
@@ -156,7 +156,7 @@ async function handle(req, res) {
     const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
     const user = userRes.rows[0];
     if (!user) return ok(res, { message: 'Se o e-mail existir, um novo código será enviado.' });
-    if (user.email_verificado) return badRequest(res, 'E-mail já verificado.');
+    if (user.email_confirmed_at) return badRequest(res, 'E-mail já verificado.');
     const code = generateCode(6);
     const codeHash = hashToken(code);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
