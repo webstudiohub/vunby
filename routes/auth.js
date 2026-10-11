@@ -52,7 +52,10 @@ async function createSession(res, userId) {
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
-  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress || 'unknown';
+  // O Render ACRESCENTA o IP real ao X-Forwarded-For que o cliente mandar, então o
+  // primeiro valor pode ser forjado. O último é o que o proxy do Render adicionou.
+  const xff = (req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+  const ip = xff[xff.length - 1] || req.socket.remoteAddress || 'unknown';
 
   // POST /api/auth/register
   if (req.method === 'POST' && path === '/api/auth/register') {
