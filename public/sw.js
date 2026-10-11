@@ -1,11 +1,11 @@
-/* VUNBY Service Worker — cacheia só o casco estático */
-const CACHE = 'vunby-v1';
+/* VUNBY Service Worker — versão atualizada a cada deploy */
+const CACHE = 'vunby-v3';
 const STATIC = [
   '/', '/entrar', '/cadastro',
   '/style.css', '/app.js',
   '/dashboard.html', '/radar.html', '/historico.html',
   '/pacotes.html', '/novo-orcamento.html',
-  '/manifest.json',
+  '/conta.html', '/manifest.json',
 ];
 
 self.addEventListener('install', e => {
@@ -22,8 +22,15 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  // NUNCA cacheia /api/
   if (url.pathname.startsWith('/api/')) return;
+  // Network-first para HTML (sempre pega versão mais recente)
+  if (e.request.destination === 'document') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  // Cache-first para assets estáticos
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
