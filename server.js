@@ -11,6 +11,7 @@ const followupsRoute = require('./routes/followups');
 const publicRoute = require('./routes/public');
 const radarRoute = require('./routes/radar');
 const dashboardRoute = require('./routes/dashboard');
+const pdfRoute = require('./routes/pdf');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -82,7 +83,8 @@ const server = http.createServer(async (req, res) => {
         await followupsRoute.handle(req, res) ??
         await publicRoute.handle(req, res) ??
         await radarRoute.handle(req, res) ??
-        await dashboardRoute.handle(req, res);
+        await dashboardRoute.handle(req, res) ??
+        await pdfRoute.handle(req, res);
 
       if (handled === null) {
         res.writeHead(404, { 'Content-Type': 'application/json' });

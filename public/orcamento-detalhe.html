@@ -79,6 +79,7 @@ async function renderPage(){
       ${q.validade?`<p><strong>Validade:</strong> ${new Date(q.validade+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
       ${q.observacoes?`<p><strong>Obs:</strong> ${esc(q.observacoes)}</p>`:''}
       <p style="margin-top:8px"><a href="/orcamento.html?token=${encodeURIComponent(q.public_token)}" target="_blank" style="font-size:13px">🔗 Ver página do cliente</a></p>
+      <p style="margin-top:6px"><a href="/api/quotes/${qid}/pdf" download style="font-size:13px">📄 Baixar PDF</a></p>
     </div>
 
     <div class="card">
