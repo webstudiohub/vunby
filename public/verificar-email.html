@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
-<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Verificar e-mail</title>
 <link rel="stylesheet" href="style.css"/>
 </head><body>
@@ -10,24 +10,69 @@
     <h2 style="text-align:center;margin-bottom:8px;">Verificar e-mail</h2>
     <p class="muted text-center" style="margin-bottom:20px;">Digite o código de 6 dígitos enviado para o seu e-mail.</p>
     <label>Código</label>
-    <input id="code" type="number" placeholder="000000" inputmode="numeric" style="text-align:center;font-size:28px;font-weight:800;letter-spacing:.15em"/>
+    <input id="code" type="number" maxlength="6" placeholder="000000" inputmode="numeric" style="text-align:center;font-size:28px;font-weight:800;letter-spacing:.15em"/>
     <div style="margin-top:18px;"><button class="btn-primary" onclick="verificar()">Verificar</button></div>
     <div id="msg" class="error"></div>
+    <div id="ok" class="success" style="display:none"></div>
+    <div style="margin-top:16px;text-align:center;">
+      <span class="muted" style="font-size:14px;">Não recebeu o código? </span>
+      <a href="#" id="btnReenviar" onclick="reenviar(event)" style="font-size:14px;color:#6C47FF;">Reenviar</a>
+      <span id="countdown" class="muted" style="font-size:13px;display:none;"> (aguarde <span id="secs">60</span>s)</span>
+    </div>
   </div>
 </div>
 <script>
 const params=new URLSearchParams(location.search);
 const email=params.get('email')||'';
+
 async function verificar(){
   const code=document.getElementById('code').value;
   const msg=document.getElementById('msg');
   msg.textContent='';
+  document.getElementById('ok').style.display='none';
   try{
     const r=await fetch('/api/auth/verify-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
     location.href='/entrar';
   }catch(e){msg.textContent=e.message;}
+}
+
+async function reenviar(e){
+  e.preventDefault();
+  const msg=document.getElementById('msg');
+  const ok=document.getElementById('ok');
+  msg.textContent='';
+  ok.style.display='none';
+  try{
+    const r=await fetch('/api/auth/resend-verification',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Erro');
+    ok.textContent='Código reenviado! Verifique seu e-mail.';
+    ok.style.display='block';
+    iniciarContagem();
+  }catch(e){msg.textContent=e.message;}
+}
+
+function iniciarContagem(){
+  const btn=document.getElementById('btnReenviar');
+  const countdown=document.getElementById('countdown');
+  const secs=document.getElementById('secs');
+  btn.style.pointerEvents='none';
+  btn.style.opacity='0.4';
+  countdown.style.display='inline';
+  let s=60;
+  secs.textContent=s;
+  const t=setInterval(()=>{
+    s--;
+    secs.textContent=s;
+    if(s<=0){
+      clearInterval(t);
+      btn.style.pointerEvents='';
+      btn.style.opacity='';
+      countdown.style.display='none';
+    }
+  },1000);
 }
 </script>
 </body></html>
