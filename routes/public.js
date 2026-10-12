@@ -75,7 +75,8 @@ async function handle(req, res) {
       const pacs = await query('SELECT id, nome FROM quote_packages WHERE quote_id = $1', [quote.id]);
       if (pacs.rows.length > 0) {
         const pid = parseInt(body.pacoteId, 10);
-        pacoteEscolhido = pacs.rows.find(p => p.id === pid) || (pacs.rows.length === 1 ? pacs.rows[0] : null);
+        // ids BIGINT chegam do pg como texto: compara como string
+        pacoteEscolhido = pacs.rows.find(p => String(p.id) === String(pid)) || (pacs.rows.length === 1 ? pacs.rows[0] : null);
         if (!pacoteEscolhido) return badRequest(res, 'Escolha uma das opções antes de aprovar.');
         await query('UPDATE quote_packages SET escolhido = (id = $2) WHERE quote_id = $1', [quote.id, pacoteEscolhido.id]);
       }

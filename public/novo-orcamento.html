@@ -99,7 +99,7 @@ function carregarRascunho(){
     if(Date.now()-(d.ts||0)>30*24*3600*1000){ localStorage.removeItem(RASCUNHO_KEY); return; }
     CAMPOS.forEach(id=>{ if(d[id]!==undefined&&d[id]!=='') document.getElementById(id).value=d[id]; });
     document.getElementById('q-followup').checked=!!d.followup;
-    (d.pkgs||[]).forEach(id=>{ if(pacotes.some(p=>p.id===id)){ selectedPkgs.add(id); const cb=document.querySelector(`input[data-id="${id}"]`); if(cb) cb.checked=true; } });
+    (d.pkgs||[]).forEach(id=>{ if(pacotes.some(p=>String(p.id)===String(id))){ selectedPkgs.add(id); const cb=document.querySelector(`input[data-id="${id}"]`); if(cb) cb.checked=true; } });
     document.getElementById('aviso-rascunho').style.display='';
   }catch{}
 }

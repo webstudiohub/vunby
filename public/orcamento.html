@@ -26,7 +26,7 @@ async function api(path,opts={}){
 let pacoteSel=null;
 function escolherPacote(id){
   pacoteSel=id;
-  document.querySelectorAll('.pkg-card[data-id]').forEach(el=>el.classList.toggle('pkg-escolhido',Number(el.dataset.id)===id));
+  document.querySelectorAll('.pkg-card[data-id]').forEach(el=>el.classList.toggle('pkg-escolhido',String(el.dataset.id)===String(id)));
   const m=document.getElementById('msg-acao'); if(m) m.textContent='';
 }
 
@@ -61,7 +61,7 @@ async function acao(tipo){
     <div style="margin-top:20px">
       <div style="font-size:13px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">${podeEscolher&&q.pacotes.length>1?'Escolha uma opção':'Opções de serviço'}</div>
       ${q.pacotes.map(p=>`
-        <div class="pkg-card${p.destaque?' destaque':''}${(p.escolhido||(podeEscolher&&pacoteSel===p.id))?' pkg-escolhido':''}" data-id="${p.id}" ${podeEscolher?`onclick="escolherPacote(${p.id})" style="cursor:pointer"`:''}>
+        <div class="pkg-card${p.destaque?' destaque':''}${(p.escolhido||(podeEscolher&&String(pacoteSel)===String(p.id)))?' pkg-escolhido':''}" data-id="${p.id}" ${podeEscolher?`onclick="escolherPacote(${p.id})" style="cursor:pointer"`:''}>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
             <strong>${podeEscolher&&q.pacotes.length>1?'<span class="pkg-radio"></span>':''}${esc(p.nome)}</strong> ${p.escolhido?'<span class="pkg-badge">escolhido</span>':(p.destaque?'<span class="pkg-badge">mais escolhido</span>':'')}
           </div>
