@@ -7,6 +7,8 @@ const { isNonEmpty, isPositiveNumber } = require('../lib/validate');
 const { buildWhatsAppLink } = require('../lib/phone');
 const { STATUS, isValidStatus, isFinal } = require('../lib/status');
 const { BASE_URL } = require('../lib/config');
+const { isExpired } = require('../lib/dates');
+const { refreshNoResponse } = require('../lib/autoStatus');
 
 async function getQuoteForUser(quoteId, userId) {
   const r = await query(
@@ -28,6 +30,7 @@ async function handle(req, res) {
 
   // GET /api/quotes — lista todos
   if (req.method === 'GET' && path === '/api/quotes') {
+    await refreshNoResponse(user.id);
     const status = url.searchParams.get('status');
     let q = `SELECT q.*, c.nome as cliente_nome, c.telefone as cliente_telefone
              FROM quotes q JOIN clients c ON c.id = q.client_id
@@ -83,13 +86,14 @@ async function handle(req, res) {
   const idMatch = path.match(/^\/api\/quotes\/(\d+)$/);
   if (req.method === 'GET' && idMatch) {
     const id = parseInt(idMatch[1], 10);
+    await refreshNoResponse(user.id);
     const quote = await getQuoteForUser(id, user.id);
     if (!quote) return notFound(res, 'Orçamento não encontrado.');
 
     const pacs = await query('SELECT * FROM quote_packages WHERE quote_id = $1', [id]);
     const fus = await query('SELECT * FROM follow_ups WHERE quote_id = $1 ORDER BY created_at', [id]);
 
-    const expirado = quote.validade ? new Date(quote.validade) < new Date() : false;
+    const expirado = isExpired(quote.validade);
     const publicUrl = `${BASE_URL}/orcamento.html?token=${encodeURIComponent(quote.public_token)}`;
     const msg = `Olá! Segue seu orçamento:\n${publicUrl}`;
     const whatsappLink = buildWhatsAppLink(quote.cliente_telefone, msg);
@@ -119,7 +123,7 @@ async function handle(req, res) {
       if (isFinal(quote.status)) return forbidden(res, 'Orçamento já finalizado.');
       // Validade: bloqueia aprovação/recusa se expirado
       if ([STATUS.APROVADO, STATUS.RECUSADO].includes(body.status)) {
-        if (quote.validade && new Date(quote.validade) < new Date()) {
+        if (isExpired(quote.validade)) {
           return badRequest(res, 'Orçamento expirado. Renove a validade para registrar resposta.');
         }
       }
@@ -127,6 +131,18 @@ async function handle(req, res) {
     }
 
     if (body.precisaFollowUp !== undefined) updates.precisa_follow_up = !!body.precisaFollowUp;
+    // Edição do conteúdo (só enquanto não está aprovado/recusado)
+    if (body.servico !== undefined || body.valor !== undefined) {
+      if (isFinal(quote.status)) return forbidden(res, 'Orçamento já finalizado não pode ser editado.');
+    }
+    if (body.servico !== undefined) {
+      if (!isNonEmpty(body.servico)) return badRequest(res, 'Descreva o serviço.');
+      updates.servico = String(body.servico).trim();
+    }
+    if (body.valor !== undefined) {
+      if (!isPositiveNumber(body.valor)) return badRequest(res, 'Valor inválido.');
+      updates.valor = parseFloat(body.valor);
+    }
     if (body.validade !== undefined) updates.validade = body.validade || null;
     if (body.observacoes !== undefined) updates.observacoes = body.observacoes || null;
 

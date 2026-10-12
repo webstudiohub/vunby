@@ -184,6 +184,10 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Marca do prestador no orçamento (Conta → Sua marca)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS nome_empresa TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS logo TEXT;
+
 -- Rate limit persistente (lib/rateLimit.js)
 CREATE TABLE IF NOT EXISTS rate_limits (
   key          TEXT PRIMARY KEY,

@@ -21,6 +21,27 @@
     <div id="perfil"><p class="muted">Carregando…</p></div>
   </div>
 
+  <!-- Marca no orçamento -->
+  <div class="card anim anim-2">
+    <h3>Sua marca no orçamento</h3>
+    <p class="muted" style="font-size:13px;margin-bottom:var(--sp-3)">Aparece no topo do orçamento que o seu cliente recebe. Grátis, sem marca do VUNBY.</p>
+    <label style="margin-top:0">Nome da empresa (opcional)</label>
+    <input id="m-empresa" maxlength="80" placeholder="Ex: Silva Reformas"/>
+    <label>Logo</label>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+      <div id="m-preview" style="width:64px;height:64px;border-radius:12px;background:var(--gray);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px;color:var(--muted)">sem logo</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="btn-outline btn-sm" style="margin:0;text-transform:none;cursor:pointer;text-align:center">Escolher imagem<input id="m-logo" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"/></label>
+        <button class="btn-outline btn-sm" id="m-remover" style="display:none" onclick="removerLogo()">Remover logo</button>
+      </div>
+    </div>
+    <div style="margin-top:var(--sp-5)">
+      <button class="btn-primary" id="btn-marca" onclick="salvarMarca()">Salvar marca</button>
+    </div>
+    <div id="msg-marca" class="error"></div>
+    <div id="ok-marca" class="success" style="display:none"></div>
+  </div>
+
   <!-- Alterar senha -->
   <div class="card anim anim-2">
     <h3>Alterar senha</h3>
@@ -45,6 +66,56 @@
 </div>
 <div id="nav"></div>
 <script src="app.js"></script>
+<script>
+// ─── Marca (logo + nome da empresa) ───
+let logoNova; // undefined = sem mudança; null = remover; string = nova imagem
+function mostrarLogo(src){
+  const p=document.getElementById('m-preview');
+  p.innerHTML=src?`<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain"/>`:'sem logo';
+  document.getElementById('m-remover').style.display=src?'':'none';
+}
+function reduzirImagem(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=400, k=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      // PNG mantém fundo transparente (logo redonda continua redonda)
+      const png=file.type!=='image/jpeg';
+      let url=c.toDataURL(png?'image/png':'image/jpeg',0.85);
+      if(url.length>500000) url=c.toDataURL('image/jpeg',0.8);
+      URL.revokeObjectURL(img.src); resolve(url);
+    };
+    img.onerror=()=>reject(new Error('Não foi possível ler essa imagem.'));
+    img.src=URL.createObjectURL(file);
+  });
+}
+document.addEventListener('change',async e=>{
+  if(e.target.id!=='m-logo'||!e.target.files[0])return;
+  const msg=document.getElementById('msg-marca'); msg.textContent='';
+  try{ logoNova=await reduzirImagem(e.target.files[0]); mostrarLogo(logoNova); }
+  catch(err){ msg.textContent=err.message; }
+});
+function removerLogo(){ logoNova=null; mostrarLogo(null); document.getElementById('m-logo').value=''; }
+async function salvarMarca(){
+  const msg=document.getElementById('msg-marca'), okEl=document.getElementById('ok-marca'), btn=document.getElementById('btn-marca');
+  msg.textContent=''; okEl.style.display='none';
+  const body={nomeEmpresa:document.getElementById('m-empresa').value};
+  if(logoNova!==undefined) body.logo=logoNova;
+  btn.disabled=true; btn.textContent='Salvando…';
+  try{ await api('/api/auth/profile',{method:'PUT',body}); logoNova=undefined; okEl.textContent='Marca salva! Já aparece nos seus orçamentos.'; okEl.style.display='block'; }
+  catch(err){ msg.textContent=err.message; }
+  btn.disabled=false; btn.textContent='Salvar marca';
+}
+(async()=>{
+  try{
+    const u=await api('/api/auth/me');
+    document.getElementById('m-empresa').value=u.nomeEmpresa||'';
+    if(u.temLogo){ const l=await api('/api/auth/logo'); mostrarLogo(l.logo); }
+  }catch{}
+})();
+</script>
 <script>
 async function alterarSenha(){
   const atual=document.getElementById('s-atual').value;

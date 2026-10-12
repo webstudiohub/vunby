@@ -16,7 +16,7 @@ async function getSession(req) {
   const raw = verifySessionToken(token);
   if (!raw) return null;
   const tokenHash = hashToken(raw);
-  const res = await query('SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
+  const res = await query('SELECT u.id, u.nome, u.email, u.senha_hash, u.telefone, u.telefone_verificado, u.trial_concedido, u.email_verificado, u.nome_empresa, (u.logo IS NOT NULL) AS tem_logo, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
   return res.rows[0] || null;
 }
 
@@ -185,7 +185,42 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/auth/me') {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
-    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', temLogo: !!user.tem_logo, emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+  }
+
+  // GET /api/auth/logo — logo do próprio usuário (para a tela de Conta)
+  if (req.method === 'GET' && path === '/api/auth/logo') {
+    const user = await requireAuth(req, res);
+    if (!user) return true;
+    const r = await query('SELECT logo FROM users WHERE id = $1', [user.id]);
+    return ok(res, { logo: r.rows[0]?.logo || null });
+  }
+
+  // PUT /api/auth/profile — nome da empresa e logo que aparecem no orçamento do cliente
+  if (req.method === 'PUT' && path === '/api/auth/profile') {
+    const user = await requireAuth(req, res);
+    if (!user) return true;
+    let body;
+    try { body = await readBody(req, 700_000); } catch { return badRequest(res, 'Imagem muito grande. Use uma imagem menor.'); }
+    const updates = {};
+    if (body.nomeEmpresa !== undefined) {
+      const n = String(body.nomeEmpresa || '').trim();
+      if (n.length > 80) return badRequest(res, 'Nome da empresa muito longo (máximo 80 caracteres).');
+      updates.nome_empresa = n || null;
+    }
+    if (body.logo !== undefined) {
+      if (body.logo === null || body.logo === '') updates.logo = null;
+      else {
+        const l = String(body.logo);
+        if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(l)) return badRequest(res, 'Formato de imagem inválido. Use PNG ou JPG.');
+        if (l.length > 600_000) return badRequest(res, 'Imagem muito grande. Use uma imagem menor.');
+        updates.logo = l;
+      }
+    }
+    if (Object.keys(updates).length === 0) return badRequest(res, 'Nada para atualizar.');
+    const cols = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(', ');
+    await query(`UPDATE users SET ${cols} WHERE id = $1`, [user.id, ...Object.values(updates)]);
+    return ok(res, { message: 'Dados da marca salvos.' });
   }
 
   // POST /api/auth/resend-verification

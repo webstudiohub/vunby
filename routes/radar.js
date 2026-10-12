@@ -1,6 +1,7 @@
 'use strict';
 const { query } = require('../lib/db');
 const { requireAuth } = require('./auth');
+const { refreshNoResponse } = require('../lib/autoStatus');
 const { ok } = require('../lib/http');
 const { OPEN_STATUS } = require('../lib/status');
 
@@ -11,6 +12,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/radar') {
     const user = await requireAuth(req, res);
     if (!user) return true;
+    await refreshNoResponse(user.id);
 
     const placeholders = OPEN_STATUS.map((_, i) => `$${i + 2}`).join(',');
     const r = await query(

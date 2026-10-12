@@ -1,6 +1,7 @@
 'use strict';
 const { query } = require('../lib/db');
 const { requireAuth } = require('./auth');
+const { refreshNoResponse } = require('../lib/autoStatus');
 const { ok } = require('../lib/http');
 const { STATUS, OPEN_STATUS } = require('../lib/status');
 
@@ -11,6 +12,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/dashboard') {
     const user = await requireAuth(req, res);
     if (!user) return true;
+    await refreshNoResponse(user.id);
 
     const [totals, openVal, followup] = await Promise.all([
       query(`SELECT status, COUNT(*) as count, COALESCE(SUM(valor),0) as total

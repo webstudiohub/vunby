@@ -15,6 +15,11 @@
     <p>Preencha os dados e envie pelo WhatsApp</p>
   </div>
 
+  <div id="aviso-rascunho" class="card" style="display:none;background:#EEF4FA;border:1.5px solid #003D6B">
+    <p style="font-size:14px;margin:0"><strong>Rascunho recuperado.</strong> Continuamos de onde você parou.</p>
+    <button class="btn-outline btn-sm" style="margin-top:8px" onclick="descartarRascunho()">Descartar e começar do zero</button>
+  </div>
+
   <div class="card">
     <label>Cliente</label>
     <select id="q-client">
@@ -72,6 +77,41 @@
 let clientes=[], pacotes=[];
 const selectedPkgs=new Set();
 
+// ─── Rascunho automático (fica no próprio aparelho; some ao criar o orçamento) ───
+let RASCUNHO_KEY='vunby:rascunho';
+let criado=false; // depois de criar o orçamento, não salva mais rascunho
+const CAMPOS=['q-client','q-servico','q-valor','q-validade','q-obs'];
+function salvarRascunho(){
+  if(criado) return;
+  try{
+    const d={pkgs:[...selectedPkgs],followup:document.getElementById('q-followup').checked,ts:Date.now()};
+    CAMPOS.forEach(id=>d[id]=document.getElementById(id).value);
+    const vazio=!d['q-servico']&&!d['q-valor']&&!d['q-obs']&&!d['q-client'];
+    if(vazio) localStorage.removeItem(RASCUNHO_KEY); else localStorage.setItem(RASCUNHO_KEY,JSON.stringify(d));
+  }catch{}
+}
+function carregarRascunho(){
+  try{
+    const d=JSON.parse(localStorage.getItem(RASCUNHO_KEY)||'null');
+    if(!d) return;
+    if(Date.now()-(d.ts||0)>30*24*3600*1000){ localStorage.removeItem(RASCUNHO_KEY); return; }
+    CAMPOS.forEach(id=>{ if(d[id]!==undefined&&d[id]!=='') document.getElementById(id).value=d[id]; });
+    document.getElementById('q-followup').checked=!!d.followup;
+    (d.pkgs||[]).forEach(id=>{ if(pacotes.some(p=>p.id===id)){ selectedPkgs.add(id); const cb=document.querySelector(`input[data-id="${id}"]`); if(cb) cb.checked=true; } });
+    document.getElementById('aviso-rascunho').style.display='';
+  }catch{}
+}
+function limparRascunho(){ try{ localStorage.removeItem(RASCUNHO_KEY); }catch{} }
+function descartarRascunho(){
+  limparRascunho();
+  ['q-client','q-servico','q-valor','q-obs'].forEach(id=>document.getElementById(id).value='');
+  const d=new Date(); d.setDate(d.getDate()+7);
+  document.getElementById('q-validade').value=d.toISOString().split('T')[0];
+  document.getElementById('q-followup').checked=false;
+  selectedPkgs.clear(); document.querySelectorAll('#pacotes-lista input').forEach(cb=>cb.checked=false);
+  document.getElementById('aviso-rascunho').style.display='none';
+}
+
 async function criarCliente(){
   const nome=document.getElementById('nc-nome').value;
   const telefone=document.getElementById('nc-tel').value;
@@ -88,6 +128,7 @@ async function criarCliente(){
     opt.textContent=`${c.nome} — ${c.telefone}`;
     sel.appendChild(opt);
     sel.value=String(c.id);
+    salvarRascunho();
     document.getElementById('novo-cliente-details').removeAttribute('open');
   }catch(e){msg.textContent=e.message;}
   btn.disabled=false; btn.textContent='Salvar cliente';
@@ -111,6 +152,7 @@ function renderPacotes(){
 function togglePkg(id){
   if(selectedPkgs.has(id)) selectedPkgs.delete(id);
   else selectedPkgs.add(id);
+  salvarRascunho();
 }
 
 async function criarOrcamento(){
@@ -128,6 +170,7 @@ async function criarOrcamento(){
   btn.disabled=true; btn.textContent='Criando…';
   try{
     const r=await api('/api/quotes',{method:'POST',body:{clientId:parseInt(clientId),servico,valor,validade,observacoes,pacoteIds:[...selectedPkgs],precisaFollowUp}});
+    criado=true; limparRascunho();
     window.open(r.whatsappLink,'_blank');
     location.href='orcamento-detalhe.html?id='+r.id;
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Criar e abrir WhatsApp';}
@@ -149,6 +192,11 @@ async function criarOrcamento(){
   const d=new Date(); d.setDate(d.getDate()+7);
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];
   renderPacotes();
+  RASCUNHO_KEY='vunby:rascunho:'+session.id;
+  carregarRascunho();
+  CAMPOS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',salvarRascunho); el.addEventListener('change',salvarRascunho); });
+  document.getElementById('q-followup').addEventListener('change',salvarRascunho);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') salvarRascunho(); });
 })();
 </script>
 </body></html>

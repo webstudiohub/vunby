@@ -32,6 +32,21 @@ async function marcarStatus(status){
   catch(e){alert(e.message);}
 }
 
+function abrirEdicao(){ document.getElementById('form-edicao').style.display=''; document.getElementById('btn-editar').style.display='none'; }
+function fecharEdicao(){ document.getElementById('form-edicao').style.display='none'; document.getElementById('btn-editar').style.display=''; }
+async function salvarEdicao(){
+  const msg=document.getElementById('ed-msg'); msg.textContent='';
+  const body={
+    servico:document.getElementById('ed-servico').value,
+    valor:document.getElementById('ed-valor').value,
+    validade:document.getElementById('ed-validade').value,
+    observacoes:document.getElementById('ed-obs').value,
+  };
+  const btn=document.getElementById('ed-salvar'); btn.disabled=true; btn.textContent='Salvando…';
+  try{ await api(`/api/quotes/${qid}`,{method:'PATCH',body}); renderPage(); }
+  catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Salvar alterações'; }
+}
+
 async function toggleFollowUp(atual){
   await api(`/api/quotes/${qid}`,{method:'PATCH',body:{precisaFollowUp:!atual}});renderPage();
 }
@@ -40,6 +55,7 @@ async function renderPage(){
   const q=await api(`/api/quotes/${qid}`);
   const el=document.getElementById('content');
 
+  const final=['Aprovado','Recusado'].includes(q.status);
   const statusBtns=['Enviado','Visualizado','Sem resposta','Aprovado','Recusado']
     .filter(s=>s!==q.status&&!['Aprovado','Recusado'].includes(q.status))
     .map(s=>`<button class="btn-outline btn-sm" onclick="marcarStatus('${s}')">${s}</button>`)
@@ -47,7 +63,7 @@ async function renderPage(){
 
   const pacotesHtml=q.pacotes.length?`<div class="card"><h3>Pacotes</h3>${q.pacotes.map(p=>`
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F2F2F7">
-      <span>${esc(p.nome)} ${p.destaque?'<span class="flag-followup">destaque</span>':''}</span>
+      <span>${esc(p.nome)} ${p.escolhido?'<span class="badge badge-aprovado">✓ escolhido pelo cliente</span>':''} ${p.destaque?'<span class="flag-followup">destaque</span>':''}</span>
       <strong>${brl(p.preco)}</strong>
     </div>`).join('')}</div>`:'';
 
@@ -76,8 +92,28 @@ async function renderPage(){
       <p><strong>Cliente:</strong> ${esc(q.cliente.nome)}</p>
       <p><strong>Telefone:</strong> ${esc(q.cliente.telefone)}</p>
       <p><strong>Valor:</strong> <span style="font-size:20px;font-weight:800;color:#003D6B">${brl(q.valor)}</span></p>
-      ${q.validade?`<p><strong>Validade:</strong> ${new Date(q.validade+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
+      ${q.validade?`<p><strong>Validade:</strong> ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
       ${q.observacoes?`<p><strong>Obs:</strong> ${esc(q.observacoes)}</p>`:''}
+      ${q.resposta_cliente?`<p><strong>Comentário do cliente:</strong> ${esc(q.resposta_cliente)}</p>`:''}
+      ${final?'':`<div style="margin-top:12px">
+        <button class="btn-outline btn-sm" id="btn-editar" onclick="abrirEdicao()">✏️ Editar orçamento</button>
+        <div id="form-edicao" style="display:none;margin-top:8px">
+          <label>Serviço / descrição</label>
+          <input id="ed-servico" value="${esc(q.servico)}"/>
+          <label>Valor (R$)</label>
+          <input id="ed-valor" type="number" step="0.01" min="0" inputmode="decimal" value="${q.valor}"/>
+          <label>Validade</label>
+          <input id="ed-validade" type="date" value="${q.validade?String(q.validade).slice(0,10):''}"/>
+          <label>Observações</label>
+          <textarea id="ed-obs" rows="2">${esc(q.observacoes||'')}</textarea>
+          <p class="muted" style="font-size:13px;margin-top:6px">O link do cliente mostra a versão atualizada automaticamente.</p>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-primary btn-sm" id="ed-salvar" onclick="salvarEdicao()">Salvar alterações</button>
+            <button class="btn-outline btn-sm" onclick="fecharEdicao()">Cancelar</button>
+          </div>
+          <div id="ed-msg" class="error"></div>
+        </div>
+      </div>`}
       <p style="margin-top:8px"><a href="/orcamento.html?token=${encodeURIComponent(q.public_token)}" target="_blank" style="font-size:13px">🔗 Ver página do cliente</a></p>
       <!-- Botão "Baixar PDF" oculto até o PDF (Puppeteer + plano pago do Render) voltar no pré-lançamento:
       <p style="margin-top:6px"><a href="/api/quotes/${qid}/pdf" download style="font-size:13px">📄 Baixar PDF</a></p>
