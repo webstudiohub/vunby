@@ -88,7 +88,7 @@ async function handle(req, res) {
 
     const senhaHash = await hashPassword(senha);
     const result = await query(
-      'INSERT INTO users (nome, email, senha_hash, telefone, trial_concedido, telefone_verificado) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
+      'INSERT INTO users (nome, email, senha_hash, telefone, trial_concedido, telefone_verificado, trial_ate) VALUES ($1,$2,$3,$4,$5,$6, CASE WHEN $5 THEN NOW() + INTERVAL \'14 days\' ELSE NOW() END) RETURNING id',
       [nomeClean, email.trim().toLowerCase(), senhaHash, telNorm, trialConcedido, false]
     );
     const userId = result.rows[0].id;

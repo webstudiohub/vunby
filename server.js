@@ -12,6 +12,8 @@ const publicRoute = require('./routes/public');
 const radarRoute = require('./routes/radar');
 const dashboardRoute = require('./routes/dashboard');
 const pdfRoute = require('./routes/pdf');
+const billingRoute = require('./routes/billing');
+const { sendEmail } = require('./lib/email');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -84,6 +86,7 @@ const server = http.createServer(async (req, res) => {
         await publicRoute.handle(req, res) ??
         await radarRoute.handle(req, res) ??
         await dashboardRoute.handle(req, res) ??
+        await billingRoute.handle(req, res) ??
         await pdfRoute.handle(req, res);
 
       if (handled === null) {
@@ -105,3 +108,10 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`VUNBY rodando na porta ${PORT} [${NODE_ENV}]`);
 });
+
+// E-mails automáticos (fim do teste grátis e pesquisa de opinião): 1 min após subir e depois a cada hora
+if (process.env.DISABLE_JOBS !== '1') {
+  const tarefas = () => billingRoute.rodarTarefas(sendEmail).catch(e => console.error('tarefas:', e.message));
+  setTimeout(tarefas, 60_000).unref();
+  setInterval(tarefas, 3600_000).unref();
+}

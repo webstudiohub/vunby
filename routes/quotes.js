@@ -9,6 +9,8 @@ const { STATUS, isValidStatus, isFinal } = require('../lib/status');
 const { BASE_URL } = require('../lib/config');
 const { isExpired } = require('../lib/dates');
 const { refreshNoResponse } = require('../lib/autoStatus');
+const { podeCriarOrcamento } = require('../lib/billing');
+const { json } = require('../lib/http');
 
 async function getQuoteForUser(quoteId, userId) {
   const r = await query(
@@ -44,6 +46,9 @@ async function handle(req, res) {
 
   // POST /api/quotes — modo rápido
   if (req.method === 'POST' && path === '/api/quotes') {
+    if (!(await podeCriarOrcamento(user.id))) {
+      return json(res, 402, { error: 'Seu teste grátis terminou. Seus orçamentos continuam salvos; para criar novos, assine o VUNBY.', bloqueado: true });
+    }
     let body; try { body = await readBody(req); } catch { return badRequest(res); }
     const { clientId, servico, valor, validade, observacoes, pacoteIds, precisaFollowUp } = body;
     if (!clientId || !isNonEmpty(servico)) return badRequest(res, 'Cliente e serviço são obrigatórios.');

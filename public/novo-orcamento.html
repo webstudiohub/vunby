@@ -15,6 +15,8 @@
     <p>Preencha os dados e envie pelo WhatsApp</p>
   </div>
 
+  <div id="aviso-plano"></div>
+
   <div id="aviso-rascunho" class="card" style="display:none;background:#EEF4FA;border:1.5px solid #003D6B">
     <p style="font-size:14px;margin:0"><strong>Rascunho recuperado.</strong> Continuamos de onde você parou.</p>
     <button class="btn-outline btn-sm" style="margin-top:8px" onclick="descartarRascunho()">Descartar e começar do zero</button>
@@ -66,7 +68,7 @@
     <p class="muted" style="font-size:13px;margin-top:var(--sp-2)">Aparecerá em destaque no Radar</p>
   </div>
 
-  <div style="margin-bottom:var(--sp-6)">
+  <div class="card-acao" style="margin-bottom:var(--sp-6)">
     <button class="btn-primary btn-gold" onclick="criarOrcamento()">Criar e abrir WhatsApp</button>
     <div id="q-msg" class="error"></div>
   </div>
@@ -181,6 +183,12 @@ async function criarOrcamento(){
   document.getElementById('top').innerHTML=topbar('');
   document.getElementById('nav').innerHTML=bottomNav('novo-orcamento.html');
   wireLogout();
+  // Teste grátis terminou: mostra só o aviso (o servidor também bloqueia a criação)
+  api('/api/billing/status').then(st=>{
+    if(st.tipo!=='expirado')return;
+    document.body.classList.add('plano-bloqueado');
+    document.getElementById('aviso-plano').innerHTML=avisoPlano({tipo:'expirado'});
+  }).catch(()=>{});
   [clientes,pacotes]=await Promise.all([api('/api/clients'),api('/api/packages')]);
   const sel=document.getElementById('q-client');
   clientes.forEach(c=>{

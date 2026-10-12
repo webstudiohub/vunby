@@ -15,6 +15,8 @@
     <p>Resumo dos seus orçamentos</p>
   </div>
 
+  <div id="aviso-plano"></div>
+
   <div id="stats-area" class="stat-grid">
     <div class="stat-card anim anim-1"><div class="stat-label">Em aberto</div><div class="stat-value">—</div></div>
     <div class="stat-card anim anim-2"><div class="stat-label">Follow-ups</div><div class="stat-value">—</div></div>
@@ -40,6 +42,7 @@
   const hora=new Date().getHours();
   const saudacao=hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
   document.getElementById('greeting').textContent=`${saudacao}, ${primeiroNome}`;
+  api('/api/billing/status').then(st=>{document.getElementById('aviso-plano').innerHTML=avisoPlano(st);}).catch(()=>{});
 
   const [dash,quotes]=await Promise.all([api('/api/dashboard'),api('/api/quotes')]);
   const s=dash.stats||{};

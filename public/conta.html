@@ -42,6 +42,13 @@
     <div id="ok-marca" class="success" style="display:none"></div>
   </div>
 
+  <!-- Assinatura -->
+  <div class="card anim anim-2">
+    <h3>Assinatura</h3>
+    <div id="assinatura"><p class="muted">Carregando…</p></div>
+    <div id="msg-assinatura" class="error"></div>
+  </div>
+
   <!-- Alterar senha -->
   <div class="card anim anim-2">
     <h3>Alterar senha</h3>
@@ -169,15 +176,33 @@ async function excluirConta(){
           <span class="perfil-label">Telefone</span>
           <span class="perfil-val">${esc(u.telefone||'—')}</span>
         </div>
-        <div class="perfil-row">
-          <span class="perfil-label">Trial</span>
-          <span class="perfil-val">${u.trialConcedido?'<span class="badge badge-aprovado">Ativo</span>':'<span class="badge badge-recusado">Não concedido</span>'}</span>
-        </div>
       </div>`;
   }catch(e){
     document.getElementById('perfil').innerHTML='<p class="muted">Erro ao carregar dados.</p>';
   }
+  carregarAssinatura();
 })();
+
+const precoBR=v=>'R$'+Number(v).toFixed(2).replace('.',',');
+async function carregarAssinatura(){
+  const el=document.getElementById('assinatura');
+  try{
+    const st=await api('/api/billing/status');
+    const fim=d=>new Date(d).toLocaleDateString('pt-BR');
+    if(st.tipo==='cortesia') el.innerHTML='<p>Acesso liberado ✅</p>';
+    else if(st.tipo==='ativa') el.innerHTML=`<p><strong>Ativa ✅</strong> · ${precoBR(st.precoAssinatura||st.precoOferta)}/mês${st.fundador?' · Fundador':''}</p>
+      <button class="btn-outline btn-sm" style="margin-top:var(--sp-3)" onclick="cancelarAssinatura()">Cancelar assinatura</button>`;
+    else if(st.tipo==='cancelada_com_acesso') el.innerHTML=`<p>Cancelada. Seu acesso continua até ${fim(st.acessoAte)}.</p><a href="planos.html"><button class="btn-primary btn-sm" style="margin-top:var(--sp-3)">Assinar de novo</button></a>`;
+    else if(st.tipo==='trial') el.innerHTML=`<p>Teste grátis: ${st.diasTrial===1?'último dia':'faltam '+st.diasTrial+' dias'}.</p><a href="planos.html"><button class="btn-primary btn-sm btn-gold" style="margin-top:var(--sp-3)">Ver planos</button></a>`;
+    else el.innerHTML=`<p>Seu teste grátis terminou. Seus orçamentos continuam salvos.</p><a href="planos.html"><button class="btn-primary btn-sm btn-gold" style="margin-top:var(--sp-3)">Assinar</button></a>`;
+  }catch{ el.innerHTML='<p class="muted">Não foi possível carregar.</p>'; }
+}
+async function cancelarAssinatura(){
+  if(!confirm('Cancelar a assinatura? Você continua com acesso até o fim do mês já pago. Seus orçamentos continuam salvos.'))return;
+  const msg=document.getElementById('msg-assinatura'); msg.textContent='';
+  try{ await api('/api/billing/cancel',{method:'POST'}); carregarAssinatura(); }
+  catch(e){ msg.textContent=e.message; }
+}
 </script>
 <style>
 .perfil-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--gray2)}

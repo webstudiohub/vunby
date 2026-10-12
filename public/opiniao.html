@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<title>VUNBY — Sua opinião</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#003D6B"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container" style="margin-bottom:calc(var(--nav-h) + var(--sp-5))">
+  <div class="page-header anim">
+    <h1>Sua opinião</h1>
+    <p>2 minutos. Pode ser sincero: é isso que faz o VUNBY melhorar.</p>
+  </div>
+
+  <div class="card anim anim-1" id="form">
+    <label style="margin-top:0">De 0 a 10, quanto você recomendaria o VUNBY para um colega?</label>
+    <div class="nota-grid" id="nota"></div>
+
+    <label>Como está sendo a sua experiência com o VUNBY?</label>
+    <textarea id="f-experiencia" rows="3" maxlength="2000"></textarea>
+
+    <label>Do que você mais está gostando?</label>
+    <textarea id="f-gostando" rows="2" maxlength="2000"></textarea>
+
+    <label>O que você não achou legal?</label>
+    <textarea id="f-naoGostou" rows="2" maxlength="2000"></textarea>
+
+    <label>O que deveria melhorar?</label>
+    <textarea id="f-melhorar" rows="2" maxlength="2000"></textarea>
+
+    <label>O que está faltando no VUNBY para o seu trabalho?</label>
+    <textarea id="f-falta" rows="2" maxlength="2000"></textarea>
+
+    <label>Você pagaria R$49,90 por mês pelo VUNBY?</label>
+    <div class="pagaria" id="pagaria">
+      <button type="button" data-v="sim">Sim</button>
+      <button type="button" data-v="talvez">Talvez</button>
+      <button type="button" data-v="nao">Não</button>
+    </div>
+    <input id="f-comentarioPreco" maxlength="500" placeholder="Quer comentar o preço? (opcional)" style="margin-top:var(--sp-3)"/>
+
+    <div style="margin-top:var(--sp-5)">
+      <button class="btn-primary btn-gold" id="btn-enviar">Enviar minha opinião</button>
+      <button class="btn-outline" id="btn-depois" style="margin-top:var(--sp-3)">Responder depois</button>
+    </div>
+    <div id="msg" class="error"></div>
+  </div>
+</div>
+<div id="nav"></div>
+<script src="app.js"></script>
+<script>
+let nota=null, pagaria=null;
+const notaEl=document.getElementById('nota');
+for(let i=0;i<=10;i++){
+  const b=document.createElement('button'); b.type='button'; b.textContent=i;
+  b.onclick=()=>{nota=i; notaEl.querySelectorAll('button').forEach(x=>x.classList.toggle('sel',x===b));};
+  notaEl.appendChild(b);
+}
+document.querySelectorAll('#pagaria button').forEach(b=>b.onclick=()=>{
+  pagaria=b.dataset.v; document.querySelectorAll('#pagaria button').forEach(x=>x.classList.toggle('sel',x===b));
+});
+const val=id=>document.getElementById('f-'+id).value;
+
+document.getElementById('btn-enviar').onclick=async()=>{
+  const msg=document.getElementById('msg'), btn=document.getElementById('btn-enviar');
+  msg.textContent='';
+  if(nota===null){msg.textContent='Escolha uma nota de 0 a 10.';return;}
+  if(!pagaria){msg.textContent='Responda se pagaria R$49,90.';return;}
+  btn.disabled=true; btn.textContent='Enviando…';
+  try{
+    await api('/api/feedback',{method:'POST',body:{nota,pagaria,experiencia:val('experiencia'),gostando:val('gostando'),naoGostou:val('naoGostou'),melhorar:val('melhorar'),falta:val('falta'),comentarioPreco:val('comentarioPreco')}});
+    document.getElementById('form').innerHTML='<h3>Muito obrigado! 🙏</h3><p class="muted">Lemos cada resposta. É assim que o VUNBY melhora.</p><a href="dashboard.html"><button class="btn-primary" style="margin-top:var(--sp-4)">Voltar ao início</button></a>';
+  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Enviar minha opinião';}
+};
+document.getElementById('btn-depois').onclick=async()=>{
+  await api('/api/feedback/adiar',{method:'POST'}).catch(()=>{});
+  location.href='dashboard.html';
+};
+
+(async()=>{
+  const session=await requireSession(); if(!session)return;
+  document.getElementById('top').innerHTML=topbar('');
+  document.getElementById('nav').innerHTML=bottomNav('');
+  wireLogout();
+})();
+</script>
+<style>
+.nota-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-top:8px}
+.nota-grid button,.pagaria button{min-height:40px;border:1.5px solid var(--gray2);background:#fff;border-radius:8px;font-weight:700;color:var(--dark);cursor:pointer;padding:0}
+.nota-grid button.sel,.pagaria button.sel{background:var(--navy);border-color:var(--navy);color:#fff}
+.pagaria{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+@media (max-width:380px){.nota-grid{grid-template-columns:repeat(6,1fr)}}
+</style>
+</body></html>

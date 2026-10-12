@@ -12,6 +12,8 @@ async function api(path, { method = 'GET', body } = {}) {
     throw new Error('Sem conexão. Verifique sua internet e tente novamente.');
   }
   const data = await res.json().catch(() => ({}));
+  // 402 = teste grátis terminou e a ação exige assinatura
+  if (res.status === 402 && data.bloqueado) { window.location.href = '/planos.html?bloqueado=1'; }
   if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
   return data;
 }
@@ -24,6 +26,33 @@ async function requireSession() {
     window.location.href = '/entrar';
     return null;
   }
+}
+
+// ─── Aviso do plano (teste grátis / assinatura) ───────────────
+// Devolve o HTML do aviso para o topo das páginas, ou '' quando não há nada a avisar.
+function avisoPlano(st) {
+  if (!st) return '';
+  let html = '';
+  if (st.tipo === 'expirado') {
+    html += `<div class="card aviso-plano aviso-plano-fim">
+      <strong>Seu teste grátis terminou.</strong>
+      <p>Seus orçamentos continuam salvos aqui. Para criar novos, assine o VUNBY.</p>
+      <a href="planos.html"><button class="btn-primary btn-gold">Ver planos</button></a>
+    </div>`;
+  } else if (st.tipo === 'trial') {
+    const d = st.diasTrial;
+    html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">
+      <span>🎁 Teste grátis: <strong>${d === 1 ? 'último dia' : 'faltam ' + d + ' dias'}</strong></span>
+      <span class="aviso-plano-link">Ver planos ›</span>
+    </a>`;
+  }
+  if (st.feedbackPendente) {
+    html += `<a href="opiniao.html" class="card aviso-plano aviso-plano-trial">
+      <span>💬 <strong>Como está sendo o VUNBY?</strong> 2 minutos para nos contar.</span>
+      <span class="aviso-plano-link">Responder ›</span>
+    </a>`;
+  }
+  return html;
 }
 
 // ─── Logout ───────────────────────────────────────────────────

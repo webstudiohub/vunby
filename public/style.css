@@ -678,3 +678,12 @@ hr { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-5) 0; }
 
 /* ─── Error block ─── */
 .error-block { text-align:center; padding: var(--sp-6) var(--sp-4); color: var(--muted); }
+
+/* Aviso do plano (teste grátis / assinatura) */
+.aviso-plano{display:flex;flex-direction:column;gap:8px;text-decoration:none;color:var(--dark)}
+.aviso-plano p{margin:0;font-size:14px;color:var(--muted)}
+.aviso-plano-trial{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;background:#EEF4FA;border:1.5px solid #CFE0F0;font-size:14px}
+.aviso-plano-link{font-weight:700;color:var(--navy);white-space:nowrap}
+.aviso-plano-fim{background:#FFF6E5;border:1.5px solid #F5C451}
+.plano-bloqueado .container > .card,.plano-bloqueado .card-acao{display:none!important}
+.btn-primary:disabled{opacity:.55;cursor:not-allowed}

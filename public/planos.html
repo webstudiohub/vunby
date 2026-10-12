@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<title>VUNBY — Planos</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#003D6B"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container" style="margin-bottom:calc(var(--nav-h) + var(--sp-5))">
+  <div class="page-header anim">
+    <h1>Assine o VUNBY</h1>
+    <p>Um plano só, com tudo liberado</p>
+  </div>
+
+  <div id="aviso"></div>
+
+  <div class="card anim anim-1" id="plano"><p class="muted">Carregando…</p></div>
+
+  <div class="card anim anim-2">
+    <h3>O que está incluído</h3>
+    <ul class="plano-lista">
+      <li>Orçamentos ilimitados, enviados pelo WhatsApp</li>
+      <li>Link para o cliente ver, aprovar e escolher a opção</li>
+      <li>Sua logo e o nome da sua empresa no orçamento</li>
+      <li>Radar: avisa quem precisa de retorno para você não perder venda</li>
+      <li>Histórico e resumo do que está em aberto e aprovado</li>
+    </ul>
+    <p class="muted" style="font-size:13px;margin-top:var(--sp-4)">Cancele quando quiser, em 1 clique, na tela Minha Conta. Seus orçamentos são sempre seus e continuam salvos.</p>
+  </div>
+</div>
+<div id="nav"></div>
+<script src="app.js"></script>
+<script>
+const precoBR=v=>'R$'+Number(v).toFixed(2).replace('.',',');
+
+function renderPlano(st){
+  const el=document.getElementById('plano');
+  if(st.tipo==='ativa'||st.tipo==='cortesia'){
+    el.innerHTML=`<h3>Sua assinatura está ativa ✅</h3>
+      <p class="muted">${st.tipo==='cortesia'?'Acesso liberado.':`${precoBR(st.precoAssinatura||st.precoOferta)}/mês${st.fundador?' · <strong>Fundador</strong> (preço garantido para sempre)':''}`}</p>
+      <a href="dashboard.html"><button class="btn-primary" style="margin-top:var(--sp-4)">Ir para o início</button></a>`;
+    return;
+  }
+  const fundador=st.precoOferta===st.precoFundador;
+  let topo='';
+  if(st.tipo==='cancelada_com_acesso'){
+    topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Sua assinatura foi cancelada. Você continua com acesso até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}.</p>`;
+  }else if(st.tipo==='trial'){
+    topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Você está no teste grátis: ${st.diasTrial===1?'último dia':'faltam '+st.diasTrial+' dias'}.</p>`;
+  }
+  el.innerHTML=`${topo}
+    ${fundador?`<span class="badge badge-aprovado">Oferta de fundador${st.fundador?'':' · restam '+st.vagasFundador+' de 100 vagas'}</span>`:''}
+    <div class="plano-preco">
+      ${fundador?`<span class="plano-de">de ${precoBR(st.precoPadrao)}</span>`:''}
+      <span class="plano-valor">${precoBR(st.precoOferta)}</span><span class="plano-mes">/mês</span>
+    </div>
+    ${fundador?'<p class="muted" style="font-size:13px">Para os 100 primeiros assinantes: esse preço fica garantido para sempre enquanto a assinatura estiver ativa.</p>':''}
+    <button class="btn-primary btn-gold" id="btn-assinar" style="margin-top:var(--sp-4)" ${st.pagamentoConfigurado?'':'disabled'}>${st.pagamentoConfigurado?'Assinar agora':'Pagamento em configuração'}</button>
+    <div id="msg" class="error"></div>`;
+  const btn=document.getElementById('btn-assinar');
+  if(st.pagamentoConfigurado)btn.addEventListener('click',assinar);
+}
+
+async function assinar(){
+  const btn=document.getElementById('btn-assinar'), msg=document.getElementById('msg');
+  msg.textContent=''; btn.disabled=true; btn.textContent='Abrindo o pagamento…';
+  try{
+    const r=await api('/api/billing/checkout',{method:'POST'});
+    window.location.href=r.url;
+  }catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Assinar agora'; }
+}
+
+(async()=>{
+  const session=await requireSession(); if(!session)return;
+  document.getElementById('top').innerHTML=topbar('');
+  document.getElementById('nav').innerHTML=bottomNav('');
+  wireLogout();
+  const params=new URLSearchParams(location.search);
+  const aviso=document.getElementById('aviso');
+  if(params.get('bloqueado')){
+    aviso.innerHTML=`<div class="card aviso-plano aviso-plano-fim"><strong>Seu teste grátis terminou.</strong><p>Seus orçamentos continuam salvos. Para criar novos, assine abaixo.</p></div>`;
+  }
+  try{
+    if(params.get('retorno')){
+      aviso.innerHTML='<div class="card"><p class="muted">Conferindo seu pagamento…</p></div>';
+      let s=await api('/api/billing/sync',{method:'POST'}).catch(()=>null);
+      // O Mercado Pago pode levar alguns segundos para confirmar
+      for(let i=0;i<3&&s&&s.tipo!=='ativa';i++){ await new Promise(r=>setTimeout(r,3000)); s=await api('/api/billing/sync',{method:'POST'}).catch(()=>null); }
+      aviso.innerHTML=s&&s.tipo==='ativa'
+        ?'<div class="card aviso-plano aviso-plano-trial"><span>🎉 <strong>Pagamento confirmado!</strong> Bem-vindo ao VUNBY.</span></div>'
+        :'<div class="card aviso-plano aviso-plano-trial"><span>Seu pagamento está sendo processado. Assim que o Mercado Pago confirmar, a assinatura é liberada automaticamente.</span></div>';
+    }
+    renderPlano(await api('/api/billing/status'));
+  }catch(e){
+    document.getElementById('plano').innerHTML=`<p class="muted">Não foi possível carregar. <a href="" onclick="location.reload()">Tentar novamente</a></p>`;
+  }
+})();
+</script>
+<style>
+.plano-preco{display:flex;align-items:baseline;gap:8px;margin-top:var(--sp-4);flex-wrap:wrap}
+.plano-de{font-size:15px;color:var(--muted);text-decoration:line-through}
+.plano-valor{font-size:40px;font-weight:800;color:var(--navy);letter-spacing:-1px}
+.plano-mes{font-size:16px;color:var(--muted);font-weight:600}
+.plano-lista{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;color:var(--dark)}
+</style>
+</body></html>

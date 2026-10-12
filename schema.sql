@@ -218,3 +218,34 @@ ALTER TABLE quote_packages        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE follow_ups            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE email_verifications   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rate_limits           ENABLE ROW LEVEL SECURITY;
+
+-- Assinatura (Mercado Pago) e pesquisa de opinião — 12/10/2026
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ate TIMESTAMPTZ;
+UPDATE users SET trial_ate = CASE WHEN trial_concedido THEN created_at + INTERVAL '14 days' ELSE created_at END WHERE trial_ate IS NULL;
+ALTER TABLE users ALTER COLUMN trial_ate SET DEFAULT (NOW() + INTERVAL '14 days');
+ALTER TABLE users ADD COLUMN IF NOT EXISTS assinatura_status TEXT NOT NULL DEFAULT 'nenhuma';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mp_preapproval_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS preco_assinatura NUMERIC(10,2);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS fundador BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS assinado_em TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS acesso_ate TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_aviso_em TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS feedback_email_em TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS feedback_adiado_ate TIMESTAMPTZ;
+CREATE INDEX IF NOT EXISTS idx_users_fundador ON users(fundador) WHERE fundador = true;
+
+CREATE TABLE IF NOT EXISTS feedbacks (
+  id               BIGSERIAL PRIMARY KEY,
+  user_id          BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  nota             SMALLINT NOT NULL CHECK (nota BETWEEN 0 AND 10),
+  experiencia      TEXT,
+  gostando         TEXT,
+  melhorar         TEXT,
+  nao_gostou       TEXT,
+  falta            TEXT,
+  pagaria_4990     TEXT NOT NULL CHECK (pagaria_4990 IN ('sim','talvez','nao')),
+  comentario_preco TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_feedbacks_user_id ON feedbacks(user_id);
+ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
