@@ -1,5 +1,5 @@
 /* VUNBY Service Worker — versão atualizada a cada deploy */
-const CACHE = 'vunby-v4';
+const CACHE = 'vunby-v5';
 const STATIC = [
   '/', '/entrar', '/cadastro',
   '/style.css', '/app.js',
@@ -30,8 +30,15 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // Cache-first para assets estáticos
+  // Assets: responde do cache (rápido) e atualiza o cache em segundo plano,
+  // assim uma nova versão do app.js/style.css chega sozinha no próximo acesso
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    caches.open(CACHE).then(cache => cache.match(e.request).then(cached => {
+      const rede = fetch(e.request).then(resp => {
+        if (resp && resp.ok && e.request.method === 'GET') cache.put(e.request, resp.clone());
+        return resp;
+      }).catch(() => cached);
+      return cached || rede;
+    }))
   );
 });

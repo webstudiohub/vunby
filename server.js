@@ -41,6 +41,8 @@ function serveStatic(req, res) {
     filePath = path.join(PUBLIC_DIR, 'index.html');
   } else {
     filePath = path.join(PUBLIC_DIR, urlPath.replace(/^\//, ''));
+    // Endereço sem extensão (ex.: /redefinir-senha) → página .html correspondente
+    if (!path.extname(filePath) && fs.existsSync(filePath + '.html')) filePath += '.html';
   }
 
   // Segurança: impede path traversal
@@ -72,6 +74,12 @@ const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+  // Cabeçalhos de segurança: impede abrir o VUNBY dentro de outro site, impede o navegador de
+  // "adivinhar" tipos de arquivo e não vaza o link do orçamento (com o token) para outros sites
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'same-origin');
+  if (NODE_ENV === 'production') res.setHeader('Strict-Transport-Security', 'max-age=31536000');
 
   try {
     const urlPath = new URL(req.url, 'http://x').pathname;

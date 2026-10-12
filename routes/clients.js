@@ -25,8 +25,9 @@ async function handle(req, res) {
     let body; try { body = await readBody(req); } catch { return badRequest(res); }
     const { nome, telefone, observacoes } = body;
     if (!isNonEmpty(nome)) return badRequest(res, 'Nome é obrigatório.');
+    if (nome.trim().length > 100) return badRequest(res, 'Nome muito longo (máximo 100 caracteres).');
     const telNorm = normalizePhone(telefone);
-    if (!telNorm) return badRequest(res, 'Telefone inválido.');
+    if (!telNorm || telNorm.replace(/\D/g, '').length < 10 || telNorm.replace(/\D/g, '').length > 15) return badRequest(res, 'Telefone inválido. Use DDD + número.');
     const r = await query(
       'INSERT INTO clients (user_id, nome, telefone, observacoes) VALUES ($1,$2,$3,$4) RETURNING *',
       [user.id, nome.trim(), telNorm, observacoes || null]
@@ -55,6 +56,8 @@ async function handle(req, res) {
     const id = parseInt(clientMatch[1], 10);
     const existing = await query('SELECT id FROM clients WHERE id = $1 AND user_id = $2', [id, user.id]);
     if (!existing.rows[0]) return notFound(res, 'Cliente não encontrado.');
+    const temOrc = await query('SELECT 1 FROM quotes WHERE client_id = $1 LIMIT 1', [id]);
+    if (temOrc.rows[0]) return badRequest(res, 'Este cliente tem orçamentos e não pode ser apagado.');
     await query('DELETE FROM clients WHERE id = $1', [id]);
     return ok(res, { message: 'Cliente removido.' });
   }
@@ -71,6 +74,7 @@ async function handle(req, res) {
     let body; try { body = await readBody(req); } catch { return badRequest(res); }
     const { nome, conteudo, preco, destaque } = body;
     if (!isNonEmpty(nome)) return badRequest(res, 'Nome é obrigatório.');
+    if (nome.trim().length > 100 || (conteudo && String(conteudo).length > 2000)) return badRequest(res, 'Texto muito longo.');
     const r = await query(
       'INSERT INTO package_templates (user_id, nome, conteudo, preco, destaque) VALUES ($1,$2,$3,$4,$5) RETURNING *',
       [user.id, nome.trim(), conteudo || null, parseFloat(preco) || 0, !!destaque]
@@ -86,6 +90,8 @@ async function handle(req, res) {
     const existing = await query('SELECT id FROM package_templates WHERE id = $1 AND user_id = $2', [id, user.id]);
     if (!existing.rows[0]) return notFound(res, 'Modelo não encontrado.');
     const { nome, conteudo, preco, destaque } = body;
+    if (!isNonEmpty(nome)) return badRequest(res, 'Nome é obrigatório.');
+    if (nome.trim().length > 100 || (conteudo && String(conteudo).length > 2000)) return badRequest(res, 'Texto muito longo.');
     const r = await query(
       'UPDATE package_templates SET nome=$1, conteudo=$2, preco=$3, destaque=$4 WHERE id=$5 RETURNING *',
       [nome?.trim(), conteudo || null, parseFloat(preco) || 0, !!destaque, id]

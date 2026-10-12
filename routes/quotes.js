@@ -3,7 +3,7 @@ const { query } = require('../lib/db');
 const { requireAuth } = require('./auth');
 const { ok, created, badRequest, notFound, forbidden, readBody } = require('../lib/http');
 const { generatePublicToken } = require('../lib/tokens');
-const { isNonEmpty, isPositiveNumber } = require('../lib/validate');
+const { isNonEmpty, isPositiveNumber, isDateOrEmpty } = require('../lib/validate');
 const { buildWhatsAppLink } = require('../lib/phone');
 const { STATUS, isValidStatus, isFinal } = require('../lib/status');
 const { BASE_URL } = require('../lib/config');
@@ -53,6 +53,10 @@ async function handle(req, res) {
     const { clientId, servico, valor, validade, observacoes, pacoteIds, precisaFollowUp } = body;
     if (!clientId || !isNonEmpty(servico)) return badRequest(res, 'Cliente e serviço são obrigatórios.');
     if (!isPositiveNumber(valor)) return badRequest(res, 'Valor inválido.');
+    if (!/^\d+$/.test(String(clientId))) return badRequest(res, 'Cliente inválido.');
+    if (!isDateOrEmpty(validade)) return badRequest(res, 'Data de validade inválida.');
+    if (String(servico).length > 300) return badRequest(res, 'Descrição do serviço muito longa (máximo 300 caracteres).');
+    if (observacoes && String(observacoes).length > 3000) return badRequest(res, 'Observações muito longas (máximo 3000 caracteres).');
 
     const clientRes = await query('SELECT id, telefone FROM clients WHERE id = $1 AND user_id = $2', [clientId, user.id]);
     if (!clientRes.rows[0]) return notFound(res, 'Cliente não encontrado.');
@@ -68,7 +72,8 @@ async function handle(req, res) {
 
     // Cópia congelada dos pacotes selecionados (snapshot)
     if (Array.isArray(pacoteIds) && pacoteIds.length > 0) {
-      for (const pkgId of pacoteIds) {
+      for (const pkgId of pacoteIds.slice(0, 10)) {
+        if (!/^\d+$/.test(String(pkgId))) continue;
         const pkgRes = await query('SELECT * FROM package_templates WHERE id = $1 AND user_id = $2', [pkgId, user.id]);
         if (pkgRes.rows[0]) {
           const p = pkgRes.rows[0];
@@ -142,14 +147,21 @@ async function handle(req, res) {
     }
     if (body.servico !== undefined) {
       if (!isNonEmpty(body.servico)) return badRequest(res, 'Descreva o serviço.');
+      if (String(body.servico).length > 300) return badRequest(res, 'Descrição do serviço muito longa (máximo 300 caracteres).');
       updates.servico = String(body.servico).trim();
     }
     if (body.valor !== undefined) {
       if (!isPositiveNumber(body.valor)) return badRequest(res, 'Valor inválido.');
       updates.valor = parseFloat(body.valor);
     }
-    if (body.validade !== undefined) updates.validade = body.validade || null;
-    if (body.observacoes !== undefined) updates.observacoes = body.observacoes || null;
+    if (body.validade !== undefined) {
+      if (!isDateOrEmpty(body.validade)) return badRequest(res, 'Data de validade inválida.');
+      updates.validade = body.validade || null;
+    }
+    if (body.observacoes !== undefined) {
+      if (body.observacoes && String(body.observacoes).length > 3000) return badRequest(res, 'Observações muito longas (máximo 3000 caracteres).');
+      updates.observacoes = body.observacoes || null;
+    }
 
     if (Object.keys(updates).length === 0) return badRequest(res, 'Nada para atualizar.');
 

@@ -9,6 +9,8 @@ const { isEmail, isPhone, isNonEmpty } = require('../lib/validate');
 const { normalizePhone } = require('../lib/phone');
 const { rateLimit, resetLimit } = require('../lib/rateLimit');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../lib/email');
+const { BASE_URL } = require('../lib/config');
+const B = require('../lib/billing');
 
 async function getSession(req) {
   const token = parseSession(req);
@@ -127,13 +129,15 @@ async function handle(req, res) {
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const { email, code } = body;
-    if (!email || !code) return badRequest(res, 'Dados inválidos.');
+    if (!isEmail(email) || !code) return badRequest(res, 'Dados inválidos.');
+    if (!(await rateLimit(`verify-phone:${email.trim().toLowerCase()}`, 5, 15 * 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde alguns minutos.');
+    if (!(await rateLimit(`verify-phone-ip:${ip}`, 20, 15 * 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde alguns minutos.');
     const userRes = await query('SELECT * FROM users WHERE email = $1', [email.trim().toLowerCase()]);
-    if (!userRes.rows[0]) return notFound(res, 'Usuário não encontrado.');
+    if (!userRes.rows[0]) return badRequest(res, 'Código incorreto.');
     const user = userRes.rows[0];
     const vRes = await query('SELECT * FROM phone_verifications WHERE user_id = $1 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1', [user.id]);
     if (!vRes.rows[0]) return badRequest(res, 'Código expirado. Solicite novo código.');
-    if (!hashesMatch(code, vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
+    if (!hashesMatch(String(code).trim(), vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
     await query('UPDATE users SET telefone_verificado = true WHERE id = $1', [user.id]);
     await query('DELETE FROM phone_verifications WHERE user_id = $1', [user.id]);
     if (user.trial_concedido) {
@@ -253,7 +257,7 @@ async function handle(req, res) {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
     await query('DELETE FROM password_resets WHERE user_id = $1', [userId]);
     await query('INSERT INTO password_resets (user_id, token_hash, expires_at) VALUES ($1,$2,$3)', [userId, codeHash, expiresAt]);
-    const link = `${process.env.BASE_URL}/redefinir-senha?token=${code}`;
+    const link = `${BASE_URL.replace(/\/$/, '')}/redefinir-senha.html?token=${code}`;
     await sendPasswordResetEmail(email.trim(), link);
     return ok(res, { message: 'Se o e-mail existir, um link será enviado.' });
   }
@@ -305,6 +309,17 @@ async function handle(req, res) {
   if (req.method === 'DELETE' && path === '/api/auth/account') {
     const user = await requireAuth(req, res);
     if (!user) return true;
+    // Assinatura ativa: cancela no Mercado Pago antes de apagar (senão o cartão continua sendo cobrado)
+    const bu = await B.getBillingUser(user.id);
+    if (bu && bu.mp_preapproval_id && ['ativa', 'pausada', 'pendente'].includes(bu.assinatura_status)) {
+      if (!B.mpConfigurado()) return json(res, 503, { error: 'Não foi possível cancelar sua assinatura agora. Tente novamente mais tarde.' });
+      const r = await B.mpRequest('PUT', '/preapproval/' + encodeURIComponent(bu.mp_preapproval_id), { status: 'cancelled' })
+        .catch(e => ({ status: 0, data: { message: e.message } }));
+      if (r.status !== 200 && bu.assinatura_status !== 'pendente') {
+        console.error('Excluir conta: falha ao cancelar MP', r.status, JSON.stringify(r.data).slice(0, 300));
+        return json(res, 502, { error: 'Não foi possível cancelar sua assinatura agora. Tente novamente em instantes.' });
+      }
+    }
     await query('DELETE FROM sessions WHERE user_id = $1', [user.id]);
     await query('DELETE FROM users WHERE id = $1', [user.id]);
     clearSessionCookie(res);

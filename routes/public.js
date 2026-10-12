@@ -3,6 +3,13 @@ const { query } = require('../lib/db');
 const { ok, badRequest, notFound, forbidden, readBody } = require('../lib/http');
 const { STATUS, isFinal } = require('../lib/status');
 const { isExpired } = require('../lib/dates');
+const { getSession } = require('./auth');
+
+// O próprio prestador abrindo o link do orçamento (ex.: "Ver página do cliente") não conta como visualização
+async function isOwner(req, quoteUserId) {
+  try { const u = await getSession(req); return !!u && String(u.id) === String(quoteUserId); }
+  catch { return false; }
+}
 
 // Heurística anti-bot: exige user-agent real e tempo mínimo
 const BOT_UA = /bot|crawl|spider|slurp|teoma|ia_archiver|facebookexternalhit|whatsapp|telegram|discord|slack/i;
@@ -34,7 +41,7 @@ async function handle(req, res) {
     const expirado = isExpired(quote.validade);
 
     // Registrar visualização (heurística anti-bot)
-    if (!isLikelyBot(req) && quote.status === STATUS.ENVIADO) {
+    if (!isLikelyBot(req) && quote.status === STATUS.ENVIADO && !(await isOwner(req, quote.user_id))) {
       // Marca como "Visualizado" na primeira view real
       await query("UPDATE quotes SET status = $1, viewed_at = NOW() WHERE id = $2 AND status = $3",
         [STATUS.VISUALIZADO, quote.id, STATUS.ENVIADO]);
@@ -83,8 +90,11 @@ async function handle(req, res) {
     }
 
     const observacao = typeof body.observacao === 'string' ? body.observacao.slice(0, 1000) : null;
-    await query('UPDATE quotes SET status = $1, resposta_cliente = $2, responded_at = NOW() WHERE id = $3',
-      [newStatus, observacao || null, quote.id]);
+    const upd = await query(
+      `UPDATE quotes SET status = $1, resposta_cliente = $2, responded_at = NOW()
+       WHERE id = $3 AND status <> ALL($4) RETURNING id`,
+      [newStatus, observacao || null, quote.id, [STATUS.APROVADO, STATUS.RECUSADO]]);
+    if (!upd.rows[0]) return badRequest(res, 'Este orçamento já foi finalizado.');
 
     return ok(res, { message: newStatus === STATUS.APROVADO ? 'Orçamento aprovado!' : 'Resposta registrada.' });
   }
@@ -93,10 +103,10 @@ async function handle(req, res) {
   const viewConfirm = path.match(/^\/api\/public\/quote\/([A-Za-z0-9_-]+)\/view-confirmed$/);
   if (req.method === 'POST' && viewConfirm) {
     const token = viewConfirm[1];
-    const qRes = await query('SELECT id, status FROM quotes WHERE public_token = $1', [token]);
+    const qRes = await query('SELECT id, status, user_id FROM quotes WHERE public_token = $1', [token]);
     if (!qRes.rows[0]) return notFound(res);
     const quote = qRes.rows[0];
-    if (quote.status === STATUS.ENVIADO) {
+    if (quote.status === STATUS.ENVIADO && !(await isOwner(req, quote.user_id))) {
       await query("UPDATE quotes SET status = $1, viewed_at = NOW() WHERE id = $2 AND status = $3",
         [STATUS.VISUALIZADO, quote.id, STATUS.ENVIADO]);
     }
