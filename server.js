@@ -75,13 +75,6 @@ const server = http.createServer(async (req, res) => {
     const urlPath = new URL(req.url, 'http://x').pathname;
 
     if (urlPath.startsWith('/api/')) {
-      // TEMPORÁRIO (diagnóstico de IP do proxy do Render) — remover em seguida
-      if (urlPath === '/api/_diag-ip-7f3k') {
-        const h = req.headers;
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ xff: h['x-forwarded-for'] || null, cf: h['cf-connecting-ip'] || null, tci: h['true-client-ip'] || null, xri: h['x-real-ip'] || null, cfray: h['cf-ray'] || null, remote: req.socket.remoteAddress }));
-        return;
-      }
       // Rotas da API
       let handled =
         await authRoute.handle(req, res) ??
