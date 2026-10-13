@@ -28,7 +28,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && viewMatch) {
     const token = viewMatch[1];
     const qRes = await query(
-      `SELECT q.*, c.nome as cliente_nome, u.nome as prestador_nome, u.nome_empresa, u.logo
+      `SELECT q.*, c.nome as cliente_nome, u.nome as prestador_nome, u.nome_empresa, u.logo, u.profissao, u.cidade, u.whatsapp, u.documento, u.instagram
        FROM quotes q
        JOIN clients c ON c.id = q.client_id
        JOIN users u ON u.id = q.user_id
@@ -56,7 +56,11 @@ async function handle(req, res) {
       status: quote.status,
       expirado,
       clienteNome: quote.cliente_nome,
-      prestador: { nome: quote.nome_empresa || quote.prestador_nome, logo: quote.logo || null },
+      prestador: {
+        nome: quote.nome_empresa || quote.prestador_nome, logo: quote.logo || null,
+        profissao: quote.profissao || '', cidade: quote.cidade || '',
+        whatsapp: (quote.whatsapp || '').replace(/\D/g, ''), documento: quote.documento || '', instagram: quote.instagram || '',
+      },
       pacotes: pacs.rows,
     });
   }

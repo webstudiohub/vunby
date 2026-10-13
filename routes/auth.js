@@ -19,13 +19,21 @@ function isGoogleReviewLink(l) {
   try { const u = new URL(l); return u.protocol === 'https:' && GOOGLE_HOSTS.includes(u.hostname); } catch { return false; }
 }
 
+// Dados mínimos da empresa para o orçamento sair completo (o resto é opcional)
+function perfilCompleto(u) {
+  return !!(u.nome_empresa && u.profissao && u.cidade && u.whatsapp);
+}
+
+// Campos de texto simples da empresa: nome do campo no app → coluna no banco e tamanho máximo
+const CAMPOS_EMPRESA = { profissao: ['profissao', 60], cidade: ['cidade', 60] };
+
 async function getSession(req) {
   const token = parseSession(req);
   if (!token) return null;
   const raw = verifySessionToken(token);
   if (!raw) return null;
   const tokenHash = hashToken(raw);
-  const res = await query('SELECT u.id, u.nome, u.email, u.senha_hash, u.telefone, u.telefone_verificado, u.trial_concedido, u.email_verificado, u.nome_empresa, u.google_review_link, (u.logo IS NOT NULL) AS tem_logo, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
+  const res = await query('SELECT u.id, u.nome, u.email, u.senha_hash, u.telefone, u.telefone_verificado, u.trial_concedido, u.email_verificado, u.nome_empresa, u.google_review_link, u.profissao, u.cidade, u.whatsapp, u.documento, u.instagram, (u.logo IS NOT NULL) AS tem_logo, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
   return res.rows[0] || null;
 }
 
@@ -196,7 +204,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/auth/me') {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
-    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, profissao: user.profissao || '', cidade: user.cidade || '', whatsapp: user.whatsapp || '', documento: user.documento || '', instagram: user.instagram || '', perfilCompleto: perfilCompleto(user), emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
   }
 
   // GET /api/auth/logo — logo do próprio usuário (para a tela de Conta)
@@ -236,10 +244,37 @@ async function handle(req, res) {
         updates.google_review_link = l;
       }
     }
+    for (const [campo, [col, max]] of Object.entries(CAMPOS_EMPRESA)) {
+      if (body[campo] === undefined) continue;
+      const v = String(body[campo] || '').trim().replace(/\s+/g, ' ');
+      if (v.length > max) return badRequest(res, `Texto muito longo (máximo ${max} caracteres).`);
+      updates[col] = v || null;
+    }
+    if (body.whatsapp !== undefined) {
+      const d = String(body.whatsapp || '').replace(/\D/g, '');
+      if (!d) updates.whatsapp = null;
+      else {
+        const n = normalizePhone(d);
+        // Celular/fixo brasileiro com DDD: +55 + 10 ou 11 dígitos
+        if (!/^\+55\d{10,11}$/.test(n)) return badRequest(res, 'WhatsApp inválido. Use DDD + número, ex.: (21) 99999-9999.');
+        updates.whatsapp = n;
+      }
+    }
+    if (body.documento !== undefined) {
+      const d = String(body.documento || '').replace(/\D/g, '');
+      if (d && d.length !== 11 && d.length !== 14) return badRequest(res, 'CNPJ ou CPF inválido. CPF tem 11 números e CNPJ tem 14.');
+      updates.documento = d || null;
+    }
+    if (body.instagram !== undefined) {
+      // Aceita "@perfil", "perfil" ou o link do perfil; guarda só o nome do perfil
+      let v = String(body.instagram || '').trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/^@/, '').replace(/[/?#].*$/, '');
+      if (v && !/^[A-Za-z0-9._]{1,30}$/.test(v)) return badRequest(res, 'Instagram inválido. Use só o nome do perfil, ex.: @silvareformas.');
+      updates.instagram = v || null;
+    }
     if (Object.keys(updates).length === 0) return badRequest(res, 'Nada para atualizar.');
     const cols = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(', ');
     await query(`UPDATE users SET ${cols} WHERE id = $1`, [user.id, ...Object.values(updates)]);
-    return ok(res, { message: 'Dados da marca salvos.' });
+    return ok(res, { message: 'Dados da empresa salvos.' });
   }
 
   // POST /api/auth/resend-verification

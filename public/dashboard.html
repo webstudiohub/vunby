@@ -16,6 +16,7 @@
   </div>
 
   <div id="aviso-plano"></div>
+  <div id="aviso-empresa"></div>
 
   <div id="stats-area" class="stat-grid">
     <div class="stat-card anim anim-1"><div class="stat-label">Em aberto</div><div class="stat-value">—</div></div>
@@ -42,6 +43,12 @@
   const hora=new Date().getHours();
   const saudacao=hora<12?'Bom dia':hora<18?'Boa tarde':'Boa noite';
   document.getElementById('greeting').textContent=`${saudacao}, ${primeiroNome}`;
+  if(!session.perfilCompleto){
+    document.getElementById('aviso-empresa').innerHTML=`<a href="configurar-empresa.html" class="card aviso-plano aviso-plano-trial">
+      <span>🏢 <strong>Complete os dados da empresa</strong> para seus orçamentos saírem com a sua cara.</span>
+      <span class="aviso-plano-link">Completar ›</span>
+    </a>`;
+  }
   api('/api/billing/status').then(st=>{document.getElementById('aviso-plano').innerHTML=avisoPlano(st);}).catch(()=>{});
 
   const [dash,quotes]=await Promise.all([api('/api/dashboard'),api('/api/quotes')]);

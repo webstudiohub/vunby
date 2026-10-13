@@ -55,8 +55,8 @@ async function verificar(){
     const r=await fetch('/api/auth/verify-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,code})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error||'Erro');
-    // O servidor já abre a sessão ao confirmar o e-mail
-    location.href='/dashboard.html';
+    // O servidor já abre a sessão ao confirmar o e-mail → primeiro passo: dados da empresa
+    location.href='/configurar-empresa.html';
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Confirmar';}
 }
 

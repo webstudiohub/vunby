@@ -156,3 +156,22 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   });
 }
+
+// ─── Logo: reduz a imagem escolhida (máx. 400px) antes de enviar ─────
+function reduzirImagem(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=400, k=Math.min(1,max/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      // PNG mantém fundo transparente (logo redonda continua redonda)
+      const png=file.type!=='image/jpeg';
+      let url=c.toDataURL(png?'image/png':'image/jpeg',0.85);
+      if(url.length>500000) url=c.toDataURL('image/jpeg',0.8);
+      URL.revokeObjectURL(img.src); resolve(url);
+    };
+    img.onerror=()=>reject(new Error('Não foi possível ler essa imagem.'));
+    img.src=URL.createObjectURL(file);
+  });
+}

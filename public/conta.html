@@ -35,6 +35,7 @@
         <button class="btn-outline btn-sm" id="m-remover" style="display:none" onclick="removerLogo()">Remover logo</button>
       </div>
     </div>
+    <a href="configurar-empresa.html?editar=1" class="btn-outline btn-sm" style="display:block;text-align:center;text-decoration:none;margin-top:var(--sp-4)">Profissão, cidade, WhatsApp e Instagram ›</a>
     <label>Link para avaliar no Google (opcional)</label>
     <input id="m-review" maxlength="300" inputmode="url" placeholder="https://g.page/r/.../review"/>
     <p class="muted" style="font-size:12px;margin-top:4px">No Google Meu Negócio, toque em <strong>"Pedir avaliações"</strong> e copie o link. Assim, quando o cliente aprovar, você pede a avaliação com 1 toque.</p>
@@ -83,23 +84,6 @@ function mostrarLogo(src){
   const p=document.getElementById('m-preview');
   p.innerHTML=src?`<img src="${src}" alt="" style="width:100%;height:100%;object-fit:contain"/>`:'sem logo';
   document.getElementById('m-remover').style.display=src?'':'none';
-}
-function reduzirImagem(file){
-  return new Promise((resolve,reject)=>{
-    const img=new Image();
-    img.onload=()=>{
-      const max=400, k=Math.min(1,max/Math.max(img.width,img.height));
-      const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k);
-      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      // PNG mantém fundo transparente (logo redonda continua redonda)
-      const png=file.type!=='image/jpeg';
-      let url=c.toDataURL(png?'image/png':'image/jpeg',0.85);
-      if(url.length>500000) url=c.toDataURL('image/jpeg',0.8);
-      URL.revokeObjectURL(img.src); resolve(url);
-    };
-    img.onerror=()=>reject(new Error('Não foi possível ler essa imagem.'));
-    img.src=URL.createObjectURL(file);
-  });
 }
 document.addEventListener('change',async e=>{
   if(e.target.id!=='m-logo'||!e.target.files[0])return;

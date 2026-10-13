@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<title>VUNBY — Configure sua empresa</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0F3A8C"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.ce-opcional{font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0}
+.ce-dica{font-size:12px;color:var(--muted);margin-top:4px}
+.ce-previa-titulo{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--sp-2)}
+.ce-acoes{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-5)}
+.ce-depois{background:none;border:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;padding:12px;cursor:pointer;text-decoration:underline}
+body.ce-onboarding .container{padding-bottom:var(--sp-8)}
+</style>
+</head><body>
+<div id="top"></div>
+<div class="container">
+  <div class="page-header anim">
+    <h1 id="ce-titulo">Configure sua empresa</h1>
+    <p id="ce-sub">Leva 1 minuto. Esses dados aparecem no orçamento que o seu cliente recebe.</p>
+  </div>
+
+  <!-- Prévia: como o cliente vê o topo do orçamento -->
+  <div class="anim anim-1" style="margin-bottom:var(--sp-5)">
+    <div class="ce-previa-titulo">Prévia do seu orçamento</div>
+    <div class="quote-card">
+      <div class="quote-header">
+        <div id="ce-previa"></div>
+        <div style="font-size:12px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Orçamento</div>
+        <h1>Exemplo de serviço</h1>
+        <div style="font-size:14px;opacity:.8">Para: Nome do cliente</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card anim anim-2">
+    <label style="margin-top:0" for="f-empresa">Nome da empresa</label>
+    <input id="f-empresa" maxlength="80" placeholder="Ex: Silva Reformas" autocomplete="organization"/>
+    <p class="ce-dica">Não tem empresa? Use seu nome, ex.: "João Eletricista".</p>
+
+    <label for="f-profissao">Profissão</label>
+    <select id="f-profissao">
+      <option value="">Escolha…</option>
+      <option>Construção e reforma</option>
+      <option>Pedreiro</option>
+      <option>Pintor</option>
+      <option>Eletricista</option>
+      <option>Encanador</option>
+      <option>Ar-condicionado</option>
+      <option>Mudança e frete</option>
+      <option>Montagem de móveis</option>
+      <option>Marido de aluguel</option>
+      <option>Limpeza</option>
+      <option>Jardinagem</option>
+      <option>Confeitaria</option>
+      <option>Beleza e estética</option>
+      <option>Fotografia e eventos</option>
+      <option value="__outra">Outra</option>
+    </select>
+    <input id="f-profissao-outra" maxlength="60" placeholder="Qual é a sua profissão?" style="display:none;margin-top:var(--sp-2)"/>
+
+    <label for="f-whatsapp">WhatsApp da empresa</label>
+    <input id="f-whatsapp" type="tel" inputmode="tel" maxlength="20" placeholder="(21) 99999-9999" autocomplete="tel"/>
+    <p class="ce-dica">O cliente fala com você com 1 toque, direto do orçamento.</p>
+
+    <label for="f-cidade">Cidade</label>
+    <input id="f-cidade" maxlength="60" placeholder="Ex: Rio de Janeiro - RJ" autocomplete="address-level2"/>
+
+    <label>Logo <span class="ce-opcional">(opcional)</span></label>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+      <div id="f-logo-previa" style="width:64px;height:64px;border-radius:12px;background:var(--gray);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px;color:var(--muted)">sem logo</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <label class="btn-outline btn-sm" style="margin:0;text-transform:none;cursor:pointer;text-align:center">Escolher imagem<input id="f-logo" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"/></label>
+        <button type="button" class="btn-outline btn-sm" id="f-logo-remover" style="display:none" onclick="removerLogo()">Remover logo</button>
+      </div>
+    </div>
+
+    <label for="f-documento">CNPJ ou CPF <span class="ce-opcional">(opcional)</span></label>
+    <input id="f-documento" inputmode="numeric" maxlength="18" placeholder="Só números"/>
+    <p class="ce-dica">Aparece no orçamento e passa mais confiança. Deixe vazio se preferir não mostrar.</p>
+
+    <label for="f-instagram">Instagram <span class="ce-opcional">(opcional)</span></label>
+    <input id="f-instagram" maxlength="60" placeholder="@suaempresa" autocapitalize="off" autocorrect="off"/>
+
+    <div id="msg" class="error" role="alert"></div>
+    <div class="ce-acoes">
+      <button class="btn-primary" id="btn-salvar" onclick="salvar()">Salvar e continuar</button>
+      <button type="button" class="ce-depois" id="btn-depois" onclick="depois()">Preencher depois</button>
+    </div>
+  </div>
+</div>
+<div id="nav"></div>
+<script src="app.js"></script>
+<script src="marca.js"></script>
+<script>
+// ?editar=1 → aberta pela Minha Conta (com menu). Sem isso → logo após confirmar o e-mail.
+const EDITAR=new URLSearchParams(location.search).get('editar')==='1';
+const $=id=>document.getElementById(id);
+let logoAtual=null;   // logo salva
+let logoNova;         // undefined = sem mudança; null = remover; string = nova imagem
+
+function profissao(){
+  const v=$('f-profissao').value;
+  return v==='__outra'?$('f-profissao-outra').value.trim():v;
+}
+function mascaraTelefone(v){
+  const d=v.replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'').slice(0,11);
+  if(d.length<=2) return d?'('+d:'';
+  if(d.length<=6) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  if(d.length<=10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+}
+function atualizarPrevia(){
+  const logo=logoNova!==undefined?logoNova:logoAtual;
+  const p={
+    nome:$('f-empresa').value.trim()||'Nome da sua empresa',
+    logo, profissao:profissao(), cidade:$('f-cidade').value.trim(),
+    whatsapp:$('f-whatsapp').value, documento:$('f-documento').value,
+    instagram:$('f-instagram').value.trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i,'').replace(/[/?#].*$/,''),
+  };
+  $('ce-previa').innerHTML=marcaHtml(p);
+  const lp=$('f-logo-previa');
+  lp.innerHTML=logo?`<img src="${logo}" alt="Logo" style="width:100%;height:100%;object-fit:contain"/>`:'sem logo';
+  $('f-logo-remover').style.display=logo?'':'none';
+}
+function removerLogo(){ logoNova=null; $('f-logo').value=''; atualizarPrevia(); }
+
+document.addEventListener('input',e=>{
+  if(e.target.id==='f-whatsapp') e.target.value=mascaraTelefone(e.target.value);
+  atualizarPrevia();
+});
+document.addEventListener('change',async e=>{
+  if(e.target.id==='f-profissao'){
+    const outra=e.target.value==='__outra';
+    $('f-profissao-outra').style.display=outra?'':'none';
+    if(outra) $('f-profissao-outra').focus();
+    atualizarPrevia(); return;
+  }
+  if(e.target.id!=='f-logo'||!e.target.files[0])return;
+  $('msg').textContent='';
+  try{ logoNova=await reduzirImagem(e.target.files[0]); atualizarPrevia(); }
+  catch(err){ $('msg').textContent=err.message; }
+});
+
+function destino(){ return EDITAR?'conta.html':'dashboard.html'; }
+function depois(){ location.href=destino(); }
+
+async function salvar(){
+  const msg=$('msg'), btn=$('btn-salvar');
+  msg.textContent='';
+  const body={
+    nomeEmpresa:$('f-empresa').value, profissao:profissao(), cidade:$('f-cidade').value,
+    whatsapp:$('f-whatsapp').value, documento:$('f-documento').value, instagram:$('f-instagram').value,
+  };
+  if(logoNova!==undefined) body.logo=logoNova;
+  btn.disabled=true; btn.textContent='Salvando…';
+  try{
+    await api('/api/auth/profile',{method:'PUT',body});
+    location.href=destino()+(EDITAR?'':'?empresa=ok');
+  }catch(err){
+    msg.textContent=err.message;
+    btn.disabled=false; btn.textContent=EDITAR?'Salvar':'Salvar e continuar';
+  }
+}
+
+(async()=>{
+  const u=await requireSession(); if(!u)return;
+  if(EDITAR){
+    $('top').innerHTML=topbar('conta.html');
+    $('nav').innerHTML=bottomNav('conta.html');
+    wireLogout();
+    $('ce-titulo').textContent='Dados da empresa';
+    $('ce-sub').textContent='Aparecem no orçamento que o seu cliente recebe.';
+    $('btn-salvar').textContent='Salvar';
+    $('btn-depois').textContent='Voltar';
+  }else{
+    document.body.classList.add('ce-onboarding');
+  }
+  $('f-empresa').value=u.nomeEmpresa||'';
+  $('f-cidade').value=u.cidade||'';
+  $('f-documento').value=u.documento||'';
+  $('f-instagram').value=u.instagram?'@'+u.instagram:'';
+  // WhatsApp: se ainda não tem, sugere o telefone do cadastro
+  $('f-whatsapp').value=mascaraTelefone(u.whatsapp||u.telefone||'');
+  const sel=$('f-profissao');
+  if(u.profissao){
+    if([...sel.options].some(o=>o.value===u.profissao)) sel.value=u.profissao;
+    else { sel.value='__outra'; $('f-profissao-outra').value=u.profissao; $('f-profissao-outra').style.display=''; }
+  }
+  if(u.temLogo){ try{ logoAtual=(await api('/api/auth/logo')).logo; }catch{} }
+  atualizarPrevia();
+})();
+</script>
+</body></html>

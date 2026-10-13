@@ -9,6 +9,7 @@
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
 </div>
+<script src="marca.js"></script>
 <script>
 // NÃO referencia app.js, manifest, SW — página pública do cliente
 const token=new URLSearchParams(location.search).get('token');
@@ -87,10 +88,7 @@ async function acao(tipo){
   document.getElementById('content').innerHTML=`
     <div class="quote-card">
       <div class="quote-header">
-        ${q.prestador&&(q.prestador.logo||q.prestador.nome)?`<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-          ${q.prestador.logo?`<img src="${q.prestador.logo}" alt="" style="width:52px;height:52px;object-fit:contain;border-radius:10px;background:#fff;padding:4px"/>`:''}
-          <div style="font-size:15px;font-weight:700">${esc(q.prestador.nome||'')}</div>
-        </div>`:''}
+        ${marcaHtml(q.prestador)}
         <div style="font-size:12px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Orçamento</div>
         <h1>${esc(q.servico)}</h1>
         <div style="font-size:14px;opacity:.8">Para: ${esc(q.clienteNome)}</div>
