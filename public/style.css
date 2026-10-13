@@ -798,4 +798,4 @@ hr { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-5) 0; }
 .tb-vazia{text-align:center;padding:24px 8px}
 .ie-ferramenta{margin-bottom:var(--sp-2)}
 .ie-nums{grid-template-columns:64px 1.2fr 1fr}
-.ie-campo select{padding-right:30px!important;background-position:right 8px center}
+.ie-campo select{padding-right:28px!important;padding-left:8px!important;background-position:right 6px center;font-size:var(--fs-sm)}
