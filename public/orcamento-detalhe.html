@@ -5,6 +5,14 @@
 <link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
+<style>
+/* Barra fixa de salvar enquanto edita: o botão fica sempre à vista */
+.ed-barra{position:fixed;left:0;right:0;bottom:0;z-index:300;background:#fff;border-top:1px solid var(--gray2);box-shadow:0 -4px 16px rgba(0,0,0,.1);padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
+.ed-barra .error{margin:0 0 6px;min-height:0}
+.ed-barra-btns{display:grid;grid-template-columns:1fr 2fr;gap:10px;max-width:600px;margin:0 auto}
+body.editando{padding-bottom:120px}
+.ed-salvo{background:#E8F7EE;border:1.5px solid var(--green);font-size:var(--fs-md)}
+</style>
 </head><body>
 <div id="top"></div>
 <div class="container" id="content"><p class="muted">Carregando…</p></div>
@@ -40,18 +48,28 @@ async function marcarStatus(status){
   catch(e){alert(e.message);}
 }
 
-let editorEd=null;
+let editorEd=null, editSujo=false;
+// Ao sair da página com alterações não salvas, o navegador pergunta antes
+window.addEventListener('beforeunload',e=>{ if(editSujo){ e.preventDefault(); e.returnValue=''; } });
+document.addEventListener('input',e=>{ if(e.target.closest&&e.target.closest('#form-edicao')) editSujo=true; });
 function abrirEdicao(){
-  document.getElementById('form-edicao').style.display=''; document.getElementById('btn-editar').style.display='none';
+  const form=document.getElementById('form-edicao');
+  if(form.style.display===''&&editorEd) return; // já está aberto: não cria outro editor
+  form.style.display=''; document.getElementById('btn-editar').style.display='none';
+  document.body.classList.add('editando');
   const q=qAtual;
   editorEd=ItensEditor(document.getElementById('ed-itens'),{
     itens:q.itens, desconto:q.desconto_cents?(q.desconto_cents/100).toFixed(2).replace('.',','):'',
     taxa:q.taxa_cents?(q.taxa_cents/100).toFixed(2).replace('.',','):'', taxaNome:q.taxa_nome||'',
     sinalPct:Number(q.sinal_pct)?String(Number(q.sinal_pct)).replace('.',','):'',
-  },()=>{ document.getElementById('ed-valor-box').style.display=editorEd.quantos()?'none':''; },ferramentasItens(()=>editorEd,'ed-obs'));
+  },()=>{ editSujo=true; document.getElementById('ed-valor-box').style.display=editorEd.quantos()?'none':''; },ferramentasItens(()=>editorEd,'ed-obs'));
   document.getElementById('ed-valor-box').style.display=editorEd.quantos()?'none':'';
 }
-function fecharEdicao(){ document.getElementById('form-edicao').style.display='none'; document.getElementById('btn-editar').style.display=''; }
+function fecharEdicao(){
+  if(editSujo&&!confirm('Descartar as alterações que você fez?')) return;
+  editSujo=false; editorEd=null; document.body.classList.remove('editando');
+  document.getElementById('form-edicao').style.display='none'; document.getElementById('btn-editar').style.display='';
+}
 async function salvarEdicao(){
   const msg=document.getElementById('ed-msg'); msg.textContent='';
   const body={
@@ -62,7 +80,14 @@ async function salvarEdicao(){
   if(editorEd.quantos()){ const erro=editorEd.validar(); if(erro){ msg.textContent=erro; return; } Object.assign(body,editorEd.dados()); }
   else { body.valor=document.getElementById('ed-valor').value; if(qAtual.usa_itens) body.itens=[]; }
   const btn=document.getElementById('ed-salvar'); btn.disabled=true; btn.textContent='Salvando…';
-  try{ await api(`/api/quotes/${qid}`,{method:'PATCH',body}); renderPage(); }
+  try{
+    await api(`/api/quotes/${qid}`,{method:'PATCH',body});
+    editSujo=false; editorEd=null; document.body.classList.remove('editando');
+    await renderPage();
+    const aviso=document.createElement('div'); aviso.className='card ed-salvo'; aviso.setAttribute('role','status');
+    aviso.innerHTML='✅ <strong>Alterações salvas.</strong> O link do cliente já mostra a versão nova.';
+    document.getElementById('content').prepend(aviso); window.scrollTo({top:0,behavior:'smooth'});
+  }
   catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Salvar alterações'; }
 }
 
@@ -185,11 +210,13 @@ async function renderPage(){
           <label>Observações</label>
           <textarea id="ed-obs" rows="2">${esc(q.observacoes||'')}</textarea>
           <p class="muted" style="font-size:var(--fs-sm);margin-top:6px">O link do cliente mostra a versão atualizada automaticamente. Se ele estiver com a página aberta, ela recarrega antes de aprovar.</p>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-primary btn-sm" id="ed-salvar" onclick="salvarEdicao()">Salvar alterações</button>
-            <button class="btn-outline btn-sm" onclick="fecharEdicao()">Cancelar</button>
+          <div class="ed-barra">
+            <div id="ed-msg" class="error" role="alert"></div>
+            <div class="ed-barra-btns">
+              <button class="btn-outline" onclick="fecharEdicao()">Cancelar</button>
+              <button class="btn-primary btn-gold" id="ed-salvar" onclick="salvarEdicao()">Salvar alterações</button>
+            </div>
           </div>
-          <div id="ed-msg" class="error"></div>
         </div>
       </div>`}
       <p style="margin-top:8px"><a href="/orcamento.html?token=${encodeURIComponent(q.public_token)}" target="_blank" style="font-size:var(--fs-sm)">🔗 Ver página do cliente</a></p>

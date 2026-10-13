@@ -1,5 +1,5 @@
 /* VUNBY Service Worker — versão atualizada a cada deploy */
-const CACHE = 'vunby-v17';
+const CACHE = 'vunby-v18';
 const STATIC = [
   '/', '/entrar', '/cadastro',
   '/style.css', '/app.js',
