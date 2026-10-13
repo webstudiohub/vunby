@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Início</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -78,9 +78,9 @@
   if(!recentes.length){
     document.getElementById('recent-list').innerHTML=`
       <div style="text-align:center;padding:var(--sp-6) 0">
-        <div style="font-size:40px;margin-bottom:var(--sp-3)">📄</div>
+        <div style="font-size:var(--fs-num);margin-bottom:var(--sp-3)">📄</div>
         <p style="font-weight:600;color:var(--dark);margin-bottom:var(--sp-2)">Nenhum orçamento ainda</p>
-        <p class="muted" style="font-size:13px;margin-bottom:var(--sp-5)">Crie o primeiro e comece a fechar negócios.</p>
+        <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-5)">Crie o primeiro e comece a fechar negócios.</p>
         <a href="novo-orcamento.html"><button class="btn-primary btn-gold" style="width:auto;padding:0 var(--sp-6)">Criar primeiro orçamento</button></a>
       </div>`;
     return;

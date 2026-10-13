@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Minha Conta</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -24,12 +24,12 @@
   <!-- Marca no orçamento -->
   <div class="card anim anim-2">
     <h3>Sua marca no orçamento</h3>
-    <p class="muted" style="font-size:13px;margin-bottom:var(--sp-3)">Aparece no topo do orçamento que o seu cliente recebe. Grátis, sem marca do VUNBY.</p>
+    <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-3)">Aparece no topo do orçamento que o seu cliente recebe. Grátis, sem marca do VUNBY.</p>
     <label style="margin-top:0">Nome da empresa (opcional)</label>
     <input id="m-empresa" maxlength="80" placeholder="Ex: Silva Reformas"/>
     <label>Logo</label>
     <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
-      <div id="m-preview" style="width:64px;height:64px;border-radius:12px;background:var(--gray);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px;color:var(--muted)">sem logo</div>
+      <div id="m-preview" style="width:64px;height:64px;border-radius:12px;background:var(--gray);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:var(--fs-sm);color:var(--muted)">sem logo</div>
       <div style="display:flex;flex-direction:column;gap:6px">
         <label class="btn-outline btn-sm" style="margin:0;text-transform:none;cursor:pointer;text-align:center">Escolher imagem<input id="m-logo" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"/></label>
         <button class="btn-outline btn-sm" id="m-remover" style="display:none" onclick="removerLogo()">Remover logo</button>
@@ -38,7 +38,7 @@
     <a href="configurar-empresa.html?editar=1" class="btn-outline btn-sm" style="display:block;text-align:center;text-decoration:none;margin-top:var(--sp-4)">Profissão, cidade, WhatsApp e Instagram ›</a>
     <label>Link para avaliar no Google (opcional)</label>
     <input id="m-review" maxlength="300" inputmode="url" placeholder="https://g.page/r/.../review"/>
-    <p class="muted" style="font-size:12px;margin-top:4px">No Google Meu Negócio, toque em <strong>"Pedir avaliações"</strong> e copie o link. Assim, quando o cliente aprovar, você pede a avaliação com 1 toque.</p>
+    <p class="muted" style="font-size:var(--fs-sm);margin-top:4px">No Google Meu Negócio, toque em <strong>"Pedir avaliações"</strong> e copie o link. Assim, quando o cliente aprovar, você pede a avaliação com 1 toque.</p>
     <div style="margin-top:var(--sp-5)">
       <button class="btn-primary" id="btn-marca" onclick="salvarMarca()">Salvar marca</button>
     </div>
@@ -195,7 +195,7 @@ async function cancelarAssinatura(){
 <style>
 .perfil-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--gray2)}
 .perfil-row:last-child{border-bottom:none}
-.perfil-label{font-size:13px;color:var(--muted);font-weight:600;text-transform:none;min-width:72px}
-.perfil-val{font-size:14px;color:var(--dark);font-weight:500;text-align:right;flex:1;display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2);flex-wrap:wrap}
+.perfil-label{font-size:var(--fs-sm);color:var(--muted);font-weight:600;text-transform:none;min-width:72px}
+.perfil-val{font-size:var(--fs-md);color:var(--dark);font-weight:500;text-align:right;flex:1;display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2);flex-wrap:wrap}
 </style>
 </body></html>

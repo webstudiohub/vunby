@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Configure sua empresa</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -9,10 +9,10 @@
 <link rel="stylesheet" href="style.css"/>
 <style>
 .ce-opcional{font-weight:500;color:var(--muted);text-transform:none;letter-spacing:0}
-.ce-dica{font-size:12px;color:var(--muted);margin-top:4px}
-.ce-previa-titulo{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:var(--sp-2)}
+.ce-dica{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
+.ce-previa-titulo{font-size:var(--fs-sm);font-weight:700;color:var(--muted);margin-bottom:var(--sp-2)}
 .ce-acoes{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-5)}
-.ce-depois{background:none;border:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;padding:12px;cursor:pointer;text-decoration:underline}
+.ce-depois{background:none;border:none;color:var(--muted);font:inherit;font-size:var(--fs-md);font-weight:600;padding:12px;cursor:pointer;text-decoration:underline}
 body.ce-onboarding .container{padding-bottom:var(--sp-8)}
 </style>
 </head><body>
@@ -29,9 +29,9 @@ body.ce-onboarding .container{padding-bottom:var(--sp-8)}
     <div class="quote-card">
       <div class="quote-header">
         <div id="ce-previa"></div>
-        <div style="font-size:12px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Orçamento</div>
+        <div style="font-size:var(--fs-sm);font-weight:700;opacity:.88;margin-bottom:6px">Orçamento</div>
         <h1>Exemplo de serviço</h1>
-        <div style="font-size:14px;opacity:.8">Para: Nome do cliente</div>
+        <div style="font-size:var(--fs-md);opacity:.9">Para: Nome do cliente</div>
       </div>
     </div>
   </div>
@@ -71,7 +71,7 @@ body.ce-onboarding .container{padding-bottom:var(--sp-8)}
 
     <label>Logo <span class="ce-opcional">(opcional)</span></label>
     <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
-      <div id="f-logo-previa" style="width:64px;height:64px;border-radius:12px;background:var(--gray);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:12px;color:var(--muted)">sem logo</div>
+      <div id="f-logo-previa" style="width:64px;height:64px;border-radius:12px;background:var(--gray);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:var(--fs-sm);color:var(--muted)">sem logo</div>
       <div style="display:flex;flex-direction:column;gap:6px">
         <label class="btn-outline btn-sm" style="margin:0;text-transform:none;cursor:pointer;text-align:center">Escolher imagem<input id="f-logo" type="file" accept="image/png,image/jpeg,image/webp" style="display:none"/></label>
         <button type="button" class="btn-outline btn-sm" id="f-logo-remover" style="display:none" onclick="removerLogo()">Remover logo</button>

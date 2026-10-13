@@ -18,7 +18,7 @@ function marcaHtml(p) {
   const doc = marcaDocumento(p.documento);
   const wa = String(p.whatsapp || '').replace(/\D/g, '');
   const ig = String(p.instagram || '').replace(/^@/, '');
-  const chip = 'display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;text-decoration:none;font-size:13px;font-weight:600;padding:6px 12px;border-radius:20px';
+  const chip = 'display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;text-decoration:none;font-size:var(--fs-sm);font-weight:600;padding:6px 12px;border-radius:20px';
   const contatos = [
     wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" style="${chip}">💬 WhatsApp</a>` : '',
     ig ? `<a href="https://instagram.com/${encodeURIComponent(ig)}" target="_blank" rel="noopener" style="${chip}">@${marcaEsc(ig)}</a>` : '',
@@ -27,9 +27,9 @@ function marcaHtml(p) {
     <div style="display:flex;align-items:center;gap:12px">
       ${p.logo ? `<img src="${marcaEsc(p.logo)}" alt="" style="width:52px;height:52px;object-fit:contain;border-radius:10px;background:#fff;padding:4px;flex-shrink:0"/>` : ''}
       <div style="min-width:0">
-        <div style="font-size:16px;font-weight:700;line-height:1.25">${marcaEsc(p.nome || '')}</div>
-        ${linha ? `<div style="font-size:13px;opacity:.85;margin-top:2px">${linha}</div>` : ''}
-        ${doc ? `<div style="font-size:12px;opacity:.7;margin-top:2px">${doc}</div>` : ''}
+        <div style="font-size:var(--fs-md);font-weight:700;line-height:1.25">${marcaEsc(p.nome || '')}</div>
+        ${linha ? `<div style="font-size:var(--fs-sm);opacity:.85;margin-top:2px">${linha}</div>` : ''}
+        ${doc ? `<div style="font-size:var(--fs-sm);opacity:.88;margin-top:2px">${doc}</div>` : ''}
       </div>
     </div>
     ${contatos ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">${contatos}</div>` : ''}

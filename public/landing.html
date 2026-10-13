@@ -9,20 +9,20 @@
 .features{background:#fff;padding:40px 20px}
 .features-grid{max-width:600px;margin:0 auto;display:grid;gap:14px}
 .feature{display:flex;gap:14px;align-items:flex-start;padding:16px;background:#F2F2F7;border-radius:12px}
-.feature-icon{font-size:28px;flex-shrink:0}
-.feature h3{font-size:15px;font-weight:700;margin-bottom:4px}
-.feature p{font-size:14px;color:#8E8E93;line-height:1.5}
+.feature-icon{font-size:var(--fs-2xl);flex-shrink:0}
+.feature h3{font-size:var(--fs-md);font-weight:700;margin-bottom:4px}
+.feature p{font-size:var(--fs-md);color:#5B6675;line-height:1.5}
 .pricing{background:#0F3A8C;color:#fff;padding:48px 20px;text-align:center}
-.pricing h2{font-size:26px;font-weight:800;margin-bottom:8px}
-.pricing p{opacity:.8;margin-bottom:28px;font-size:16px}
+.pricing h2{font-size:var(--fs-2xl);font-weight:800;margin-bottom:8px}
+.pricing p{opacity:.8;margin-bottom:28px;font-size:var(--fs-md)}
 .price-card{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:16px;padding:28px 20px;max-width:340px;margin:0 auto 20px}
-.price-main{font-size:42px;font-weight:800;color:#F5C000}
-.price-main small{font-size:18px}
-.price-desc{font-size:14px;opacity:.7;margin-bottom:20px}
+.price-main{font-size:var(--fs-num);font-weight:800;color:#F5C000}
+.price-main small{font-size:var(--fs-lg)}
+.price-desc{font-size:var(--fs-md);opacity:.88;margin-bottom:20px}
 .price-features{list-style:none;text-align:left;margin-bottom:24px}
-.price-features li{padding:6px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.1)}
+.price-features li{padding:6px 0;font-size:var(--fs-md);border-bottom:1px solid rgba(255,255,255,.1)}
 .price-features li::before{content:"✓ ";color:#F5C000;font-weight:800}
-footer{background:#1C1C1E;color:rgba(255,255,255,.5);text-align:center;padding:24px;font-size:13px}
+footer{background:#1C1C1E;color:rgba(255,255,255,.5);text-align:center;padding:24px;font-size:var(--fs-sm)}
 footer a{color:rgba(255,255,255,.5)}
 </style>
 </head>
@@ -52,7 +52,7 @@ footer a{color:rgba(255,255,255,.5)}
   <h2>Simples assim</h2>
   <p>14 dias grátis, sem cartão de crédito</p>
   <div class="price-card">
-    <div class="price-desc" style="text-decoration:line-through;opacity:.7">de R$49,90/mês</div>
+    <div class="price-desc" style="text-decoration:line-through;opacity:.88">de R$49,90/mês</div>
     <div class="price-main"><small>R$</small>29,90</div>
     <div class="price-desc">por mês, para sempre, para os 100 primeiros assinantes</div>
     <ul class="price-features">
@@ -63,7 +63,7 @@ footer a{color:rgba(255,255,255,.5)}
       <li>Histórico completo</li>
       <li>Cancele quando quiser, em 1 clique</li>
     </ul>
-    <a href="/cadastro" style="display:block;background:#F5C000;color:#1C1C1E;padding:14px;border-radius:10px;text-align:center;font-weight:800;text-decoration:none;font-size:16px;">Criar conta grátis</a>
+    <a href="/cadastro" style="display:block;background:#F5C000;color:#1C1C1E;padding:14px;border-radius:10px;text-align:center;font-weight:800;text-decoration:none;font-size:var(--fs-md);">Criar conta grátis</a>
   </div>
 </div>
 

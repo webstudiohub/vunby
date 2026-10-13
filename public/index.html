@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Entrar</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -11,8 +11,8 @@
 body { background: var(--navy); padding-bottom: 0; }
 .auth-outer { background: var(--navy); }
 .auth-header { padding: 48px var(--sp-5) 28px; }
-.auth-logo { font-size: 32px; margin-bottom: var(--sp-3); }
-.auth-tagline { font-size: 15px; }
+.auth-logo { font-size: var(--fs-2xl); margin-bottom: var(--sp-3); }
+.auth-tagline { font-size: var(--fs-md); }
 .auth-body { background: var(--gray); border-radius: 24px 24px 0 0; flex: 1; padding: var(--sp-6) var(--sp-5) 48px; }
 .auth-body .card { box-shadow: none; padding: 0; background: transparent; margin-bottom: 0; }
 </style>
@@ -39,7 +39,7 @@ body { background: var(--navy); padding-bottom: 0; }
         <button class="btn-primary" onclick="login()">Entrar</button>
       </div>
       <div id="l-msg" class="error"></div>
-      <p class="muted mt text-center" style="font-size:13px">
+      <p class="muted mt text-center" style="font-size:var(--fs-sm)">
         <a href="/esqueci-senha.html">Esqueci minha senha</a>
       </p>
     </div>
@@ -58,7 +58,7 @@ body { background: var(--navy); padding-bottom: 0; }
         <button class="btn-primary btn-gold" onclick="register()">Criar conta grátis</button>
       </div>
       <div id="r-msg" class="error"></div>
-      <p class="muted mt text-center" style="font-size:12px">
+      <p class="muted mt text-center" style="font-size:var(--fs-sm)">
         Ao criar conta você aceita os <a href="/termos.html">Termos</a> e a <a href="/privacidade.html">Privacidade</a>.
       </p>
     </div>

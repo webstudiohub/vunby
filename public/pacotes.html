@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Pacotes</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -17,14 +17,14 @@
 
   <div class="card">
     <h3>Novo modelo</h3>
-    <p class="muted" style="font-size:13px;margin-bottom:var(--sp-4)">Crie uma vez, use em qualquer orçamento. Editar aqui não altera orçamentos já enviados.</p>
+    <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-4)">Crie uma vez, use em qualquer orçamento. Editar aqui não altera orçamentos já enviados.</p>
     <label>Nome do pacote</label>
     <input id="p-nome" placeholder="Ex: Básico, Completo, Premium"/>
     <label>Itens / descrição</label>
     <textarea id="p-conteudo" rows="2" placeholder="Ex: 2 funcionários, caminhão 3/4, até 50km…"></textarea>
     <label>Preço (R$)</label>
     <input id="p-preco" type="number" step="0.01" min="0" inputmode="decimal"/>
-    <label style="display:flex;align-items:center;gap:var(--sp-2);text-transform:none;font-size:14px;font-weight:600;color:var(--body);margin-top:var(--sp-4)">
+    <label style="display:flex;align-items:center;gap:var(--sp-2);text-transform:none;font-size:var(--fs-md);font-weight:600;color:var(--body);margin-top:var(--sp-4)">
       <input type="checkbox" id="p-destaque" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--navy)"/>
       Marcar como "mais escolhido"
     </label>
@@ -81,11 +81,11 @@ async function renderLista(){
   el.innerHTML=pacotes.map(p=>`
     <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:var(--sp-4) 0;border-bottom:1px solid var(--gray2)">
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;color:var(--dark);font-size:15px">${esc(p.nome)} ${p.destaque?'<span class="flag-followup">mais escolhido</span>':''}</div>
-        ${p.conteudo?`<div class="muted" style="font-size:13px;margin-top:2px">${esc(p.conteudo)}</div>`:''}
-        <div style="font-size:17px;font-weight:800;color:var(--navy);margin-top:var(--sp-2)">${brl(p.preco)}</div>
+        <div style="font-weight:700;color:var(--dark);font-size:var(--fs-md)">${esc(p.nome)} ${p.destaque?'<span class="flag-followup">mais escolhido</span>':''}</div>
+        ${p.conteudo?`<div class="muted" style="font-size:var(--fs-sm);margin-top:2px">${esc(p.conteudo)}</div>`:''}
+        <div style="font-size:var(--fs-lg);font-weight:800;color:var(--navy);margin-top:var(--sp-2)">${brl(p.preco)}</div>
       </div>
-      <button onclick="excluir(${p.id})" style="background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:var(--sp-2);margin-left:var(--sp-2);flex-shrink:0" aria-label="Excluir">🗑</button>
+      <button onclick="excluir(${p.id})" style="background:none;border:none;color:var(--red);font-size:var(--fs-xl);cursor:pointer;padding:var(--sp-2);margin-left:var(--sp-2);flex-shrink:0" aria-label="Excluir">🗑</button>
     </div>`).join('');
 }
 

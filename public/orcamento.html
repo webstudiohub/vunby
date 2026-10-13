@@ -5,31 +5,31 @@
 <meta name="robots" content="noindex,nofollow"/>
 <link rel="stylesheet" href="style.css"/>
 <style>
-.it-titulo{font-size:13px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.05em;margin:22px 0 8px}
-.it-ajuda{font-size:14px;color:#5B6675;margin-bottom:10px;line-height:1.45}
+.it-titulo{font-size:var(--fs-lg);font-weight:700;color:#0F1923;margin:24px 0 8px}
+.it-ajuda{font-size:var(--fs-md);color:#5B6675;margin-bottom:10px;line-height:1.45}
 .it-lista{border:1.5px solid #E5E5EA;border-radius:12px;overflow:hidden}
 .it-linha{display:flex;align-items:flex-start;gap:12px;padding:14px;border-bottom:1px solid #EEF0F3;margin:0;text-transform:none;letter-spacing:0;font-weight:400;color:inherit;background:#fff}
 .it-linha:last-child{border-bottom:none}
 .it-opc{cursor:pointer}
-.it-off{background:#FAFAFB}.it-off .it-desc,.it-off .it-val{color:#9AA3AE}
+.it-off{background:#FAFAFB}.it-off .it-desc,.it-off .it-val{color:#5B6675}
 .it-check{-webkit-appearance:checkbox;appearance:auto;width:24px!important;height:24px!important;min-height:0!important;padding:0!important;margin:1px 0 0!important;border:none!important;box-shadow:none!important;flex-shrink:0;accent-color:#0F3A8C}
-.it-ok{width:24px;flex-shrink:0;text-align:center;color:#2DB56D;font-weight:800;font-size:16px}
+.it-ok{width:24px;flex-shrink:0;text-align:center;color:#2DB56D;font-weight:800;font-size:var(--fs-md)}
 .it-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-.it-desc{font-size:16px;font-weight:600;color:#0F1923;line-height:1.3}
-.it-det{font-size:13px;color:#8E8E93}
-.it-tag{font-size:12px;font-weight:700;color:#0F3A8C;background:#EEF4FA;align-self:flex-start;padding:2px 8px;border-radius:10px;margin-top:2px}
+.it-desc{font-size:var(--fs-md);font-weight:600;color:#0F1923;line-height:1.3}
+.it-det{font-size:var(--fs-sm);color:#5B6675}
+.it-tag{font-size:var(--fs-sm);font-weight:700;color:#0F3A8C;background:#EEF4FA;align-self:flex-start;padding:2px 8px;border-radius:10px;margin-top:2px}
 .it-tag-rec{color:#8A6100;background:#FFF3CC}
-.it-val{font-size:16px;font-weight:700;color:#0F3A8C;white-space:nowrap}
+.it-val{font-size:var(--fs-md);font-weight:700;color:#0F3A8C;white-space:nowrap}
 .it-resumo{margin-top:12px}
-.it-res{display:flex;justify-content:space-between;font-size:15px;padding:5px 2px;color:#3A4550}
-.it-res-total{font-size:19px;font-weight:800;color:#0F1923;border-top:1.5px solid #E5E5EA;margin-top:4px;padding-top:10px}
-.it-cond{background:#F2F2F7;border-radius:10px;padding:14px;margin-top:14px;font-size:14px}.it-cond p{margin-top:4px;white-space:pre-line}
-.it-confirma{background:#EEF4FA;border:1.5px solid #0F3A8C;border-radius:12px;padding:16px;margin-top:14px;font-size:15px;line-height:1.5}
+.it-res{display:flex;justify-content:space-between;font-size:var(--fs-md);padding:5px 2px;color:#3A4550}
+.it-res-total{font-size:var(--fs-xl);font-weight:800;color:#0F1923;border-top:1.5px solid #E5E5EA;margin-top:4px;padding-top:10px}
+.it-cond{background:#F2F2F7;border-radius:10px;padding:14px;margin-top:14px;font-size:var(--fs-md)}.it-cond p{margin-top:4px;white-space:pre-line}
+.it-confirma{background:#EEF4FA;border:1.5px solid #0F3A8C;border-radius:12px;padding:16px;margin-top:14px;font-size:var(--fs-md);line-height:1.5}
 .it-barra{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border-top:1px solid #E5E5EA;box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:12px 16px calc(12px + env(safe-area-inset-bottom));z-index:20}
 .it-barra .btn-accept{width:auto;padding:0 28px}
-.it-barra-rot{font-size:12px;color:#8E8E93;font-weight:700;text-transform:uppercase}
-.it-barra-val{font-size:22px;font-weight:800;color:#0F3A8C;line-height:1.1}
-.it-barra-sinal{font-size:12px;color:#5B6675}
+.it-barra-rot{font-size:var(--fs-sm);color:#5B6675;font-weight:700;}
+.it-barra-val{font-size:var(--fs-xl);font-weight:800;color:#0F3A8C;line-height:1.1}
+.it-barra-sinal{font-size:var(--fs-sm);color:#5B6675}
 body:has(.it-barra){padding-bottom:96px}
 .pkg-escolhido{outline:2.5px solid #0F3A8C;background:#EEF4FA}.pkg-radio{display:inline-block;width:16px;height:16px;border:2px solid #0F3A8C;border-radius:50%;margin-right:8px;vertical-align:-2px}.pkg-escolhido .pkg-radio{background:#0F3A8C;box-shadow:inset 0 0 0 3px #fff}</style>
 </head><body style="background:#F2F2F7">
@@ -135,7 +135,7 @@ async function acao(tipo){
     if(!res.ok) throw new Error(d.error||'Erro');
     document.getElementById('barra-fixa')?.remove();
     document.getElementById('acao-area').innerHTML=`<div style="background:${tipo==='aceitar'?'#D4FBDC':'#F2F2F7'};padding:20px;border-radius:12px;text-align:center">
-      <div style="font-size:32px">${tipo==='aceitar'?'🎉':'👍'}</div>
+      <div style="font-size:var(--fs-2xl)">${tipo==='aceitar'?'🎉':'👍'}</div>
       <p style="font-weight:700;margin-top:8px">${tipo==='aceitar'?'Orçamento aprovado!':'Resposta registrada.'}</p>
     </div>`;
   }catch(e){ if(m) m.textContent=e.message; }
@@ -159,14 +159,14 @@ async function acao(tipo){
   if(podeEscolher && q.pacotes.length===1) pacoteSel=q.pacotes[0].id;
   const pkgsHtml=q.pacotes.length?`
     <div style="margin-top:20px">
-      <div style="font-size:13px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">${podeEscolher&&q.pacotes.length>1?'Escolha uma opção':'Opções de serviço'}</div>
+      <div style="font-size:var(--fs-sm);font-weight:700;color:#5B6675;margin-bottom:10px">${podeEscolher&&q.pacotes.length>1?'Escolha uma opção':'Opções de serviço'}</div>
       ${q.pacotes.map(p=>`
         <div class="pkg-card${p.destaque?' destaque':''}${(p.escolhido||(podeEscolher&&String(pacoteSel)===String(p.id)))?' pkg-escolhido':''}" data-id="${p.id}" ${podeEscolher?`onclick="escolherPacote(${p.id})" style="cursor:pointer"`:''}>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
             <strong>${podeEscolher&&q.pacotes.length>1?'<span class="pkg-radio"></span>':''}${esc(p.nome)}</strong> ${p.escolhido?'<span class="pkg-badge">escolhido</span>':(p.destaque?'<span class="pkg-badge">mais escolhido</span>':'')}
           </div>
-          ${p.conteudo?`<p style="font-size:14px;color:#8E8E93;margin-top:4px">${esc(p.conteudo)}</p>`:''}
-          <div style="font-size:20px;font-weight:800;color:#0F3A8C;margin-top:6px">${brl(p.preco)}</div>
+          ${p.conteudo?`<p style="font-size:var(--fs-md);color:#5B6675;margin-top:4px">${esc(p.conteudo)}</p>`:''}
+          <div style="font-size:var(--fs-xl);font-weight:800;color:#0F3A8C;margin-top:6px">${brl(p.preco)}</div>
         </div>`).join('')}
     </div>`:'';
 
@@ -176,7 +176,7 @@ async function acao(tipo){
     </div>`:
     q.expirado?`<div style="background:#FFE8D6;padding:16px;border-radius:12px;margin-top:20px"><p style="font-weight:600;color:#C04A00">⏰ Este orçamento está expirado. Entre em contato para renovar.</p></div>`:
     `<div id="acao-area" style="margin-top:20px">
-      <textarea id="obs-acao" style="width:100%;padding:12px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:14px;margin-bottom:12px;resize:none;font-family:inherit" rows="2" placeholder="Comentário (opcional)"></textarea>
+      <textarea id="obs-acao" style="width:100%;padding:12px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:var(--fs-md);margin-bottom:12px;resize:none;font-family:inherit" rows="2" placeholder="Comentário (opcional)"></textarea>
       <div class="action-btns">
         <button class="btn-accept" onclick="acao('aceitar')">✓ Aprovar</button>
         <button class="btn-reject" onclick="acao('recusar')">✗ Recusar</button>
@@ -189,15 +189,15 @@ async function acao(tipo){
     <div class="quote-card">
       <div class="quote-header">
         ${marcaHtml(q.prestador)}
-        <div style="font-size:12px;font-weight:700;opacity:.7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Orçamento</div>
+        <div style="font-size:var(--fs-sm);font-weight:700;opacity:.88;margin-bottom:6px">Orçamento</div>
         <h1>${esc(q.servico)}</h1>
-        <div style="font-size:14px;opacity:.8">Para: ${esc(q.clienteNome)}</div>
+        <div style="font-size:var(--fs-md);opacity:.9">Para: ${esc(q.clienteNome)}</div>
       </div>
       <div class="quote-body">
-        <div style="font-size:13px;color:#8E8E93;text-transform:uppercase;font-weight:700;letter-spacing:.05em;margin-bottom:4px">${q.usaItens?'Total':'Valor'}</div>
+        <div style="font-size:var(--fs-sm);color:#5B6675;font-weight:700;margin-bottom:4px">${q.usaItens?'Total':'Valor'}</div>
         <div class="valor-grande" id="total-vivo">${brl(q.usaItens&&q.aprovacao&&q.status==='Aprovado'?q.aprovacao.total/100:q.valor)}</div>
-        ${q.validade?`<p style="font-size:13px;color:#8E8E93;margin-top:6px">Válido até ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
-        ${q.observacoes?`<div style="background:#F2F2F7;border-radius:10px;padding:14px;margin-top:16px"><p style="font-size:14px">${esc(q.observacoes)}</p></div>`:''}
+        ${q.validade?`<p style="font-size:var(--fs-sm);color:#5B6675;margin-top:6px">Válido até ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
+        ${q.observacoes?`<div style="background:#F2F2F7;border-radius:10px;padding:14px;margin-top:16px"><p style="font-size:var(--fs-md)">${esc(q.observacoes)}</p></div>`:''}
         ${q.usaItens?itensHtml(q,!final&&!q.expirado):''}
         ${pkgsHtml}
         ${acaoHtml}

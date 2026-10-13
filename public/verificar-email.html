@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Verificar e-mail</title>
 <link rel="stylesheet" href="style.css"/>
 <style>
@@ -16,23 +16,23 @@ body { background: var(--navy); padding-bottom: 0; }
     <div class="auth-tagline">Confirme seu e-mail para continuar</div>
   </div>
   <div class="auth-body">
-    <p class="muted" style="margin-bottom:var(--sp-5);font-size:15px;line-height:1.6;">
+    <p class="muted" style="margin-bottom:var(--sp-5);font-size:var(--fs-md);line-height:1.6;">
       Enviamos um código de 6 dígitos para seu e-mail. Verifique a caixa de entrada e spam.
     </p>
     <label style="margin-top:0">Código de verificação</label>
     <input id="code" type="number" maxlength="6" placeholder="000000" inputmode="numeric"
-      style="text-align:center;font-size:28px;font-weight:800;letter-spacing:.2em"/>
+      style="text-align:center;font-size:var(--fs-2xl);font-weight:800;letter-spacing:.2em"/>
     <div style="margin-top:var(--sp-5)">
       <button class="btn-primary" onclick="verificar()">Confirmar</button>
     </div>
     <div id="msg" class="error"></div>
     <div id="ok" class="success" style="display:none"></div>
     <div style="margin-top:var(--sp-5);text-align:center">
-      <span class="muted" style="font-size:14px">Não recebeu? </span>
-      <a href="#" id="btnReenviar" onclick="reenviar(event)" style="font-size:14px;font-weight:600">Reenviar código</a>
-      <span id="countdown" class="muted" style="font-size:13px;display:none"> (aguarde <span id="secs">60</span>s)</span>
+      <span class="muted" style="font-size:var(--fs-md)">Não recebeu? </span>
+      <a href="#" id="btnReenviar" onclick="reenviar(event)" style="font-size:var(--fs-md);font-weight:600">Reenviar código</a>
+      <span id="countdown" class="muted" style="font-size:var(--fs-sm);display:none"> (aguarde <span id="secs">60</span>s)</span>
     </div>
-    <p class="text-center mt" style="font-size:13px"><a href="/entrar">← Voltar ao login</a></p>
+    <p class="text-center mt" style="font-size:var(--fs-sm)"><a href="/entrar">← Voltar ao login</a></p>
   </div>
 </div>
 <script>

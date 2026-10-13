@@ -111,10 +111,10 @@ function listaItensHtml(q){
     const fora=aprovado?i.escolhido===false:false;
     const tag=i.tipo==='incluido'?'':`<span class="flag-followup" style="margin-left:4px">${aprovado?(i.escolhido?'cliente escolheu':'cliente não quis'):(i.tipo==='opcional'?'opcional':'recomendado')}</span>`;
     return `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #F2F2F7;${fora?'opacity:.5':''}">
-      <span style="font-size:14px"><strong>${esc(i.descricao)}</strong>${tag}<br><span class="muted" style="font-size:13px">${VCalc.qtdBR(i.qtd)} ${esc(i.unidade)} × ${R(i.preco_cents)}</span></span>
-      <strong style="white-space:nowrap;font-size:14px">${R(VCalc.linhaCents(i))}</strong></div>`;}).join('');
+      <span style="font-size:var(--fs-md)"><strong>${esc(i.descricao)}</strong>${tag}<br><span class="muted" style="font-size:var(--fs-sm)">${VCalc.qtdBR(i.qtd)} ${esc(i.unidade)} × ${R(i.preco_cents)}</span></span>
+      <strong style="white-space:nowrap;font-size:var(--fs-md)">${R(VCalc.linhaCents(i))}</strong></div>`;}).join('');
   const ex=[q.desconto_cents>0?`Desconto: − ${R(q.desconto_cents)}`:'',q.taxa_cents>0?`${esc(q.taxa_nome||'Taxa')}: ${R(q.taxa_cents)}`:'',Number(q.sinal_pct)>0?`Sinal: ${VCalc.qtdBR(q.sinal_pct)}%${q.aprovacao?` (${R(q.aprovacao.sinal)})`:''}`:''].filter(Boolean).join(' · ');
-  return `<div style="margin:10px 0 4px">${linhas}</div>${ex?`<p class="muted" style="font-size:13px">${ex}</p>`:''}`;
+  return `<div style="margin:10px 0 4px">${linhas}</div>${ex?`<p class="muted" style="font-size:var(--fs-sm)">${ex}</p>`:''}`;
 }
 
 async function renderPage(){
@@ -138,12 +138,12 @@ async function renderPage(){
     q.followUps.map(f=>{
       const dt=new Date(f.created_at).toLocaleString('pt-BR');
       if(f.estado==='preparado')return`<div style="padding:10px 0;border-bottom:1px solid #F2F2F7">
-        <div class="muted" style="font-size:13px">${dt}</div>
+        <div class="muted" style="font-size:var(--fs-sm)">${dt}</div>
         <p style="margin:4px 0">${esc(f.mensagem||'(sem mensagem)')}</p>
         <button class="btn-outline btn-sm" onclick="confirmarEnvio(${f.id})">✓ Confirmar que enviei</button>
       </div>`;
       return`<div style="padding:10px 0;border-bottom:1px solid #F2F2F7">
-        <div class="muted" style="font-size:13px">${dt} — <em>enviado</em></div>
+        <div class="muted" style="font-size:var(--fs-sm)">${dt} — <em>enviado</em></div>
         <p style="margin:4px 0">${esc(f.mensagem||'(sem mensagem)')}</p>
       </div>`;
     }).join('');
@@ -158,7 +158,7 @@ async function renderPage(){
       </div>
       <p><strong>Cliente:</strong> ${esc(q.cliente.nome)}</p>
       <p><strong>Telefone:</strong> ${esc(q.cliente.telefone)}</p>
-      <p><strong>${q.usa_itens?(q.status==='Aprovado'?'Total aprovado':'Total'):'Valor'}:</strong> <span style="font-size:20px;font-weight:800;color:#0F3A8C">${brl(q.valor)}</span></p>
+      <p><strong>${q.usa_itens?(q.status==='Aprovado'?'Total aprovado':'Total'):'Valor'}:</strong> <span style="font-size:var(--fs-xl);font-weight:800;color:#0F3A8C">${brl(q.valor)}</span></p>
       ${q.usa_itens?listaItensHtml(q):''}
       ${q.validade?`<p><strong>Validade:</strong> ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
       ${q.observacoes?`<p><strong>Obs:</strong> ${esc(q.observacoes)}</p>`:''}
@@ -176,7 +176,7 @@ async function renderPage(){
           <input id="ed-validade" type="date" value="${q.validade?String(q.validade).slice(0,10):''}"/>
           <label>Observações</label>
           <textarea id="ed-obs" rows="2">${esc(q.observacoes||'')}</textarea>
-          <p class="muted" style="font-size:13px;margin-top:6px">O link do cliente mostra a versão atualizada automaticamente. Se ele estiver com a página aberta, ela recarrega antes de aprovar.</p>
+          <p class="muted" style="font-size:var(--fs-sm);margin-top:6px">O link do cliente mostra a versão atualizada automaticamente. Se ele estiver com a página aberta, ela recarrega antes de aprovar.</p>
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn-primary btn-sm" id="ed-salvar" onclick="salvarEdicao()">Salvar alterações</button>
             <button class="btn-outline btn-sm" onclick="fecharEdicao()">Cancelar</button>
@@ -184,7 +184,7 @@ async function renderPage(){
           <div id="ed-msg" class="error"></div>
         </div>
       </div>`}
-      <p style="margin-top:8px"><a href="/orcamento.html?token=${encodeURIComponent(q.public_token)}" target="_blank" style="font-size:13px">🔗 Ver página do cliente</a></p>
+      <p style="margin-top:8px"><a href="/orcamento.html?token=${encodeURIComponent(q.public_token)}" target="_blank" style="font-size:var(--fs-sm)">🔗 Ver página do cliente</a></p>
       <button class="btn-primary btn-gold" id="btn-pdf" style="margin-top:12px" onclick="gerarPdf()">📄 Enviar PDF do orçamento</button>
       <div id="pdf-msg" class="error"></div>
     </div>
@@ -200,16 +200,16 @@ async function renderPage(){
     ${q.status==='Aprovado'?`<div class="card" style="border:1.5px solid #F5C000">
       <h3>⭐ Avaliação no Google</h3>
       ${q.avaliacaoWhatsApp?`
-        <p class="muted" style="font-size:13px;margin-bottom:10px">${q.avaliacao_pedida_em?`Pedido enviado em ${new Date(q.avaliacao_pedida_em).toLocaleDateString('pt-BR')}.`:'Serviço aprovado! Peça a avaliação de 2 a 48 horas depois de terminar — é quando o cliente mais responde.'}</p>
+        <p class="muted" style="font-size:var(--fs-sm);margin-bottom:10px">${q.avaliacao_pedida_em?`Pedido enviado em ${new Date(q.avaliacao_pedida_em).toLocaleDateString('pt-BR')}.`:'Serviço aprovado! Peça a avaliação de 2 a 48 horas depois de terminar — é quando o cliente mais responde.'}</p>
         <a href="${esc(q.avaliacaoWhatsApp)}" target="_blank" rel="noopener" onclick="pediuAvaliacao()"><button class="btn-primary btn-gold">${q.avaliacao_pedida_em?'Pedir de novo pelo WhatsApp':'Pedir avaliação pelo WhatsApp'}</button></a>`
-      :`<p class="muted" style="font-size:13px">Cadastre o link de avaliação do seu Google Meu Negócio em <a href="conta.html">Minha Conta</a> para pedir a avaliação com 1 toque.</p>`}
+      :`<p class="muted" style="font-size:var(--fs-sm)">Cadastre o link de avaliação do seu Google Meu Negócio em <a href="conta.html">Minha Conta</a> para pedir a avaliação com 1 toque.</p>`}
     </div>`:''}
 
     ${pacotesHtml}
 
     <div class="card">
       <h3>Follow-up</h3>
-      <p class="muted" style="font-size:13px;margin-bottom:10px">Passo 1: clique no botão — abrirá o WhatsApp com a mensagem. Passo 2: confirme que enviou.</p>
+      <p class="muted" style="font-size:var(--fs-sm);margin-bottom:10px">Passo 1: clique no botão — abrirá o WhatsApp com a mensagem. Passo 2: confirme que enviou.</p>
       <textarea id="fu-msg" rows="2" placeholder="Mensagem (deixe vazio para padrão)"></textarea>
       <div style="margin-top:10px"><button class="btn-primary" onclick="registrarFollowUp()">Abrir WhatsApp</button></div>
     </div>

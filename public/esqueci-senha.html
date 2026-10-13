@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Esqueci minha senha</title>
 <link rel="stylesheet" href="style.css"/>
 <style>
@@ -16,7 +16,7 @@ body { background: var(--navy); padding-bottom: 0; }
     <div class="auth-tagline">Recuperar acesso à conta</div>
   </div>
   <div class="auth-body">
-    <p class="muted" style="margin-bottom:var(--sp-5);font-size:15px;line-height:1.6;">
+    <p class="muted" style="margin-bottom:var(--sp-5);font-size:var(--fs-md);line-height:1.6;">
       Informe seu e-mail e enviaremos um link para redefinir sua senha.
     </p>
     <label style="margin-top:0">E-mail</label>
@@ -26,7 +26,7 @@ body { background: var(--navy); padding-bottom: 0; }
     </div>
     <div id="msg" class="error"></div>
     <div id="ok" class="success" style="display:none">Link enviado! Verifique seu e-mail.</div>
-    <p class="text-center mt" style="font-size:13px"><a href="/entrar">← Voltar ao login</a></p>
+    <p class="text-center mt" style="font-size:var(--fs-sm)"><a href="/entrar">← Voltar ao login</a></p>
   </div>
 </div>
 <script>

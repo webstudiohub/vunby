@@ -64,10 +64,13 @@ function ItensEditor(el, inicial, aoMudar) {
       </div>
       <p class="ie-dica">${TIPO_DICA[i.tipo]}</p>
       <div class="ie-acoes">
-        <button type="button" data-acao="subir" ${k === 0 ? 'disabled' : ''} aria-label="Subir item">↑</button>
-        <button type="button" data-acao="descer" ${k === n - 1 ? 'disabled' : ''} aria-label="Descer item">↓</button>
-        <button type="button" data-acao="duplicar" aria-label="Duplicar item">Duplicar</button>
-        <button type="button" data-acao="remover" class="ie-remover" aria-label="Remover item">Remover</button>
+        <button type="button" data-acao="mais" aria-expanded="false">Mais opções</button>
+        <button type="button" data-acao="remover" class="ie-remover" aria-label="Remover item ${k + 1}">Remover</button>
+      </div>
+      <div class="ie-mais" hidden>
+        <button type="button" data-acao="subir" ${k === 0 ? 'disabled' : ''}>↑ Subir</button>
+        <button type="button" data-acao="descer" ${k === n - 1 ? 'disabled' : ''}>↓ Descer</button>
+        <button type="button" data-acao="duplicar">Duplicar</button>
       </div>
     </div>`;
   }
@@ -114,6 +117,7 @@ function ItensEditor(el, inicial, aoMudar) {
     const item = b.closest('.ie-item'), k = item ? +item.dataset.k : -1;
     if (b.dataset.tipo) { st.itens[k].tipo = b.dataset.tipo; render(); aoMudar && aoMudar(); return; }
     const a = b.dataset.acao; if (!a) return;
+    if (a === 'mais') { const m = item.querySelector('.ie-mais'); m.hidden = !m.hidden; b.setAttribute('aria-expanded', String(!m.hidden)); b.textContent = m.hidden ? 'Mais opções' : 'Fechar opções'; return; }
     if (a === 'adicionar') { st.itens.push({ descricao: '', qtd: '1', unidade: 'un', preco: '', tipo: 'incluido' }); render(true); }
     else if (a === 'remover') { st.itens.splice(k, 1); render(); }
     else if (a === 'duplicar') { st.itens.splice(k + 1, 0, { ...st.itens[k] }); render(); }

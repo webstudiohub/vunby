@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Planos</title>
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -28,7 +28,7 @@
       <li>Radar: avisa quem precisa de retorno para você não perder venda</li>
       <li>Histórico e resumo do que está em aberto e aprovado</li>
     </ul>
-    <p class="muted" style="font-size:13px;margin-top:var(--sp-4)">Cancele quando quiser, em 1 clique, na tela Minha Conta. Seus orçamentos são sempre seus e continuam salvos.</p>
+    <p class="muted" style="font-size:var(--fs-sm);margin-top:var(--sp-4)">Cancele quando quiser, em 1 clique, na tela Minha Conta. Seus orçamentos são sempre seus e continuam salvos.</p>
   </div>
 </div>
 <div id="nav"></div>
@@ -57,7 +57,7 @@ function renderPlano(st){
       ${fundador?`<span class="plano-de">de ${precoBR(st.precoPadrao)}</span>`:''}
       <span class="plano-valor">${precoBR(st.precoOferta)}</span><span class="plano-mes">/mês</span>
     </div>
-    ${fundador?'<p class="muted" style="font-size:13px">Para os 100 primeiros assinantes: esse preço fica garantido para sempre enquanto a assinatura estiver ativa.</p>':''}
+    ${fundador?'<p class="muted" style="font-size:var(--fs-sm)">Para os 100 primeiros assinantes: esse preço fica garantido para sempre enquanto a assinatura estiver ativa.</p>':''}
     <button class="btn-primary btn-gold" id="btn-assinar" style="margin-top:var(--sp-4)" ${st.pagamentoConfigurado?'':'disabled'}>${st.pagamentoConfigurado?'Assinar agora':'Pagamento em configuração'}</button>
     <div id="msg" class="error"></div>`;
   const btn=document.getElementById('btn-assinar');
@@ -101,9 +101,9 @@ async function assinar(){
 </script>
 <style>
 .plano-preco{display:flex;align-items:baseline;gap:8px;margin-top:var(--sp-4);flex-wrap:wrap}
-.plano-de{font-size:15px;color:var(--muted);text-decoration:line-through}
-.plano-valor{font-size:40px;font-weight:800;color:var(--navy);letter-spacing:-1px}
-.plano-mes{font-size:16px;color:var(--muted);font-weight:600}
-.plano-lista{margin:0;padding-left:20px;display:grid;gap:8px;font-size:14px;color:var(--dark)}
+.plano-de{font-size:var(--fs-md);color:var(--muted);text-decoration:line-through}
+.plano-valor{font-size:var(--fs-num);font-weight:800;color:var(--navy);letter-spacing:-1px}
+.plano-mes{font-size:var(--fs-md);color:var(--muted);font-weight:600}
+.plano-lista{margin:0;padding-left:20px;display:grid;gap:8px;font-size:var(--fs-md);color:var(--dark)}
 </style>
 </body></html>
