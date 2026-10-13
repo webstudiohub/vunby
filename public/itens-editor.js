@@ -52,7 +52,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
     return `<div class="ie-item ie-${i.tipo}" data-k="${k}">
       <div class="ie-topo">
         <span class="ie-num">${k + 1}</span>
-        <input class="ie-desc" data-f="descricao" maxlength="200" placeholder="Ex: Desmontagem de guarda-roupa" value="${e(i.descricao)}" aria-label="Descrição do item ${k + 1}"/>
+        <textarea class="ie-desc" data-f="descricao" maxlength="200" rows="2" placeholder="Ex: Desmontagem de guarda-roupa" aria-label="Descrição do item ${k + 1}">${e(i.descricao)}</textarea>
       </div>
       <div class="ie-nums">
         <label class="ie-campo"><span>Qtd</span><input data-f="qtd" inputmode="decimal" value="${e(i.qtd)}" aria-label="Quantidade"/></label>
@@ -61,7 +61,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
       </div>
       <div class="ie-linha-total">= <strong data-tot="${k}">${tot}</strong></div>
       <div class="ie-tipos" role="radiogroup" aria-label="Tipo do item">
-        ${['incluido', 'recomendado', 'opcional'].map(t => `<button type="button" class="ie-tipo${t === i.tipo ? ' ativo' : ''}" data-tipo="${t}" role="radio" aria-checked="${t === i.tipo}">${TIPO_ROTULO[t]}</button>`).join('')}
+        ${['incluido', 'recomendado', 'opcional'].map(t => `<button type="button" class="ie-tipo${t === i.tipo ? ' ativo' : ''}" data-tipo="${t}" role="radio" aria-checked="${t === i.tipo}">${t === i.tipo ? '✓ ' : ''}${TIPO_ROTULO[t]}</button>`).join('')}
       </div>
       <p class="ie-dica">${TIPO_DICA[i.tipo]}</p>
       <div class="ie-acoes">
