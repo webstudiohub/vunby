@@ -28,6 +28,7 @@ function perfilCompleto(u) {
 const CAMPOS_EMPRESA = { profissao: ['profissao', 60], cidade: ['cidade', 60] };
 
 // Config das calculadoras: só números, textos curtos e listas pequenas (nada de HTML ou objetos gigantes)
+const UNIDADES_OK = require('../public/calc').UNIDADES;
 function limparConfig(c) {
   if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
   const num = v => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n <= 1e7 ? Math.round(n * 100) / 100 : 0; };
@@ -39,6 +40,8 @@ function limparConfig(c) {
       precoKm: num(m.precoKm), precoAndar: num(m.precoAndar), precoDesmontagem: num(m.precoDesmontagem), precoMontagem: num(m.precoMontagem),
       precoAjudante: num(m.precoAjudante), precoCaixa: num(m.precoCaixa), seguroPct: Math.min(100, num(m.seguroPct)), folgaPct: Math.min(50, num(m.folgaPct)),
       veiculos: (Array.isArray(m.veiculos) ? m.veiculos : []).slice(0, 8).map(v => ({ nome: txt(v && v.nome, 40), m3: num(v && v.m3), preco: num(v && v.preco) })).filter(v => v.nome && v.m3 > 0),
+      moveisExtras: (Array.isArray(m.moveisExtras) ? m.moveisExtras : []).slice(0, 40).map(o => ({ nome: txt(o && o.nome, 40), m3: Math.min(100, num(o && o.m3)), desmonta: !!(o && o.desmonta) })).filter(o => o.nome && o.m3 > 0),
+      servicos: (Array.isArray(m.servicos) ? m.servicos : []).slice(0, 30).map(x => ({ nome: txt(x && x.nome, 60), unidade: UNIDADES_OK.includes(x && x.unidade) ? x.unidade : 'un', preco: num(x && x.preco) })).filter(x => x.nome),
     };
   }
   return out;
