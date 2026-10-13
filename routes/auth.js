@@ -27,6 +27,23 @@ function perfilCompleto(u) {
 // Campos de texto simples da empresa: nome do campo no app → coluna no banco e tamanho máximo
 const CAMPOS_EMPRESA = { profissao: ['profissao', 60], cidade: ['cidade', 60] };
 
+// Config das calculadoras: só números, textos curtos e listas pequenas (nada de HTML ou objetos gigantes)
+function limparConfig(c) {
+  if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
+  const num = v => { const n = Number(v); return Number.isFinite(n) && n >= 0 && n <= 1e7 ? Math.round(n * 100) / 100 : 0; };
+  const txt = (v, max) => String(v == null ? '' : v).replace(/[<>]/g, '').trim().slice(0, max);
+  const out = {};
+  const m = c.mudanca;
+  if (m && typeof m === 'object') {
+    out.mudanca = {
+      precoKm: num(m.precoKm), precoAndar: num(m.precoAndar), precoDesmontagem: num(m.precoDesmontagem), precoMontagem: num(m.precoMontagem),
+      precoAjudante: num(m.precoAjudante), precoCaixa: num(m.precoCaixa), seguroPct: Math.min(100, num(m.seguroPct)), folgaPct: Math.min(50, num(m.folgaPct)),
+      veiculos: (Array.isArray(m.veiculos) ? m.veiculos : []).slice(0, 8).map(v => ({ nome: txt(v && v.nome, 40), m3: num(v && v.m3), preco: num(v && v.preco) })).filter(v => v.nome && v.m3 > 0),
+    };
+  }
+  return out;
+}
+
 async function getSession(req) {
   const token = parseSession(req);
   if (!token) return null;
@@ -275,6 +292,22 @@ async function handle(req, res) {
     const cols = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(', ');
     await query(`UPDATE users SET ${cols} WHERE id = $1`, [user.id, ...Object.values(updates)]);
     return ok(res, { message: 'Dados da empresa salvos.' });
+  }
+
+  // GET/PUT /api/auth/calc-config — preços padrão das calculadoras (ex.: mudança), salvos por prestador
+  if (path === '/api/auth/calc-config' && (req.method === 'GET' || req.method === 'PUT')) {
+    const user = await requireAuth(req, res);
+    if (!user) return true;
+    if (req.method === 'GET') {
+      const r = await query('SELECT calc_config FROM users WHERE id = $1', [user.id]);
+      return ok(res, r.rows[0]?.calc_config || {});
+    }
+    let body;
+    try { body = await readBody(req, 20_000); } catch { return badRequest(res, 'Dados inválidos'); }
+    const limpo = limparConfig(body);
+    if (!limpo) return badRequest(res, 'Configuração inválida.');
+    await query('UPDATE users SET calc_config = $2::jsonb WHERE id = $1', [user.id, JSON.stringify(limpo)]);
+    return ok(res, limpo);
   }
 
   // POST /api/auth/resend-verification

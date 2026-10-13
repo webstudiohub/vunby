@@ -9,7 +9,8 @@ const TIPO_DICA = {
   opcional: 'Vem desmarcado. O cliente escolhe se quer adicionar.',
 };
 
-function ItensEditor(el, inicial, aoMudar) {
+function ItensEditor(el, inicial, aoMudar, opcoes) {
+  const ferramentas = (opcoes && opcoes.ferramentas) || []; // ex.: [{ rotulo:'🚚 Calculadora de mudança', acao: fn }]
   const C = window.VCalc;
   const st = {
     itens: (inicial && inicial.itens || []).map(i => ({
@@ -76,6 +77,7 @@ function ItensEditor(el, inicial, aoMudar) {
     el.innerHTML = `
       <div class="ie-lista">${st.itens.length ? st.itens.map(itemHtml).join('') : '<p class="muted ie-vazio">Nenhum item ainda. Adicione o primeiro abaixo.</p>'}</div>
       <button type="button" class="btn-outline ie-add" data-acao="adicionar">+ Adicionar item</button>
+      ${ferramentas.map((f, k) => `<button type="button" class="btn-outline ie-add ie-ferramenta" data-ferr="${k}">${e(f.rotulo)}</button>`).join('')}
       <details class="ie-extras"${temExtras() ? ' open' : ''}>
         <summary>Desconto, taxa e sinal</summary>
         <label>Desconto (R$)</label>
@@ -111,6 +113,7 @@ function ItensEditor(el, inicial, aoMudar) {
   el.addEventListener('change', ev => { if (ev.target.dataset.f === 'unidade') atualizarNumeros(); });
   el.addEventListener('click', ev => {
     const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.ferr !== undefined) { ferramentas[+b.dataset.ferr].acao(); return; }
     const item = b.closest('.ie-item'), k = item ? +item.dataset.k : -1;
     if (b.dataset.tipo) { st.itens[k].tipo = b.dataset.tipo; render(); aoMudar && aoMudar(); return; }
     const a = b.dataset.acao; if (!a) return;
@@ -132,6 +135,13 @@ function ItensEditor(el, inicial, aoMudar) {
     // Estado bruto (para rascunho)
     estado: () => JSON.parse(JSON.stringify(st)),
     quantos: () => st.itens.length,
+    // Acrescenta itens prontos (ex.: gerados pela calculadora); preço em reais (número)
+    adicionarItens: lista => {
+      for (const i of lista) st.itens.push({ descricao: i.descricao, qtd: String(i.qtd).replace('.', ','), unidade: i.unidade || 'un', tipo: i.tipo || 'incluido', preco: Number(i.preco || 0).toFixed(2).replace('.', ',') });
+      render(); aoMudar && aoMudar();
+    },
+    // Desconto/taxa vindos de fora (ex.: calculadora) — só preenche se estiver vazio
+    definirTaxa: (nome, valor) => { if (!st.taxa) { st.taxaNome = nome; st.taxa = Number(valor).toFixed(2).replace('.', ','); render(); aoMudar && aoMudar(); } },
     total: () => C.calcular(paraCalculo(), null).total,
     // Erro de preenchimento (para avisar antes de enviar), ou ''
     validar: () => {

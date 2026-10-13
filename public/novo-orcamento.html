@@ -86,6 +86,7 @@
 <script src="app.js"></script>
 <script src="calc.js"></script>
 <script src="itens-editor.js"></script>
+<script src="calc-mudanca.js"></script>
 <script>
 let clientes=[], pacotes=[], editor=null, itensRascunho=null;
 const selectedPkgs=new Set();
@@ -128,7 +129,7 @@ function descartarRascunho(){
 }
 
 function iniciarEditor(estado){
-  editor=ItensEditor(document.getElementById('itens-editor'),estado,()=>{ mostrarValorFechado(); salvarRascunho(); });
+  editor=ItensEditor(document.getElementById('itens-editor'),estado,()=>{ mostrarValorFechado(); salvarRascunho(); },ferramentasItens(window.__perfil,()=>editor,'q-obs'));
   mostrarValorFechado();
 }
 function mostrarValorFechado(){ document.getElementById('valor-fechado').style.display=editor&&editor.quantos()?'none':''; }
@@ -202,6 +203,7 @@ async function criarOrcamento(){
 
 (async()=>{
   const session=await requireSession(); if(!session)return;
+  window.__perfil=session;
   document.getElementById('top').innerHTML=topbar('');
   document.getElementById('nav').innerHTML=bottomNav('novo-orcamento.html');
   wireLogout();

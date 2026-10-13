@@ -175,3 +175,15 @@ function reduzirImagem(file){
     img.src=URL.createObjectURL(file);
   });
 }
+
+// ─── Calculadoras no editor de itens (aparecem conforme a profissão) ─────
+function ferramentasItens(perfil, editorRef, campoObs) {
+  const prof = String((perfil && perfil.profissao) || '').toLowerCase();
+  const lista = [];
+  if (!prof || /mudan|frete|carreto|transport|montag/.test(prof)) {
+    lista.push({ rotulo: '🚚 Calculadora de mudança (m³)', acao: () => abrirCalcMudanca(
+      itens => editorRef().adicionarItens(itens),
+      texto => { const o = document.getElementById(campoObs); if (o) { o.value = (o.value.trim() ? o.value.trim() + '\n' : '') + texto; o.dispatchEvent(new Event('input', { bubbles: true })); } }) });
+  }
+  return { ferramentas: lista };
+}
