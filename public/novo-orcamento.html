@@ -47,12 +47,21 @@
     <h3>Detalhes do serviço</h3>
     <label style="margin-top:0">Serviço / descrição</label>
     <input id="q-servico" placeholder="Ex: Mudança residencial — 2 quartos"/>
-    <label>Valor (R$)</label>
-    <input id="q-valor" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00"/>
     <label>Validade</label>
     <input id="q-validade" type="date"/>
     <label>Observações (opcional)</label>
     <textarea id="q-obs" rows="2" placeholder="Algum detalhe extra para o cliente…"></textarea>
+  </div>
+
+  <div class="card">
+    <h3>Itens do orçamento</h3>
+    <p class="muted" style="font-size:13px;margin-bottom:var(--sp-4)">Cada item com quantidade e valor; o total soma sozinho. Marque como <strong>Opcional</strong> o que o cliente pode escolher.</p>
+    <div id="itens-editor"></div>
+    <div id="valor-fechado">
+      <label>Ou só o valor total (R$)</label>
+      <input id="q-valor" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00"/>
+      <p class="muted" style="font-size:12px;margin-top:4px">Use se não quiser detalhar em itens.</p>
+    </div>
   </div>
 
   <div class="card" id="card-pacotes" style="display:none">
@@ -75,8 +84,10 @@
 </div>
 <div id="nav"></div>
 <script src="app.js"></script>
+<script src="calc.js"></script>
+<script src="itens-editor.js"></script>
 <script>
-let clientes=[], pacotes=[];
+let clientes=[], pacotes=[], editor=null, itensRascunho=null;
 const selectedPkgs=new Set();
 
 // ─── Rascunho automático (fica no próprio aparelho; some ao criar o orçamento) ───
@@ -86,9 +97,9 @@ const CAMPOS=['q-client','q-servico','q-valor','q-validade','q-obs'];
 function salvarRascunho(){
   if(criado) return;
   try{
-    const d={pkgs:[...selectedPkgs],followup:document.getElementById('q-followup').checked,ts:Date.now()};
+    const d={pkgs:[...selectedPkgs],followup:document.getElementById('q-followup').checked,ts:Date.now(),itens:editor?editor.estado():null};
     CAMPOS.forEach(id=>d[id]=document.getElementById(id).value);
-    const vazio=!d['q-servico']&&!d['q-valor']&&!d['q-obs']&&!d['q-client'];
+    const vazio=!d['q-servico']&&!d['q-valor']&&!d['q-obs']&&!d['q-client']&&!(editor&&editor.quantos());
     if(vazio) localStorage.removeItem(RASCUNHO_KEY); else localStorage.setItem(RASCUNHO_KEY,JSON.stringify(d));
   }catch{}
 }
@@ -99,6 +110,7 @@ function carregarRascunho(){
     if(Date.now()-(d.ts||0)>30*24*3600*1000){ localStorage.removeItem(RASCUNHO_KEY); return; }
     CAMPOS.forEach(id=>{ if(d[id]!==undefined&&d[id]!=='') document.getElementById(id).value=d[id]; });
     document.getElementById('q-followup').checked=!!d.followup;
+    if(d.itens) itensRascunho=d.itens;
     (d.pkgs||[]).forEach(id=>{ if(pacotes.some(p=>String(p.id)===String(id))){ selectedPkgs.add(id); const cb=document.querySelector(`input[data-id="${id}"]`); if(cb) cb.checked=true; } });
     document.getElementById('aviso-rascunho').style.display='';
   }catch{}
@@ -111,8 +123,15 @@ function descartarRascunho(){
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];
   document.getElementById('q-followup').checked=false;
   selectedPkgs.clear(); document.querySelectorAll('#pacotes-lista input').forEach(cb=>cb.checked=false);
+  iniciarEditor(null);
   document.getElementById('aviso-rascunho').style.display='none';
 }
+
+function iniciarEditor(estado){
+  editor=ItensEditor(document.getElementById('itens-editor'),estado,()=>{ mostrarValorFechado(); salvarRascunho(); });
+  mostrarValorFechado();
+}
+function mostrarValorFechado(){ document.getElementById('valor-fechado').style.display=editor&&editor.quantos()?'none':''; }
 
 async function criarCliente(){
   const nome=document.getElementById('nc-nome').value;
@@ -169,9 +188,12 @@ async function criarOrcamento(){
   msg.textContent='';
   if(!clientId){msg.textContent='Selecione ou crie um cliente.';return;}
   if(!servico){msg.textContent='Descreva o serviço.';return;}
+  const comItens=editor.quantos()>0;
+  if(comItens){ const erro=editor.validar(); if(erro){msg.textContent=erro;return;} }
+  else if(!valor){msg.textContent='Adicione os itens ou informe o valor total.';return;}
   btn.disabled=true; btn.textContent='Criando…';
   try{
-    const r=await api('/api/quotes',{method:'POST',body:{clientId:parseInt(clientId),servico,valor,validade,observacoes,pacoteIds:[...selectedPkgs],precisaFollowUp}});
+    const r=await api('/api/quotes',{method:'POST',body:{clientId:parseInt(clientId),servico,valor:comItens?0:valor,validade,observacoes,pacoteIds:[...selectedPkgs],precisaFollowUp,...(comItens?editor.dados():{})}});
     criado=true; limparRascunho();
     window.open(r.whatsappLink,'_blank');
     location.href='orcamento-detalhe.html?id='+r.id;
@@ -202,6 +224,7 @@ async function criarOrcamento(){
   renderPacotes();
   RASCUNHO_KEY='vunby:rascunho:'+session.id;
   carregarRascunho();
+  iniciarEditor(itensRascunho);
   CAMPOS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',salvarRascunho); el.addEventListener('change',salvarRascunho); });
   document.getElementById('q-followup').addEventListener('change',salvarRascunho);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') salvarRascunho(); });

@@ -11,6 +11,21 @@ const { isExpired } = require('../lib/dates');
 const { refreshNoResponse } = require('../lib/autoStatus');
 const { podeCriarOrcamento } = require('../lib/billing');
 const { json } = require('../lib/http');
+const I = require('../lib/itens');
+
+// Pacote que entra no total padrão (antes do cliente escolher): o destaque, ou o primeiro
+function pacotePadrao(pacotes) { return pacotes.find(p => p.destaque) || pacotes[0] || null; }
+
+// Recalcula e grava o valor de um orçamento por itens (total padrão: recomendados marcados, opcionais não)
+async function atualizarValor(quoteId) {
+  const q = (await query('SELECT * FROM quotes WHERE id = $1', [quoteId])).rows[0];
+  if (!q || !q.usa_itens) return;
+  const itens = await I.lerItens(quoteId);
+  const pacs = (await query('SELECT preco, destaque FROM quote_packages WHERE quote_id = $1 ORDER BY id', [quoteId])).rows;
+  const pp = pacotePadrao(pacs);
+  const r = I.calcular(I.paraCalculo(q, itens, pp && pp.preco), null);
+  await query('UPDATE quotes SET valor = $2 WHERE id = $1', [quoteId, r.total / 100]);
+}
 
 async function getQuoteForUser(quoteId, userId) {
   const r = await query(
@@ -52,7 +67,12 @@ async function handle(req, res) {
     let body; try { body = await readBody(req); } catch { return badRequest(res); }
     const { clientId, servico, valor, validade, observacoes, pacoteIds, precisaFollowUp } = body;
     if (!clientId || !isNonEmpty(servico)) return badRequest(res, 'Cliente e serviço são obrigatórios.');
-    if (!isPositiveNumber(valor)) return badRequest(res, 'Valor inválido.');
+    const vi = I.validarItens(body.itens);
+    if (vi.erro) return badRequest(res, vi.erro);
+    const ve = I.validarExtras(body);
+    if (ve.erro) return badRequest(res, ve.erro);
+    const usaItens = vi.itens.length > 0;
+    if (!usaItens && !isPositiveNumber(valor)) return badRequest(res, 'Valor inválido.');
     if (!/^\d+$/.test(String(clientId))) return badRequest(res, 'Cliente inválido.');
     if (!isDateOrEmpty(validade)) return badRequest(res, 'Data de validade inválida.');
     if (String(servico).length > 300) return badRequest(res, 'Descrição do serviço muito longa (máximo 300 caracteres).');
@@ -66,9 +86,15 @@ async function handle(req, res) {
     const r = await query(
       `INSERT INTO quotes (user_id, client_id, servico, valor, validade, observacoes, status, public_token, precisa_follow_up)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
-      [user.id, clientId, servico.trim(), parseFloat(valor), validade || null, observacoes || null, STATUS.ENVIADO, publicToken, !!precisaFollowUp]
+      [user.id, clientId, servico.trim(), usaItens ? 0 : parseFloat(valor), validade || null, observacoes || null, STATUS.ENVIADO, publicToken, !!precisaFollowUp]
     );
-    const quote = r.rows[0];
+    let quote = r.rows[0];
+    if (usaItens) {
+      await I.gravarItens(quote.id, vi.itens);
+      const ex = { ...ve.extras, usa_itens: true };
+      const cols = Object.keys(ex).map((k, i) => `${k} = $${i + 2}`).join(', ');
+      await query(`UPDATE quotes SET ${cols} WHERE id = $1`, [quote.id, ...Object.values(ex)]);
+    }
 
     // Cópia congelada dos pacotes selecionados (snapshot)
     if (Array.isArray(pacoteIds) && pacoteIds.length > 0) {
@@ -84,6 +110,8 @@ async function handle(req, res) {
         }
       }
     }
+
+    if (usaItens) { await atualizarValor(quote.id); quote = (await query('SELECT * FROM quotes WHERE id = $1', [quote.id])).rows[0]; }
 
     const publicUrl = `${BASE_URL}/orcamento.html?token=${encodeURIComponent(publicToken)}`;
     const msg = `Olá! Segue seu orçamento para ${servico.trim()}:\n${publicUrl}`;
@@ -126,6 +154,7 @@ async function handle(req, res) {
       whatsappLink,
       cliente: { nome: quote.cliente_nome, telefone: quote.cliente_telefone },
       pacotes: pacs.rows,
+      itens: quote.usa_itens ? await I.lerItens(id) : [],
       followUps: fus.rows,
     });
   }
@@ -173,12 +202,35 @@ async function handle(req, res) {
       if (body.observacoes && String(body.observacoes).length > 3000) return badRequest(res, 'Observações muito longas (máximo 3000 caracteres).');
       updates.observacoes = body.observacoes || null;
     }
+    // Itens, desconto, taxa, sinal e condições
+    const mexeConteudo = body.itens !== undefined || ['desconto', 'taxa', 'taxaNome', 'sinalPct', 'condicoes'].some(k => body[k] !== undefined);
+    let novosItens = null;
+    if (mexeConteudo) {
+      if (isFinal(quote.status)) return forbidden(res, 'Orçamento já finalizado não pode ser editado.');
+      const ve = I.validarExtras(body);
+      if (ve.erro) return badRequest(res, ve.erro);
+      Object.assign(updates, ve.extras);
+      if (body.itens !== undefined) {
+        const vi = I.validarItens(body.itens);
+        if (vi.erro) return badRequest(res, vi.erro);
+        novosItens = vi.itens;
+        updates.usa_itens = vi.itens.length > 0;
+        if (!updates.usa_itens && updates.valor === undefined && quote.usa_itens) return badRequest(res, 'Adicione ao menos um item ou informe o valor.');
+      }
+    }
+    // Qualquer mudança no conteúdo vira nova versão (o cliente com a página antiga aberta precisa recarregar)
+    if (['servico', 'valor', 'validade', 'observacoes', 'usa_itens', 'desconto_cents', 'taxa_cents', 'taxa_nome', 'sinal_pct', 'condicoes'].some(k => updates[k] !== undefined) || novosItens) {
+      updates.versao = (Number(quote.versao) || 1) + 1;
+    }
+    if (updates.valor !== undefined && (updates.usa_itens ?? quote.usa_itens)) delete updates.valor; // com itens, o valor é calculado
 
     if (Object.keys(updates).length === 0) return badRequest(res, 'Nada para atualizar.');
 
     const cols = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(', ');
     const vals = Object.values(updates);
-    const r = await query(`UPDATE quotes SET ${cols} WHERE id = $1 RETURNING *`, [id, ...vals]);
+    let r = await query(`UPDATE quotes SET ${cols} WHERE id = $1 RETURNING *`, [id, ...vals]);
+    if (novosItens) await I.gravarItens(id, novosItens);
+    if (r.rows[0].usa_itens) { await atualizarValor(id); r = await query('SELECT * FROM quotes WHERE id = $1', [id]); }
     return ok(res, r.rows[0]);
   }
 

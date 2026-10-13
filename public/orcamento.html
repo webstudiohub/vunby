@@ -4,12 +4,40 @@
 <title>Orçamento</title>
 <meta name="robots" content="noindex,nofollow"/>
 <link rel="stylesheet" href="style.css"/>
-<style>.pkg-escolhido{outline:2.5px solid #0F3A8C;background:#EEF4FA}.pkg-radio{display:inline-block;width:16px;height:16px;border:2px solid #0F3A8C;border-radius:50%;margin-right:8px;vertical-align:-2px}.pkg-escolhido .pkg-radio{background:#0F3A8C;box-shadow:inset 0 0 0 3px #fff}</style>
+<style>
+.it-titulo{font-size:13px;font-weight:700;color:#8E8E93;text-transform:uppercase;letter-spacing:.05em;margin:22px 0 8px}
+.it-ajuda{font-size:14px;color:#5B6675;margin-bottom:10px;line-height:1.45}
+.it-lista{border:1.5px solid #E5E5EA;border-radius:12px;overflow:hidden}
+.it-linha{display:flex;align-items:flex-start;gap:12px;padding:14px;border-bottom:1px solid #EEF0F3;margin:0;text-transform:none;letter-spacing:0;font-weight:400;color:inherit;background:#fff}
+.it-linha:last-child{border-bottom:none}
+.it-opc{cursor:pointer}
+.it-off{background:#FAFAFB}.it-off .it-desc,.it-off .it-val{color:#9AA3AE}
+.it-check{-webkit-appearance:checkbox;appearance:auto;width:24px!important;height:24px!important;min-height:0!important;padding:0!important;margin:1px 0 0!important;border:none!important;box-shadow:none!important;flex-shrink:0;accent-color:#0F3A8C}
+.it-ok{width:24px;flex-shrink:0;text-align:center;color:#2DB56D;font-weight:800;font-size:16px}
+.it-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.it-desc{font-size:16px;font-weight:600;color:#0F1923;line-height:1.3}
+.it-det{font-size:13px;color:#8E8E93}
+.it-tag{font-size:12px;font-weight:700;color:#0F3A8C;background:#EEF4FA;align-self:flex-start;padding:2px 8px;border-radius:10px;margin-top:2px}
+.it-tag-rec{color:#8A6100;background:#FFF3CC}
+.it-val{font-size:16px;font-weight:700;color:#0F3A8C;white-space:nowrap}
+.it-resumo{margin-top:12px}
+.it-res{display:flex;justify-content:space-between;font-size:15px;padding:5px 2px;color:#3A4550}
+.it-res-total{font-size:19px;font-weight:800;color:#0F1923;border-top:1.5px solid #E5E5EA;margin-top:4px;padding-top:10px}
+.it-cond{background:#F2F2F7;border-radius:10px;padding:14px;margin-top:14px;font-size:14px}.it-cond p{margin-top:4px;white-space:pre-line}
+.it-confirma{background:#EEF4FA;border:1.5px solid #0F3A8C;border-radius:12px;padding:16px;margin-top:14px;font-size:15px;line-height:1.5}
+.it-barra{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border-top:1px solid #E5E5EA;box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:12px 16px calc(12px + env(safe-area-inset-bottom));z-index:20}
+.it-barra .btn-accept{width:auto;padding:0 28px}
+.it-barra-rot{font-size:12px;color:#8E8E93;font-weight:700;text-transform:uppercase}
+.it-barra-val{font-size:22px;font-weight:800;color:#0F3A8C;line-height:1.1}
+.it-barra-sinal{font-size:12px;color:#5B6675}
+body:has(.it-barra){padding-bottom:96px}
+.pkg-escolhido{outline:2.5px solid #0F3A8C;background:#EEF4FA}.pkg-radio{display:inline-block;width:16px;height:16px;border:2px solid #0F3A8C;border-radius:50%;margin-right:8px;vertical-align:-2px}.pkg-escolhido .pkg-radio{background:#0F3A8C;box-shadow:inset 0 0 0 3px #fff}</style>
 </head><body style="background:#F2F2F7">
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
 </div>
 <script src="marca.js"></script>
+<script src="calc.js"></script>
 <script>
 // NÃO referencia app.js, manifest, SW — página pública do cliente
 const token=new URLSearchParams(location.search).get('token');
@@ -24,19 +52,88 @@ async function api(path,opts={}){
   return d;
 }
 
-let pacoteSel=null;
+let pacoteSel=null, Q=null;
+const escolhidos=new Set(); // opcionais/recomendados marcados pelo cliente
 function escolherPacote(id){
   pacoteSel=id;
   document.querySelectorAll('.pkg-card[data-id]').forEach(el=>el.classList.toggle('pkg-escolhido',String(el.dataset.id)===String(id)));
   const m=document.getElementById('msg-acao'); if(m) m.textContent='';
+  atualizarTotal();
+}
+
+// ─── Orçamento por itens: total ao vivo (o servidor recalcula na aprovação) ───
+function calcAtual(){
+  const pac=(Q.pacotes||[]).find(p=>String(p.id)===String(pacoteSel));
+  return VCalc.calcular({itens:Q.itens,desconto_cents:Q.descontoCents,taxa_cents:Q.taxaCents,sinal_pct:Q.sinalPct,pacote_cents:pac?Math.round(Number(pac.preco)*100):0},escolhidos);
+}
+function marcarItem(id,on){ if(on) escolhidos.add(String(id)); else escolhidos.delete(String(id)); document.querySelector(`.it-linha[data-id="${id}"]`)?.classList.toggle('it-off',!on); atualizarTotal(); }
+function atualizarTotal(){
+  if(!Q||!Q.usaItens) return;
+  const r=calcAtual();
+  const R=VCalc.reais;
+  const set=(id,v)=>{const el=document.getElementById(id); if(el) el.innerHTML=v;};
+  set('total-vivo',R(r.total));
+  set('barra-total',R(r.total));
+  set('barra-sinal',r.sinal?`Sinal ${R(r.sinal)}`:'');
+  set('resumo-itens',
+    (r.desconto||r.taxa||r.pacote?`<div class="it-res"><span>Itens</span><span>${R(r.itens)}</span></div>`:'')+
+    (r.pacote?`<div class="it-res"><span>Opção escolhida</span><span>${R(r.pacote)}</span></div>`:'')+
+    (r.desconto?`<div class="it-res"><span>Desconto</span><span>− ${R(r.desconto)}</span></div>`:'')+
+    (r.taxa?`<div class="it-res"><span>${esc(Q.taxaNome||'Taxa')}</span><span>${R(r.taxa)}</span></div>`:'')+
+    `<div class="it-res it-res-total"><span>Total</span><span>${R(r.total)}</span></div>`+
+    (r.sinal?`<div class="it-res"><span>Sinal para começar (${VCalc.qtdBR(Q.sinalPct)}%)</span><span>${R(r.sinal)}</span></div>`:''));
+}
+function itensHtml(q,podeEscolher){
+  const R=VCalc.reais;
+  const ap=q.aprovacao;
+  // Depois de aprovado: mostra exatamente o que foi aprovado (registro congelado)
+  const lista=ap&&q.status==='Aprovado'?ap.itens.map(i=>({...i,tipo:'incluido'})):q.itens;
+  const linha=i=>{
+    const opc=i.tipo!=='incluido';
+    const on=!opc||escolhidos.has(String(i.id));
+    const det=`${VCalc.qtdBR(i.qtd)} ${esc(i.unidade)} × ${R(i.preco_cents)}`;
+    const controle=opc&&podeEscolher
+      ?`<input type="checkbox" class="it-check" ${on?'checked':''} onchange="marcarItem('${i.id}',this.checked)" aria-label="Incluir ${esc(i.descricao)}"/>`
+      :`<span class="it-ok" aria-hidden="true">✓</span>`;
+    const tag=opc?`<span class="it-tag ${i.tipo==='recomendado'?'it-tag-rec':''}">${i.tipo==='recomendado'?'Recomendado · pode tirar':'Opcional · '+(on?'incluído':'toque para adicionar')}</span>`:'';
+    return `<label class="it-linha${on?'':' it-off'}${opc&&podeEscolher?' it-opc':''}" data-id="${i.id||''}">
+      ${controle}
+      <span class="it-txt"><span class="it-desc">${esc(i.descricao)}</span><span class="it-det">${det}</span>${tag}</span>
+      <span class="it-val">${opc&&!on?'+ ':''}${R(VCalc.linhaCents(i))}</span>
+    </label>`;
+  };
+  const temOpc=podeEscolher&&q.itens.some(i=>i.tipo!=='incluido');
+  return `<div class="it-titulo">Itens do orçamento</div>
+    ${temOpc?'<p class="it-ajuda">Os itens com caixinha são opcionais: marque ou desmarque e o total muda na hora.</p>':''}
+    <div class="it-lista">${lista.map(linha).join('')}</div>
+    ${ap&&q.status==='Aprovado'&&ap.naoEscolhidos&&ap.naoEscolhidos.length?`<p class="it-ajuda">Não incluído: ${ap.naoEscolhidos.map(esc).join(', ')}</p>`:''}
+    <div id="resumo-itens" class="it-resumo"></div>
+    ${q.condicoes?`<div class="it-cond"><strong>Condições</strong><p>${esc(q.condicoes)}</p></div>`:''}`;
 }
 
 async function acao(tipo){
   const obs=document.getElementById('obs-acao')?.value||'';
   const m=document.getElementById('msg-acao');
   if(tipo==='aceitar' && window.__temPacotes && !pacoteSel){ if(m) m.textContent='Escolha uma das opções acima antes de aprovar.'; return; }
+  // Orçamento por itens: mostra o resumo do que será aprovado antes de confirmar
+  if(tipo==='aceitar' && Q.usaItens && !window.__confirmado){
+    const r=calcAtual(), n=Q.itens.filter(i=>i.tipo==='incluido'||escolhidos.has(String(i.id))).length;
+    document.getElementById('confirmar-area').innerHTML=`<div class="it-confirma">
+      <p><strong>Você vai aprovar:</strong> ${n} ${n===1?'item':'itens'}, total <strong>${VCalc.reais(r.total)}</strong>${r.sinal?`, sinal de ${VCalc.reais(r.sinal)}`:''}.</p>
+      <button class="btn-accept" style="width:100%;margin-top:10px" onclick="window.__confirmado=true;acao('aceitar')">✓ Confirmar aprovação</button>
+      <button class="btn-reject" style="width:100%;margin-top:8px" onclick="document.getElementById('confirmar-area').innerHTML=''">Voltar e revisar</button>
+    </div>`;
+    document.getElementById('confirmar-area').scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
   try{
-    await api(`/api/public/quote/${encodeURIComponent(token)}/${tipo==='aceitar'?'accept':'reject'}`,{method:'POST',body:JSON.stringify({observacao:obs,pacoteId:pacoteSel})});
+    const body={observacao:obs,pacoteId:pacoteSel};
+    if(Q.usaItens){ body.escolhidos=[...escolhidos]; body.versao=Q.versao; }
+    const res=await fetch(`/api/public/quote/${encodeURIComponent(token)}/${tipo==='aceitar'?'accept':'reject'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await res.json().catch(()=>({}));
+    if(d.recarregar){ if(m) m.textContent=d.error; setTimeout(()=>location.reload(),2500); return; }
+    if(!res.ok) throw new Error(d.error||'Erro');
+    document.getElementById('barra-fixa')?.remove();
     document.getElementById('acao-area').innerHTML=`<div style="background:${tipo==='aceitar'?'#D4FBDC':'#F2F2F7'};padding:20px;border-radius:12px;text-align:center">
       <div style="font-size:32px">${tipo==='aceitar'?'🎉':'👍'}</div>
       <p style="font-weight:700;margin-top:8px">${tipo==='aceitar'?'Orçamento aprovado!':'Resposta registrada.'}</p>
@@ -54,7 +151,9 @@ async function acao(tipo){
   // Confirma visualização real (JS carregou)
   fetch(`/api/public/quote/${encodeURIComponent(token)}/view-confirmed`,{method:'POST',headers:{'Content-Type':'application/json'}}).catch(()=>{});
 
+  Q=q;
   const final=['Aprovado','Recusado'].includes(q.status);
+  if(q.usaItens) q.itens.forEach(i=>{ if(i.tipo==='recomendado'||(final&&i.escolhido)) escolhidos.add(String(i.id)); });
   const podeEscolher=!final && !q.expirado && q.pacotes.length>0;
   window.__temPacotes=podeEscolher;
   if(podeEscolher && q.pacotes.length===1) pacoteSel=q.pacotes[0].id;
@@ -82,6 +181,7 @@ async function acao(tipo){
         <button class="btn-accept" onclick="acao('aceitar')">✓ Aprovar</button>
         <button class="btn-reject" onclick="acao('recusar')">✗ Recusar</button>
       </div>
+      <div id="confirmar-area"></div>
       <p id="msg-acao" class="error" style="margin-top:10px"></p>
     </div>`;
 
@@ -94,14 +194,18 @@ async function acao(tipo){
         <div style="font-size:14px;opacity:.8">Para: ${esc(q.clienteNome)}</div>
       </div>
       <div class="quote-body">
-        <div style="font-size:13px;color:#8E8E93;text-transform:uppercase;font-weight:700;letter-spacing:.05em;margin-bottom:4px">Valor</div>
-        <div class="valor-grande">${brl(q.valor)}</div>
+        <div style="font-size:13px;color:#8E8E93;text-transform:uppercase;font-weight:700;letter-spacing:.05em;margin-bottom:4px">${q.usaItens?'Total':'Valor'}</div>
+        <div class="valor-grande" id="total-vivo">${brl(q.usaItens&&q.aprovacao&&q.status==='Aprovado'?q.aprovacao.total/100:q.valor)}</div>
         ${q.validade?`<p style="font-size:13px;color:#8E8E93;margin-top:6px">Válido até ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
         ${q.observacoes?`<div style="background:#F2F2F7;border-radius:10px;padding:14px;margin-top:16px"><p style="font-size:14px">${esc(q.observacoes)}</p></div>`:''}
+        ${q.usaItens?itensHtml(q,!final&&!q.expirado):''}
         ${pkgsHtml}
         ${acaoHtml}
       </div>
-    </div>`;
+    </div>
+    ${q.usaItens&&!final&&!q.expirado?`<div id="barra-fixa" class="it-barra"><div><div class="it-barra-rot">Total</div><div class="it-barra-val" id="barra-total"></div><div class="it-barra-sinal" id="barra-sinal"></div></div><button class="btn-accept" onclick="document.getElementById('acao-area').scrollIntoView({behavior:'smooth'})">Aprovar</button></div>`:''}`;
+  if(q.usaItens && !(q.aprovacao&&q.status==='Aprovado')) atualizarTotal();
+  else if(q.usaItens) document.getElementById('resumo-itens').innerHTML=`<div class="it-res it-res-total"><span>Total aprovado</span><span>${VCalc.reais(q.aprovacao.total)}</span></div>`+(q.aprovacao.sinal?`<div class="it-res"><span>Sinal</span><span>${VCalc.reais(q.aprovacao.sinal)}</span></div>`:'');
 })();
 </script>
 </body></html>

@@ -72,7 +72,8 @@ function pdfLogoJpeg(src) {
 }
 
 /* Monta o PDF. dados = { empresa:{nome,profissao,cidade,whatsapp,documento,instagram,logo},
-   servico, clienteNome, valor, validade, observacoes, data, pacotes:[{nome,conteudo,preco,destaque}], link } */
+   servico, clienteNome, valor, validade, observacoes, data, pacotes:[{nome,conteudo,preco,destaque}], link,
+   itens:[{descricao,qtd,unidade,preco_cents,tipo}], resumo:{itens,pacote,desconto,taxa,total,sinal}, taxaNome, condicoes, rotuloValor } */
 async function gerarPdfOrcamento(dados) {
   const W = 595.28, H = 841.89, M = 40, LARG = W - 2 * M;
   const AZUL = '#0F3A8C', DOURADO = '#C9971C', ESCURO = '#0F1923', CINZA = '#6B7785', LINHA = '#E4E8EE';
@@ -130,12 +131,49 @@ async function gerarPdfOrcamento(dados) {
   paragrafo('Para: ' + (dados.clienteNome || ''), 11, false, CINZA);
   y -= 18;
 
-  // ── Valor ──
+  // ── Itens (tabela) ──
   const temPacotes = dados.pacotes && dados.pacotes.length;
+  const R = c => brl(Number(c || 0) / 100);
+  if (dados.itens && dados.itens.length) {
+    const COLV = 110; // largura da coluna de valor
+    garantir(40);
+    txt(pdfTexto('ITENS'), M, y, 9, true, DOURADO); y -= 8;
+    ret(M, y - 22, LARG, 22, AZUL);
+    txt(pdfTexto('Descrição'), M + 10, y - 15, 9.5, true, '#FFFFFF');
+    const hv = pdfTexto('Valor'); txt(hv, W - M - 10 - pdfLargura(hv, 9.5, true), y - 15, 9.5, true, '#FFFFFF');
+    y -= 22;
+    dados.itens.forEach((it, k) => {
+      const opc = it.tipo && it.tipo !== 'incluido';
+      const desc = pdfQuebrar(pdfTexto(it.descricao), 11, true, LARG - COLV - 20);
+      const det = pdfTexto(`${Number(it.qtd).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${it.unidade} × ${R(it.preco_cents)}` + (opc ? (it.tipo === 'recomendado' ? '   ·   recomendado (opcional)' : '   ·   opcional') : ''));
+      const alt = 12 + desc.length * 14 + 14;
+      garantir(alt);
+      if (k % 2 === 1) ret(M, y - alt, LARG, alt, '#F7F9FC');
+      let yl = y - 6;
+      desc.forEach(l => { yl -= 13; txt(l, M + 10, yl, 11, true, opc ? '#3A4550' : ESCURO); });
+      yl -= 13; txt(det, M + 10, yl, 9, false, opc ? DOURADO : CINZA);
+      const v = pdfTexto((it.tipo === 'opcional' ? '+ ' : '') + R(Math.round(Number(it.qtd) * Number(it.preco_cents))));
+      txt(v, W - M - 10 - pdfLargura(v, 11, true), y - 19, 11, true, opc ? '#3A4550' : ESCURO);
+      y -= alt;
+    });
+    ops.push(`${pdfCor(LINHA)} RG 1 w ${M} ${y.toFixed(2)} m ${W - M} ${y.toFixed(2)} l S`);
+    y -= 6;
+    const r = dados.resumo || {};
+    const linhaR = (rot, val, bold) => { garantir(18); y -= 16; const t = pdfTexto(rot), v = pdfTexto(val); txt(t, W - M - 10 - COLV - pdfLargura(t, 10, bold), y, 10, bold, CINZA); txt(v, W - M - 10 - pdfLargura(v, 10, bold), y, 10, bold, ESCURO); };
+    if (r.desconto || r.taxa || r.pacote) linhaR('Itens', R(r.itens));
+    if (r.pacote) linhaR('Opção escolhida', R(r.pacote));
+    if (r.desconto) linhaR('Desconto', '− ' + R(r.desconto));
+    if (r.taxa) linhaR(dados.taxaNome || 'Taxa', R(r.taxa));
+    if (dados.itens.some(i => i.tipo && i.tipo !== 'incluido')) { garantir(16); y -= 15; const n = pdfTexto('Itens opcionais: o total muda conforme o que você escolher no link.'); txt(n, M, y, 9, false, DOURADO); }
+    y -= 18;
+  }
+
+  // ── Valor ──
   garantir(70);
   ret(M, y - 62, LARG, 62, '#F4F6F9'); ret(M, y - 62, 4, 62, AZUL);
-  txt('VALOR', M + 18, y - 20, 9, true, CINZA);
+  txt(pdfTexto(dados.rotuloValor || 'VALOR'), M + 18, y - 20, 9, true, CINZA);
   txt(pdfTexto(brl(dados.valor)), M + 18, y - 48, 24, true, AZUL);
+  if (dados.resumo && dados.resumo.sinal) { const sn = pdfTexto(`Sinal para começar: ${R(dados.resumo.sinal)}`); txt(sn, W - M - 16 - pdfLargura(sn, 10, true), y - 26, 10, true, ESCURO); }
   if (dados.validade) { const v = pdfTexto('Válido até ' + dataBR(dados.validade)); txt(v, W - M - 16 - pdfLargura(v, 10, false), y - 44, 10, false, CINZA); }
   y -= 62 + 24;
 
@@ -165,11 +203,18 @@ async function gerarPdfOrcamento(dados) {
     y -= 20;
   }
 
+  // ── Condições ──
+  if (dados.condicoes && String(dados.condicoes).trim()) {
+    garantir(30); txt(pdfTexto('CONDIÇÕES'), M, y, 9, true, DOURADO); y -= 4;
+    paragrafo(dados.condicoes, 11, false, '#3A4550', M, LARG, 1.5);
+    y -= 20;
+  }
+
   // ── Aprovar online (link clicável) ──
   if (dados.link) {
     garantir(56);
     ret(M, y - 44, LARG, 44, AZUL);
-    const t1 = pdfTexto('Aprovar este orçamento online  ›');
+    const t1 = pdfTexto((dados.linkTexto || 'Aprovar este orçamento online') + '  ›');
     txt(t1, M + (LARG - pdfLargura(t1, 13, true)) / 2, y - 27, 13, true, '#FFFFFF');
     links.push({ x: M, y: y - 44, w: LARG, h: 44, url: dados.link });
     y -= 44 + 10;

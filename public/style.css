@@ -695,3 +695,35 @@ hr { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-5) 0; }
 .aviso-plano-fim{background:#FFF6E5;border:1.5px solid #F5C451}
 .plano-bloqueado .container > .card,.plano-bloqueado .card-acao{display:none!important}
 .btn-primary:disabled{opacity:.55;cursor:not-allowed}
+
+/* ─── Editor de itens do orçamento ─────────────────────────── */
+.ie-item{border:1.5px solid var(--gray2);border-radius:var(--radius-sm);padding:var(--sp-4);margin-bottom:var(--sp-3);background:var(--white)}
+.ie-item.ie-opcional{border-style:dashed;border-color:var(--gray3);background:#FAFBFC}
+.ie-item.ie-recomendado{border-color:var(--gold);background:#FFFBEB}
+.ie-topo{display:flex;align-items:center;gap:var(--sp-2)}
+.ie-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--navy-light);color:var(--navy);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+.ie-topo input{margin:0;font-weight:600}
+.ie-nums{display:grid;grid-template-columns:72px 1fr 1.3fr;gap:var(--sp-2);margin-top:var(--sp-3)}
+.ie-campo{margin:0!important;display:flex;flex-direction:column;gap:4px}
+.ie-campo span{font-size:12px;font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0}
+.ie-campo input,.ie-campo select{margin:0;padding-left:10px;padding-right:10px}
+.ie-linha-total{text-align:right;font-size:15px;color:var(--muted);margin-top:var(--sp-2)}
+.ie-linha-total strong{color:var(--navy);font-size:17px}
+.ie-tipos{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:var(--sp-3);background:var(--gray);padding:4px;border-radius:10px}
+.ie-tipo{border:none;background:transparent;font:inherit;font-size:13px;font-weight:700;color:var(--muted);padding:10px 4px;border-radius:8px;cursor:pointer;min-height:40px}
+.ie-tipo.ativo{background:var(--white);color:var(--navy);box-shadow:var(--shadow-sm)}
+.ie-dica{font-size:12px;color:var(--muted);margin-top:6px}
+.ie-acoes{display:flex;gap:6px;margin-top:var(--sp-3);flex-wrap:wrap}
+.ie-acoes button{border:1.5px solid var(--gray2);background:var(--white);border-radius:8px;font:inherit;font-size:13px;font-weight:600;color:var(--body);padding:8px 12px;min-height:40px;cursor:pointer}
+.ie-acoes button:disabled{opacity:.35}
+.ie-acoes .ie-remover{margin-left:auto;color:var(--red);border-color:#FFD5D2}
+.ie-add{width:100%}
+.ie-vazio{text-align:center;padding:var(--sp-4) 0}
+.ie-extras{margin-top:var(--sp-4)}
+.ie-extras summary{font-size:15px;font-weight:600;color:var(--navy);cursor:pointer;padding:8px 0}
+.ie-taxa{display:grid;grid-template-columns:1.4fr 1fr;gap:var(--sp-2)}
+.ie-resumo{margin-top:var(--sp-4);background:var(--gray);border-radius:var(--radius-sm);padding:var(--sp-4)}
+.ie-res-linha{display:flex;justify-content:space-between;font-size:15px;padding:4px 0;color:var(--body)}
+.ie-res-total{border-top:1.5px solid var(--gray2);margin-top:6px;padding-top:10px;font-size:18px;color:var(--dark)}
+.ie-res-total strong{color:var(--navy);font-size:22px}
+.ie-res-nota{font-size:13px;color:var(--muted);margin-top:8px}

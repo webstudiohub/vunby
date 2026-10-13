@@ -1,9 +1,10 @@
 'use strict';
 const { query } = require('../lib/db');
-const { ok, badRequest, notFound, forbidden, readBody } = require('../lib/http');
+const { ok, json, badRequest, notFound, forbidden, readBody } = require('../lib/http');
 const { STATUS, isFinal } = require('../lib/status');
 const { isExpired } = require('../lib/dates');
 const { getSession } = require('./auth');
+const I = require('../lib/itens');
 
 // O próprio prestador abrindo o link do orçamento (ex.: "Ver página do cliente") não conta como visualização
 async function isOwner(req, quoteUserId) {
@@ -22,6 +23,8 @@ function isLikelyBot(req) {
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
+  // IP real (Render atrás da Cloudflare): guardado só no registro da aprovação
+  const ip = req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
 
   // GET /api/public/quote/:token — dados públicos do orçamento
   const viewMatch = path.match(/^\/api\/public\/quote\/([A-Za-z0-9_-]+)$/);
@@ -62,6 +65,15 @@ async function handle(req, res) {
         whatsapp: (quote.whatsapp || '').replace(/\D/g, ''), documento: quote.documento || '', instagram: quote.instagram || '',
       },
       pacotes: pacs.rows,
+      usaItens: !!quote.usa_itens,
+      itens: quote.usa_itens ? (await I.lerItens(quote.id)).map(({ id, descricao, qtd, unidade, preco_cents, tipo, escolhido }) => ({ id, descricao, qtd, unidade, preco_cents, tipo, escolhido })) : [],
+      descontoCents: Number(quote.desconto_cents) || 0,
+      taxaCents: Number(quote.taxa_cents) || 0,
+      taxaNome: quote.taxa_nome || '',
+      sinalPct: Number(quote.sinal_pct) || 0,
+      condicoes: quote.condicoes || '',
+      versao: Number(quote.versao) || 1,
+      aprovacao: quote.aprovacao || null,
     });
   }
 
@@ -93,11 +105,40 @@ async function handle(req, res) {
       }
     }
 
+    // Orçamento por itens: o prestador pode ter editado depois que o cliente abriu a página
+    if (quote.usa_itens && body.versao !== undefined && String(body.versao) !== String(quote.versao || 1)) {
+      return json(res, 409, { error: 'Este orçamento foi atualizado agora há pouco. A página vai recarregar com a versão nova.', recarregar: true });
+    }
+
+    // Aprovação de orçamento por itens: o SERVIDOR recalcula o total com as escolhas do cliente e congela tudo
+    let aprovacao = null, novoValor = null;
+    if (newStatus === STATUS.APROVADO && quote.usa_itens) {
+      const itens = await I.lerItens(quote.id);
+      const validos = new Set(itens.filter(i => i.tipo !== 'incluido').map(i => i.id));
+      const escolhidos = new Set((Array.isArray(body.escolhidos) ? body.escolhidos : []).map(String).filter(x => validos.has(x)));
+      const pacPreco = pacoteEscolhido ? (await query('SELECT preco FROM quote_packages WHERE id = $1', [pacoteEscolhido.id])).rows[0].preco : null;
+      const calc = I.calcular(I.paraCalculo(quote, itens, pacPreco), escolhidos);
+      const usados = itens.filter(i => i.tipo === 'incluido' || escolhidos.has(i.id));
+      aprovacao = {
+        versao: Number(quote.versao) || 1,
+        em: new Date().toISOString(),
+        itens: usados.map(i => ({ descricao: i.descricao, qtd: i.qtd, unidade: i.unidade, preco_cents: i.preco_cents, tipo: i.tipo })),
+        naoEscolhidos: itens.filter(i => i.tipo !== 'incluido' && !escolhidos.has(i.id)).map(i => i.descricao),
+        pacote: pacoteEscolhido ? pacoteEscolhido.nome : null,
+        resumo: calc, total: calc.total, sinal: calc.sinal,
+        sinal_pct: Number(quote.sinal_pct) || 0,
+        ip, ua: String(req.headers['user-agent'] || '').slice(0, 300),
+      };
+      novoValor = calc.total / 100;
+      await query('UPDATE quote_items SET escolhido = (tipo = \'incluido\' OR id = ANY($2::bigint[])) WHERE quote_id = $1', [quote.id, [...escolhidos]]);
+    }
+
     const observacao = typeof body.observacao === 'string' ? body.observacao.slice(0, 1000) : null;
     const upd = await query(
-      `UPDATE quotes SET status = $1, resposta_cliente = $2, responded_at = NOW()
+      `UPDATE quotes SET status = $1, resposta_cliente = $2, responded_at = NOW(),
+         aprovacao = COALESCE($5::jsonb, aprovacao), valor = COALESCE($6, valor)
        WHERE id = $3 AND status <> ALL($4) RETURNING id`,
-      [newStatus, observacao || null, quote.id, [STATUS.APROVADO, STATUS.RECUSADO]]);
+      [newStatus, observacao || null, quote.id, [STATUS.APROVADO, STATUS.RECUSADO], aprovacao ? JSON.stringify(aprovacao) : null, novoValor]);
     if (!upd.rows[0]) return badRequest(res, 'Este orçamento já foi finalizado.');
 
     return ok(res, { message: newStatus === STATUS.APROVADO ? 'Orçamento aprovado!' : 'Resposta registrada.' });
