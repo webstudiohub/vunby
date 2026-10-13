@@ -249,3 +249,7 @@ CREATE TABLE IF NOT EXISTS feedbacks (
 );
 CREATE INDEX IF NOT EXISTS idx_feedbacks_user_id ON feedbacks(user_id);
 ALTER TABLE feedbacks ENABLE ROW LEVEL SECURITY;
+
+-- Pedido de avaliação no Google (12/10/2026)
+ALTER TABLE users  ADD COLUMN IF NOT EXISTS google_review_link TEXT;
+ALTER TABLE quotes ADD COLUMN IF NOT EXISTS avaliacao_pedida_em TIMESTAMPTZ;

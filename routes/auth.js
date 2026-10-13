@@ -12,13 +12,20 @@ const { sendVerificationEmail, sendPasswordResetEmail } = require('../lib/email'
 const { BASE_URL } = require('../lib/config');
 const B = require('../lib/billing');
 
+// Link de avaliação do Google Meu Negócio (ex.: https://g.page/r/XXXX/review)
+const GOOGLE_HOSTS = ['g.page', 'www.google.com', 'google.com', 'search.google.com', 'maps.google.com', 'www.google.com.br', 'google.com.br', 'maps.app.goo.gl', 'goo.gl', 'g.co'];
+function isGoogleReviewLink(l) {
+  if (l.length > 300) return false;
+  try { const u = new URL(l); return u.protocol === 'https:' && GOOGLE_HOSTS.includes(u.hostname); } catch { return false; }
+}
+
 async function getSession(req) {
   const token = parseSession(req);
   if (!token) return null;
   const raw = verifySessionToken(token);
   if (!raw) return null;
   const tokenHash = hashToken(raw);
-  const res = await query('SELECT u.id, u.nome, u.email, u.senha_hash, u.telefone, u.telefone_verificado, u.trial_concedido, u.email_verificado, u.nome_empresa, (u.logo IS NOT NULL) AS tem_logo, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
+  const res = await query('SELECT u.id, u.nome, u.email, u.senha_hash, u.telefone, u.telefone_verificado, u.trial_concedido, u.email_verificado, u.nome_empresa, u.google_review_link, (u.logo IS NOT NULL) AS tem_logo, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = $1 AND s.expires_at > NOW() AND u.email_verificado = true', [tokenHash]);
   return res.rows[0] || null;
 }
 
@@ -189,7 +196,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/auth/me') {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
-    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', temLogo: !!user.tem_logo, emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
   }
 
   // GET /api/auth/logo — logo do próprio usuário (para a tela de Conta)
@@ -219,6 +226,14 @@ async function handle(req, res) {
         if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(l)) return badRequest(res, 'Formato de imagem inválido. Use PNG ou JPG.');
         if (l.length > 600_000) return badRequest(res, 'Imagem muito grande. Use uma imagem menor.');
         updates.logo = l;
+      }
+    }
+    if (body.googleReviewLink !== undefined) {
+      const l = String(body.googleReviewLink || '').trim();
+      if (!l) updates.google_review_link = null;
+      else {
+        if (!isGoogleReviewLink(l)) return badRequest(res, 'Link de avaliação inválido. Copie o link do Google Meu Negócio (botão "Pedir avaliações").');
+        updates.google_review_link = l;
       }
     }
     if (Object.keys(updates).length === 0) return badRequest(res, 'Nada para atualizar.');

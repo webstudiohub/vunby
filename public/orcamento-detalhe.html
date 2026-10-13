@@ -22,6 +22,9 @@ async function registrarFollowUp(){
   }catch(e){alert(e.message);}
 }
 
+// Pedido de avaliação no Google: o link do WhatsApp abre direto (sem bloqueio de pop-up) e registramos o pedido
+function pediuAvaliacao(){ api(`/api/quotes/${qid}/avaliacao`,{method:'POST'}).then(()=>setTimeout(renderPage,800)).catch(()=>{}); }
+
 async function confirmarEnvio(fuId){
   await api(`/api/quotes/${qid}/followups/${fuId}/confirmar`,{method:'POST'});
   renderPage();
@@ -127,6 +130,14 @@ async function renderPage(){
         <button class="btn-outline btn-sm" onclick="toggleFollowUp(${q.precisa_follow_up})">${q.precisa_follow_up?'✓ Tirar follow-up':'+ Marcar follow-up'}</button>
       </div>
     </div>
+
+    ${q.status==='Aprovado'?`<div class="card" style="border:1.5px solid #F5C000">
+      <h3>⭐ Avaliação no Google</h3>
+      ${q.avaliacaoWhatsApp?`
+        <p class="muted" style="font-size:13px;margin-bottom:10px">${q.avaliacao_pedida_em?`Pedido enviado em ${new Date(q.avaliacao_pedida_em).toLocaleDateString('pt-BR')}.`:'Serviço aprovado! Peça a avaliação de 2 a 48 horas depois de terminar — é quando o cliente mais responde.'}</p>
+        <a href="${esc(q.avaliacaoWhatsApp)}" target="_blank" rel="noopener" onclick="pediuAvaliacao()"><button class="btn-primary btn-gold">${q.avaliacao_pedida_em?'Pedir de novo pelo WhatsApp':'Pedir avaliação pelo WhatsApp'}</button></a>`
+      :`<p class="muted" style="font-size:13px">Cadastre o link de avaliação do seu Google Meu Negócio em <a href="conta.html">Minha Conta</a> para pedir a avaliação com 1 toque.</p>`}
+    </div>`:''}
 
     ${pacotesHtml}
 

@@ -35,6 +35,9 @@
         <button class="btn-outline btn-sm" id="m-remover" style="display:none" onclick="removerLogo()">Remover logo</button>
       </div>
     </div>
+    <label>Link para avaliar no Google (opcional)</label>
+    <input id="m-review" maxlength="300" inputmode="url" placeholder="https://g.page/r/.../review"/>
+    <p class="muted" style="font-size:12px;margin-top:4px">No Google Meu Negócio, toque em <strong>"Pedir avaliações"</strong> e copie o link. Assim, quando o cliente aprovar, você pede a avaliação com 1 toque.</p>
     <div style="margin-top:var(--sp-5)">
       <button class="btn-primary" id="btn-marca" onclick="salvarMarca()">Salvar marca</button>
     </div>
@@ -108,7 +111,7 @@ function removerLogo(){ logoNova=null; mostrarLogo(null); document.getElementByI
 async function salvarMarca(){
   const msg=document.getElementById('msg-marca'), okEl=document.getElementById('ok-marca'), btn=document.getElementById('btn-marca');
   msg.textContent=''; okEl.style.display='none';
-  const body={nomeEmpresa:document.getElementById('m-empresa').value};
+  const body={nomeEmpresa:document.getElementById('m-empresa').value, googleReviewLink:document.getElementById('m-review').value};
   if(logoNova!==undefined) body.logo=logoNova;
   btn.disabled=true; btn.textContent='Salvando…';
   try{ await api('/api/auth/profile',{method:'PUT',body}); logoNova=undefined; okEl.textContent='Marca salva! Já aparece nos seus orçamentos.'; okEl.style.display='block'; }
@@ -119,6 +122,7 @@ async function salvarMarca(){
   try{
     const u=await api('/api/auth/me');
     document.getElementById('m-empresa').value=u.nomeEmpresa||'';
+    document.getElementById('m-review').value=u.googleReviewLink||'';
     if(u.temLogo){ const l=await api('/api/auth/logo'); mostrarLogo(l.logo); }
   }catch{}
 })();

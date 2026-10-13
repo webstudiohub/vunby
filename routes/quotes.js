@@ -108,9 +108,20 @@ async function handle(req, res) {
     const msg = `Olá! Segue seu orçamento:\n${publicUrl}`;
     const whatsappLink = buildWhatsAppLink(quote.cliente_telefone, msg);
 
+    // Pedido de avaliação no Google: só depois de aprovado e se o prestador cadastrou o link
+    let avaliacaoWhatsApp = null;
+    if (quote.status === STATUS.APROVADO && user.google_review_link) {
+      const primeiro = String(quote.cliente_nome || '').trim().split(/\s+/)[0];
+      const empresa = user.nome_empresa || user.nome;
+      const texto = `Olá, ${primeiro}! Obrigado por escolher ${empresa}. Se puder, deixe sua avaliação no Google — leva 1 minuto e ajuda muito o nosso trabalho:\n${user.google_review_link}`;
+      avaliacaoWhatsApp = buildWhatsAppLink(quote.cliente_telefone, texto);
+    }
+
     return ok(res, {
       ...quote,
       expirado,
+      avaliacaoWhatsApp,
+      temLinkAvaliacao: !!user.google_review_link,
       publicUrl,
       whatsappLink,
       cliente: { nome: quote.cliente_nome, telefone: quote.cliente_telefone },
@@ -169,6 +180,17 @@ async function handle(req, res) {
     const vals = Object.values(updates);
     const r = await query(`UPDATE quotes SET ${cols} WHERE id = $1 RETURNING *`, [id, ...vals]);
     return ok(res, r.rows[0]);
+  }
+
+  // POST /api/quotes/:id/avaliacao — registra que o prestador pediu a avaliação no Google
+  const avMatch = path.match(/^\/api\/quotes\/(\d+)\/avaliacao$/);
+  if (req.method === 'POST' && avMatch) {
+    const id = parseInt(avMatch[1], 10);
+    const quote = await getQuoteForUser(id, user.id);
+    if (!quote) return notFound(res, 'Orçamento não encontrado.');
+    if (quote.status !== STATUS.APROVADO) return badRequest(res, 'Peça avaliação só depois que o cliente aprovar.');
+    await query('UPDATE quotes SET avaliacao_pedida_em = NOW() WHERE id = $1', [id]);
+    return ok(res, { ok: true });
   }
 
   // DELETE /api/quotes/:id
