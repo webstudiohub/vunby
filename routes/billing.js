@@ -163,7 +163,7 @@ async function handle(req, res) {
 // ── Tarefas periódicas: e-mail de "teste acabou" e convite da pesquisa de opinião ──
 async function rodarTarefas(sendEmail) {
   const base = BASE_URL.replace(/\/$/, '');
-  const btn = (href, txt) => `<a href="${href}" style="display:inline-block;background:#6C47FF;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;margin:16px 0">${txt}</a>`;
+  const { layout, botao, p, escHtml } = require('../lib/email');
 
   // 1) Teste grátis acabou (um e-mail por pessoa)
   const exp = await query(
@@ -174,11 +174,18 @@ async function rodarTarefas(sendEmail) {
   );
   for (const u of exp.rows) {
     await query('UPDATE users SET trial_aviso_em = NOW() WHERE id = $1', [u.id]);
-    const nome = String(u.nome || '').split(' ')[0].replace(/[<>&"]/g, '');
+    const nome = escHtml(String(u.nome || '').split(' ')[0]);
     await sendEmail({
       to: u.email,
       subject: 'Seu teste grátis do VUNBY terminou',
-      html: `<div style="font-family:Arial,sans-serif;max-width:480px"><h2 style="color:#6C47FF">VUNBY</h2><p>Olá, ${nome}!</p><p>Seus 14 dias de teste grátis terminaram. Seus orçamentos continuam salvos e você pode vê-los quando quiser.</p><p>Para continuar criando orçamentos, assine o VUNBY. Os 100 primeiros assinantes pagam <b>R$29,90/mês para sempre</b> (preço normal R$49,90).</p>${btn(base + '/planos.html', 'Ver planos')}<p style="color:#888;font-size:12px">Cancele quando quiser, em 1 clique.</p></div>`,
+      html: layout({
+        preheader: 'Seus orçamentos continuam salvos. Assine para continuar criando novos.',
+        titulo: `${nome}, seu teste grátis terminou`,
+        corpo: p('Seus <strong>14 dias de teste</strong> acabaram. Fique tranquilo: <strong>seus orçamentos continuam salvos</strong> e você pode vê-los quando quiser.') +
+          p('Para continuar criando orçamentos, assine o VUNBY. Os <strong>100 primeiros assinantes</strong> pagam <strong>R$29,90/mês para sempre</strong> (preço normal R$49,90).') +
+          botao(base + '/planos.html', 'Ver planos') +
+          p('<span style="color:#6B7280;font-size:14px">Sem fidelidade: cancele quando quiser, em 1 clique.</span>'),
+      }),
     });
   }
 
@@ -193,11 +200,18 @@ async function rodarTarefas(sendEmail) {
   );
   for (const u of fb.rows) {
     await query('UPDATE users SET feedback_email_em = NOW() WHERE id = $1', [u.id]);
-    const nome = String(u.nome || '').split(' ')[0].replace(/[<>&"]/g, '');
+    const nome = escHtml(String(u.nome || '').split(' ')[0]);
     await sendEmail({
       to: u.email,
       subject: 'Como está sendo o VUNBY para você?',
-      html: `<div style="font-family:Arial,sans-serif;max-width:480px"><h2 style="color:#6C47FF">VUNBY</h2><p>Olá, ${nome}!</p><p>Você é um dos fundadores do VUNBY e faz 1 mês que está com a gente. Queremos saber a sua opinião de verdade: o que está bom, o que não está e o que falta.</p><p>São perguntas rápidas (2 minutos).</p>${btn(base + '/opiniao.html', 'Dar minha opinião')}<p>Obrigado por construir o VUNBY com a gente.</p></div>`,
+      html: layout({
+        preheader: '2 minutos para nos contar o que está bom e o que falta.',
+        titulo: `${nome}, queremos ouvir você`,
+        corpo: p('Você é um dos <strong>fundadores do VUNBY</strong> e já faz 1 mês que está com a gente. Queremos saber sua opinião de verdade: o que está bom, o que não está e o que falta.') +
+          p('São perguntas rápidas, leva uns 2 minutos.') +
+          botao(base + '/opiniao.html', 'Dar minha opinião') +
+          p('Obrigado por construir o VUNBY com a gente. 💛'),
+      }),
     });
   }
 }

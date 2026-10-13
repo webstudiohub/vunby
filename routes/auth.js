@@ -122,7 +122,7 @@ async function handle(req, res) {
     if (user.email_verificado) return badRequest(res, 'E-mail já verificado. Faça login.');
     const vRes = await query('SELECT * FROM email_verifications WHERE user_id = $1 AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1', [user.id]);
     if (!vRes.rows[0]) return badRequest(res, 'Código expirado. Solicite novo código.');
-    if (!hashesMatch(String(code).trim(), vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
+    if (!hashesMatch(String(code).replace(/\D/g, ''), vRes.rows[0].code_hash)) return badRequest(res, 'Código incorreto.');
     await query('UPDATE users SET email_verificado = true WHERE id = $1', [user.id]);
     await query('DELETE FROM email_verifications WHERE user_id = $1', [user.id]);
     await resetLimit(`verify-email:${emailNorm}`);
