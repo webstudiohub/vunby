@@ -23,7 +23,8 @@ async function requireSession() {
   try {
     return await api('/api/auth/me');
   } catch {
-    window.location.href = '/entrar';
+    // Depois do login, volta para a página que a pessoa tentou abrir (ex.: link do e-mail)
+    window.location.href = '/entrar?volta=' + encodeURIComponent(location.pathname + location.search);
     return null;
   }
 }

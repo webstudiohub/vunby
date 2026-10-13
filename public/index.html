@@ -74,6 +74,11 @@ function showTab(t){
 }
 if(location.pathname==='/cadastro') showTab('register');
 
+// Página para onde ir depois de entrar: só endereços internos do VUNBY
+function destinoAposLogin(){
+  const v=new URLSearchParams(location.search).get('volta')||'';
+  return /^\/[A-Za-z0-9-]+(\.html)?(\?[\w=&%.-]*)?$/.test(v)&&!v.startsWith('//')?v:'/dashboard.html';
+}
 async function login(){
   const email=document.getElementById('l-email').value;
   const senha=document.getElementById('l-senha').value;
@@ -87,7 +92,7 @@ async function login(){
     // E-mail ainda não confirmado: o servidor já reenviou o código
     if(d.emailVerificado===false){location.href='/verificar-email.html?reenviado=1&email='+encodeURIComponent(email.trim());return;}
     if(!r.ok)throw new Error(d.error||'Erro');
-    location.href='/dashboard.html';
+    location.href=destinoAposLogin();
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Entrar';}
 }
 
