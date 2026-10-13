@@ -9,6 +9,8 @@
 <div id="top"></div>
 <div class="container" id="content"><p class="muted">Carregando…</p></div>
 <script src="app.js"></script>
+<script src="marca.js"></script>
+<script src="pdf.js"></script>
 <script>
 const qid=new URLSearchParams(location.search).get('id');
 
@@ -54,8 +56,31 @@ async function toggleFollowUp(atual){
   await api(`/api/quotes/${qid}`,{method:'PATCH',body:{precisaFollowUp:!atual}});renderPage();
 }
 
+// PDF feito no próprio aparelho, com logo e dados da empresa (sem servidor)
+let qAtual=null, empresaCache=null;
+async function gerarPdf(){
+  const btn=document.getElementById('btn-pdf'), msg=document.getElementById('pdf-msg');
+  msg.textContent=''; btn.disabled=true; btn.textContent='Gerando PDF…';
+  try{
+    if(!empresaCache){
+      const u=await api('/api/auth/me');
+      const logo=u.temLogo?(await api('/api/auth/logo').catch(()=>({}))).logo:null;
+      empresaCache={nome:u.nomeEmpresa||u.nome,profissao:u.profissao,cidade:u.cidade,whatsapp:u.whatsapp,documento:u.documento,instagram:u.instagram,logo};
+    }
+    const q=qAtual;
+    const blob=await gerarPdfOrcamento({
+      empresa:empresaCache, servico:q.servico, clienteNome:q.cliente.nome, valor:q.valor, validade:q.validade,
+      observacoes:q.observacoes, data:q.created_at, pacotes:q.pacotes, link:q.publicUrl,
+    });
+    const limpo=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 ]+/g,' ').trim().replace(/\s+/g,'-').slice(0,40);
+    await compartilharPdf(blob,`Orcamento-${limpo(q.servico)||q.id}-${limpo(q.cliente.nome)}.pdf`.replace(/-+\.pdf$/,'.pdf'));
+  }catch(e){ msg.textContent='Não foi possível gerar o PDF. '+(e.message||''); }
+  btn.disabled=false; btn.textContent='📄 Enviar PDF do orçamento';
+}
+
 async function renderPage(){
   const q=await api(`/api/quotes/${qid}`);
+  qAtual=q;
   const el=document.getElementById('content');
 
   const final=['Aprovado','Recusado'].includes(q.status);
@@ -118,9 +143,8 @@ async function renderPage(){
         </div>
       </div>`}
       <p style="margin-top:8px"><a href="/orcamento.html?token=${encodeURIComponent(q.public_token)}" target="_blank" style="font-size:13px">🔗 Ver página do cliente</a></p>
-      <!-- Botão "Baixar PDF" oculto até o PDF (Puppeteer + plano pago do Render) voltar no pré-lançamento:
-      <p style="margin-top:6px"><a href="/api/quotes/${qid}/pdf" download style="font-size:13px">📄 Baixar PDF</a></p>
-      -->
+      <button class="btn-primary btn-gold" id="btn-pdf" style="margin-top:12px" onclick="gerarPdf()">📄 Enviar PDF do orçamento</button>
+      <div id="pdf-msg" class="error"></div>
     </div>
 
     <div class="card">
