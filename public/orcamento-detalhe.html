@@ -190,6 +190,7 @@ async function renderPage(){
       </div>
       <p><strong>Cliente:</strong> ${esc(q.cliente.nome)}</p>
       <p><strong>Telefone:</strong> ${esc(q.cliente.telefone)}</p>
+      ${q.cliente.id?`<button type="button" class="btn-link-editar" onclick="abrirEditarCliente(qAtual.cliente,()=>renderPage())">✏️ Editar cliente</button>`:''}
       <p><strong>${q.usa_itens?(q.status==='Aprovado'?'Total aprovado':'Total'):'Valor'}:</strong> <span style="font-size:var(--fs-xl);font-weight:800;color:#0F3A8C">${brl(q.valor)}</span></p>
       ${q.usa_itens?listaItensHtml(q):''}
       ${q.validade?`<p><strong>Validade:</strong> ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}

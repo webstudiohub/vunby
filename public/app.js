@@ -184,3 +184,38 @@ function ferramentasItens(editorRef, campoObs) {
     itens => editorRef().adicionarItens(itens),
     texto => { const o = document.getElementById(campoObs); if (o) { o.value = (o.value.trim() ? o.value.trim() + '\n' : '') + texto; o.dispatchEvent(new Event('input', { bubbles: true })); } }) }] };
 }
+
+// ─── Editar cliente (janela) ──────────────────────────────────
+// abrirEditarCliente({id,nome,telefone}, clienteSalvo => {...})
+function abrirEditarCliente(c, aoSalvar) {
+  const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const fundo = document.createElement('div');
+  fundo.className = 'ec-fundo'; fundo.setAttribute('role', 'dialog'); fundo.setAttribute('aria-modal', 'true'); fundo.setAttribute('aria-label', 'Editar cliente');
+  fundo.innerHTML = `<div class="ec-folha">
+    <h2>✏️ Editar cliente</h2>
+    <label for="ec-nome">Nome</label>
+    <input id="ec-nome" maxlength="100" value="${esc(c.nome)}" autocomplete="off"/>
+    <label for="ec-tel">Telefone (WhatsApp)</label>
+    <input id="ec-tel" type="tel" inputmode="tel" value="${esc(c.telefone)}"/>
+    <p class="muted ec-dica">Os orçamentos deste cliente passam a usar os dados novos.</p>
+    <p id="ec-msg" class="error" role="alert"></p>
+    <div class="ec-btns">
+      <button type="button" class="btn-outline" data-ec="cancelar">Cancelar</button>
+      <button type="button" class="btn-primary btn-gold" data-ec="salvar">Salvar</button>
+    </div></div>`;
+  const fechar = () => { fundo.remove(); document.removeEventListener('keydown', tecla); };
+  const tecla = e => { if (e.key === 'Escape') fechar(); };
+  document.addEventListener('keydown', tecla);
+  fundo.addEventListener('click', async e => {
+    if (e.target === fundo || e.target.dataset.ec === 'cancelar') return fechar();
+    if (e.target.dataset.ec !== 'salvar') return;
+    const btn = e.target, msg = fundo.querySelector('#ec-msg');
+    msg.textContent = ''; btn.disabled = true; btn.textContent = 'Salvando…';
+    try {
+      const novo = await api(`/api/clients/${c.id}`, { method: 'PUT', body: { nome: fundo.querySelector('#ec-nome').value, telefone: fundo.querySelector('#ec-tel').value } });
+      fechar(); aoSalvar && aoSalvar(novo);
+    } catch (err) { msg.textContent = err.message; btn.disabled = false; btn.textContent = 'Salvar'; }
+  });
+  document.body.appendChild(fundo);
+  fundo.querySelector('#ec-nome').focus();
+}

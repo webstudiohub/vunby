@@ -28,6 +28,7 @@
     <select id="q-client">
       <option value="">Selecione um cliente…</option>
     </select>
+    <button type="button" id="btn-editar-cliente" class="btn-link-editar" style="display:none" onclick="editarClienteEscolhido()">✏️ Editar nome ou telefone deste cliente</button>
 
     <details id="novo-cliente-details" style="margin-top:var(--sp-3)">
       <summary style="font-size:var(--fs-md);color:var(--navy);cursor:pointer;font-weight:600;user-select:none">+ Novo cliente</summary>
@@ -121,6 +122,7 @@ function limparRascunho(){ try{ localStorage.removeItem(RASCUNHO_KEY); }catch{} 
 function descartarRascunho(){
   limparRascunho();
   ['q-client','q-servico','q-valor','q-obs'].forEach(id=>document.getElementById(id).value='');
+  mostrarEditarCliente();
   const d=new Date(); d.setDate(d.getDate()+7);
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];
   document.getElementById('q-followup').checked=false;
@@ -135,6 +137,14 @@ function iniciarEditor(estado){
 }
 function mostrarValorFechado(){ document.getElementById('valor-fechado').style.display=editor&&editor.quantos()?'none':''; }
 
+function mostrarEditarCliente(){ document.getElementById('btn-editar-cliente').style.display=document.getElementById('q-client').value?'':'none'; }
+function editarClienteEscolhido(){
+  const sel=document.getElementById('q-client'); const c=clientes.find(x=>String(x.id)===sel.value); if(!c) return;
+  abrirEditarCliente(c, novo=>{
+    Object.assign(c,novo);
+    sel.selectedOptions[0].textContent=`${novo.nome} — ${novo.telefone}`;
+  });
+}
 async function criarCliente(){
   const nome=document.getElementById('nc-nome').value;
   const telefone=document.getElementById('nc-tel').value;
@@ -231,12 +241,14 @@ async function criarOrcamento(){
     opt.textContent=`${c.nome} — ${c.telefone}`;
     sel.appendChild(opt);
   });
+  sel.addEventListener('change',mostrarEditarCliente);
   const d=new Date(); d.setDate(d.getDate()+7);
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];
   renderPacotes();
   RASCUNHO_KEY='vunby:rascunho:'+session.id;
   carregarRascunho();
   iniciarEditor(itensRascunho);
+  mostrarEditarCliente();
   CAMPOS.forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',salvarRascunho); el.addEventListener('change',salvarRascunho); });
   document.getElementById('q-followup').addEventListener('change',salvarRascunho);
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') salvarRascunho(); });

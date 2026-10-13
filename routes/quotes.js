@@ -152,7 +152,7 @@ async function handle(req, res) {
       temLinkAvaliacao: !!user.google_review_link,
       publicUrl,
       whatsappLink,
-      cliente: { nome: quote.cliente_nome, telefone: quote.cliente_telefone },
+      cliente: { id: quote.client_id, nome: quote.cliente_nome, telefone: quote.cliente_telefone },
       pacotes: pacs.rows,
       itens: quote.usa_itens ? await I.lerItens(id) : [],
       followUps: fus.rows,

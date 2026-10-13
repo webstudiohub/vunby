@@ -41,12 +41,21 @@ async function handle(req, res) {
     const id = parseInt(clientMatch[1], 10);
     let body; try { body = await readBody(req); } catch { return badRequest(res); }
     const { nome, telefone, observacoes } = body;
-    const existing = await query('SELECT id FROM clients WHERE id = $1 AND user_id = $2', [id, user.id]);
+    const existing = await query('SELECT * FROM clients WHERE id = $1 AND user_id = $2', [id, user.id]);
     if (!existing.rows[0]) return notFound(res, 'Cliente não encontrado.');
-    const telNorm = normalizePhone(telefone);
+    const atual = existing.rows[0];
+    if (nome !== undefined) {
+      if (!isNonEmpty(nome)) return badRequest(res, 'Nome é obrigatório.');
+      if (nome.trim().length > 100) return badRequest(res, 'Nome muito longo (máximo 100 caracteres).');
+    }
+    let telNorm = atual.telefone;
+    if (telefone !== undefined) {
+      telNorm = normalizePhone(telefone);
+      if (!telNorm || telNorm.replace(/\D/g, '').length < 10 || telNorm.replace(/\D/g, '').length > 15) return badRequest(res, 'Telefone inválido. Use DDD + número.');
+    }
     const r = await query(
-      'UPDATE clients SET nome=$1, telefone=$2, observacoes=$3 WHERE id=$4 RETURNING *',
-      [nome?.trim() || existing.rows[0].nome, telNorm || existing.rows[0].telefone, observacoes ?? null, id]
+      'UPDATE clients SET nome=$1, telefone=$2, observacoes=$3 WHERE id=$4 AND user_id=$5 RETURNING *',
+      [nome !== undefined ? nome.trim() : atual.nome, telNorm, observacoes !== undefined ? (observacoes || null) : atual.observacoes, id, user.id]
     );
     return ok(res, r.rows[0]);
   }
