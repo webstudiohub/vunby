@@ -120,7 +120,7 @@ async function gerarPdf(){
     }
     const q=qAtual;
     const blob=await gerarPdfOrcamento({
-      empresa:empresaCache, servico:q.servico, clienteNome:q.cliente.nome, valor:q.valor, validade:q.validade,
+      empresa:empresaCache, servico:q.servico, clienteNome:q.cliente.nome, clienteDocumento:q.cliente.documento, clienteEndereco:q.cliente.endereco, valor:q.valor, validade:q.validade,
       observacoes:q.observacoes, data:q.created_at, pacotes:q.pacotes, link:q.publicUrl,
       linkTexto:['Aprovado','Recusado'].includes(q.status)?'Ver este orçamento online':undefined,
       ...(q.usa_itens?dadosItensPdf(q):{}),
@@ -190,6 +190,9 @@ async function renderPage(){
       </div>
       <p><strong>Cliente:</strong> ${esc(q.cliente.nome)}</p>
       <p><strong>Telefone:</strong> ${esc(q.cliente.telefone)}</p>
+      ${q.cliente.endereco?`<p><strong>Endereço:</strong> ${esc(q.cliente.endereco)}</p>`:''}
+      ${q.cliente.email?`<p><strong>E-mail:</strong> ${esc(q.cliente.email)}</p>`:''}
+      ${q.cliente.documento?`<p><strong>${q.cliente.documento.length>14?'CNPJ':'CPF'}:</strong> ${esc(q.cliente.documento)}</p>`:''}
       ${q.cliente.id?`<button type="button" class="btn-link-editar" onclick="abrirEditarCliente(qAtual.cliente,()=>renderPage())">✏️ Editar cliente</button>`:''}
       <p><strong>${q.usa_itens?(q.status==='Aprovado'?'Total aprovado':'Total'):'Valor'}:</strong> <span style="font-size:var(--fs-xl);font-weight:800;color:#0F3A8C">${brl(q.valor)}</span></p>
       ${q.usa_itens?listaItensHtml(q):''}

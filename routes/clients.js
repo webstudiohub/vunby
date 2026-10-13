@@ -5,6 +5,29 @@ const { ok, created, badRequest, notFound, serverError, readBody } = require('..
 const { isNonEmpty, isPhone } = require('../lib/validate');
 const { normalizePhone } = require('../lib/phone');
 
+// Dados opcionais (e-mail, endereço do serviço, CPF/CNPJ). Devolve { erro } ou { campos } só com o que veio.
+function dadosExtras(body) {
+  const campos = {};
+  if (body.email !== undefined) {
+    const e = String(body.email || '').trim().toLowerCase();
+    if (e && (e.length > 120 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))) return { erro: 'E-mail inválido.' };
+    campos.email = e || null;
+  }
+  if (body.endereco !== undefined) {
+    const t = String(body.endereco || '').trim();
+    if (t.length > 200) return { erro: 'Endereço muito longo (máximo 200 caracteres).' };
+    campos.endereco = t || null;
+  }
+  if (body.documento !== undefined) {
+    const d = String(body.documento || '').replace(/\D/g, '');
+    if (d && d.length !== 11 && d.length !== 14) return { erro: 'CPF deve ter 11 números e CNPJ 14.' };
+    campos.documento = !d ? null : d.length === 11
+      ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')
+      : d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+  return { campos };
+}
+
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
@@ -28,9 +51,10 @@ async function handle(req, res) {
     if (nome.trim().length > 100) return badRequest(res, 'Nome muito longo (máximo 100 caracteres).');
     const telNorm = normalizePhone(telefone);
     if (!telNorm || telNorm.replace(/\D/g, '').length < 10 || telNorm.replace(/\D/g, '').length > 15) return badRequest(res, 'Telefone inválido. Use DDD + número.');
+    const x = dadosExtras(body); if (x.erro) return badRequest(res, x.erro);
     const r = await query(
-      'INSERT INTO clients (user_id, nome, telefone, observacoes) VALUES ($1,$2,$3,$4) RETURNING *',
-      [user.id, nome.trim(), telNorm, observacoes || null]
+      'INSERT INTO clients (user_id, nome, telefone, observacoes, email, endereco, documento) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+      [user.id, nome.trim(), telNorm, observacoes || null, x.campos.email || null, x.campos.endereco || null, x.campos.documento || null]
     );
     return created(res, r.rows[0]);
   }
@@ -53,9 +77,11 @@ async function handle(req, res) {
       telNorm = normalizePhone(telefone);
       if (!telNorm || telNorm.replace(/\D/g, '').length < 10 || telNorm.replace(/\D/g, '').length > 15) return badRequest(res, 'Telefone inválido. Use DDD + número.');
     }
+    const x = dadosExtras(body); if (x.erro) return badRequest(res, x.erro);
+    const v = k => (k in x.campos ? x.campos[k] : atual[k]);
     const r = await query(
-      'UPDATE clients SET nome=$1, telefone=$2, observacoes=$3 WHERE id=$4 AND user_id=$5 RETURNING *',
-      [nome !== undefined ? nome.trim() : atual.nome, telNorm, observacoes !== undefined ? (observacoes || null) : atual.observacoes, id, user.id]
+      'UPDATE clients SET nome=$1, telefone=$2, observacoes=$3, email=$4, endereco=$5, documento=$6 WHERE id=$7 AND user_id=$8 RETURNING *',
+      [nome !== undefined ? nome.trim() : atual.nome, telNorm, observacoes !== undefined ? (observacoes || null) : atual.observacoes, v('email'), v('endereco'), v('documento'), id, user.id]
     );
     return ok(res, r.rows[0]);
   }

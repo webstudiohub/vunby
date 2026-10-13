@@ -185,6 +185,27 @@ function ferramentasItens(editorRef, campoObs) {
     texto => { const o = document.getElementById(campoObs); if (o) { o.value = (o.value.trim() ? o.value.trim() + '\n' : '') + texto; o.dispatchEvent(new Event('input', { bubbles: true })); } }) }] };
 }
 
+// ─── Dados opcionais do cliente (e-mail, endereço, CPF/CNPJ) ──
+function camposExtrasCliente(pfx, c) {
+  c = c || {};
+  const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+  const aberto = c.email || c.endereco || c.documento;
+  return `<details class="cli-extras"${aberto ? ' open' : ''}>
+    <summary>+ Mais dados (opcional)</summary>
+    <label for="${pfx}-end">Endereço do serviço</label>
+    <input id="${pfx}-end" maxlength="200" autocomplete="street-address" placeholder="Rua, número, bairro, cidade" value="${esc(c.endereco)}"/>
+    <label for="${pfx}-email">E-mail</label>
+    <input id="${pfx}-email" type="email" inputmode="email" maxlength="120" placeholder="cliente@email.com" value="${esc(c.email)}"/>
+    <label for="${pfx}-doc">CPF ou CNPJ</label>
+    <input id="${pfx}-doc" inputmode="numeric" maxlength="18" placeholder="Só se precisar no contrato ou na nota" value="${esc(c.documento)}"/>
+    <p class="muted cli-extras-dica">Se preencher, o endereço e o CPF/CNPJ aparecem no PDF.</p>
+  </details>`;
+}
+function lerExtrasCliente(pfx) {
+  const v = id => { const el = document.getElementById(`${pfx}-${id}`); return el ? el.value : undefined; };
+  return { endereco: v('end'), email: v('email'), documento: v('doc') };
+}
+
 // ─── Editar cliente (janela) ──────────────────────────────────
 // abrirEditarCliente({id,nome,telefone}, clienteSalvo => {...})
 function abrirEditarCliente(c, aoSalvar) {
@@ -197,6 +218,7 @@ function abrirEditarCliente(c, aoSalvar) {
     <input id="ec-nome" maxlength="100" value="${esc(c.nome)}" autocomplete="off"/>
     <label for="ec-tel">Telefone (WhatsApp)</label>
     <input id="ec-tel" type="tel" inputmode="tel" value="${esc(c.telefone)}"/>
+    ${camposExtrasCliente('ec', c)}
     <p class="muted ec-dica">Os orçamentos deste cliente passam a usar os dados novos.</p>
     <p id="ec-msg" class="error" role="alert"></p>
     <div class="ec-btns">
@@ -212,7 +234,7 @@ function abrirEditarCliente(c, aoSalvar) {
     const btn = e.target, msg = fundo.querySelector('#ec-msg');
     msg.textContent = ''; btn.disabled = true; btn.textContent = 'Salvando…';
     try {
-      const novo = await api(`/api/clients/${c.id}`, { method: 'PUT', body: { nome: fundo.querySelector('#ec-nome').value, telefone: fundo.querySelector('#ec-tel').value } });
+      const novo = await api(`/api/clients/${c.id}`, { method: 'PUT', body: { nome: fundo.querySelector('#ec-nome').value, telefone: fundo.querySelector('#ec-tel').value, ...lerExtrasCliente('ec') } });
       fechar(); aoSalvar && aoSalvar(novo);
     } catch (err) { msg.textContent = err.message; btn.disabled = false; btn.textContent = 'Salvar'; }
   });

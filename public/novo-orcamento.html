@@ -37,6 +37,7 @@
         <input id="nc-nome" placeholder="Nome do cliente"/>
         <label>Telefone (WhatsApp)</label>
         <input id="nc-tel" type="tel" placeholder="+55 11 99999-9999"/>
+        <div id="nc-extras"></div>
         <div style="margin-top:var(--sp-4)">
           <button class="btn-outline btn-sm" onclick="criarCliente()">Salvar cliente</button>
         </div>
@@ -153,7 +154,7 @@ async function criarCliente(){
   msg.textContent='';
   btn.disabled=true; btn.textContent='Salvando…';
   try{
-    const c=await api('/api/clients',{method:'POST',body:{nome,telefone}});
+    const c=await api('/api/clients',{method:'POST',body:{nome,telefone,...lerExtrasCliente('nc')}});
     clientes.push(c);
     const sel=document.getElementById('q-client');
     const opt=document.createElement('option');
@@ -242,6 +243,7 @@ async function criarOrcamento(){
     sel.appendChild(opt);
   });
   sel.addEventListener('change',mostrarEditarCliente);
+  document.getElementById('nc-extras').innerHTML=camposExtrasCliente('nc');
   const d=new Date(); d.setDate(d.getDate()+7);
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];
   renderPacotes();

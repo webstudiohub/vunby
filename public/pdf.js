@@ -129,6 +129,8 @@ async function gerarPdfOrcamento(dados) {
   paragrafo(dados.servico, 20, true, ESCURO, M, LARG, 1.3);
   y -= 4;
   paragrafo('Para: ' + (dados.clienteNome || ''), 11, false, CINZA);
+  if (dados.clienteDocumento) paragrafo((dados.clienteDocumento.length > 14 ? 'CNPJ: ' : 'CPF: ') + dados.clienteDocumento, 10, false, CINZA);
+  if (dados.clienteEndereco) paragrafo('Endereço do serviço: ' + dados.clienteEndereco, 10, false, CINZA);
   y -= 18;
 
   // ── Itens (tabela) ──

@@ -29,7 +29,8 @@ async function atualizarValor(quoteId) {
 
 async function getQuoteForUser(quoteId, userId) {
   const r = await query(
-    `SELECT q.*, c.nome as cliente_nome, c.telefone as cliente_telefone
+    `SELECT q.*, c.nome as cliente_nome, c.telefone as cliente_telefone,
+            c.email as cliente_email, c.endereco as cliente_endereco, c.documento as cliente_documento
      FROM quotes q JOIN clients c ON c.id = q.client_id
      WHERE q.id = $1 AND q.user_id = $2`,
     [quoteId, userId]
@@ -152,7 +153,7 @@ async function handle(req, res) {
       temLinkAvaliacao: !!user.google_review_link,
       publicUrl,
       whatsappLink,
-      cliente: { id: quote.client_id, nome: quote.cliente_nome, telefone: quote.cliente_telefone },
+      cliente: { id: quote.client_id, nome: quote.cliente_nome, telefone: quote.cliente_telefone, email: quote.cliente_email, endereco: quote.cliente_endereco, documento: quote.cliente_documento },
       pacotes: pacs.rows,
       itens: quote.usa_itens ? await I.lerItens(id) : [],
       followUps: fus.rows,

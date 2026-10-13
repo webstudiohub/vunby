@@ -78,6 +78,9 @@ CREATE TABLE IF NOT EXISTS clients (
   nome         TEXT NOT NULL,
   telefone     TEXT NOT NULL,
   observacoes  TEXT,
+  email        TEXT,
+  endereco     TEXT,
+  documento    TEXT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
