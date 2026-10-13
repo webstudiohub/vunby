@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
+<style>.campo-erro{border:2px solid #C62828!important;background:#FFF5F5!important}.campo-erro-msg{color:#C62828;font-weight:700;font-size:var(--fs-md);margin:6px 0 0}</style>
 </head><body>
 <div id="top"></div>
 <div class="container">
@@ -149,7 +150,7 @@ async function criarCliente(){
     opt.value=String(c.id);
     opt.textContent=`${c.nome} — ${c.telefone}`;
     sel.appendChild(opt);
-    sel.value=String(c.id);
+    sel.value=String(c.id); sel.dispatchEvent(new Event('change'));
     salvarRascunho();
     document.getElementById('novo-cliente-details').removeAttribute('open');
   }catch(e){msg.textContent=e.message;}
@@ -177,6 +178,16 @@ function togglePkg(id){
   salvarRascunho();
 }
 
+// Leva a tela até o campo que falta, marca em vermelho e mostra o aviso logo abaixo dele
+function apontarCampo(id,texto){
+  const c=document.getElementById(id); document.getElementById('q-msg').textContent=texto;
+  document.querySelectorAll('.campo-erro-msg').forEach(e=>e.remove());
+  c.classList.add('campo-erro'); c.setAttribute('aria-invalid','true');
+  const m=document.createElement('p'); m.className='campo-erro-msg'; m.setAttribute('role','alert'); m.textContent=texto; c.after(m);
+  c.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=>c.focus({preventScroll:true}),350);
+  const limpar=()=>{ c.classList.remove('campo-erro'); c.removeAttribute('aria-invalid'); m.remove(); };
+  c.addEventListener('change',limpar,{once:true}); c.addEventListener('input',limpar,{once:true});
+}
 async function criarOrcamento(){
   const clientId=document.getElementById('q-client').value;
   const servico=document.getElementById('q-servico').value;
@@ -187,8 +198,8 @@ async function criarOrcamento(){
   const msg=document.getElementById('q-msg');
   const btn=document.querySelector('[onclick="criarOrcamento()"]');
   msg.textContent='';
-  if(!clientId){msg.textContent='Selecione ou crie um cliente.';return;}
-  if(!servico){msg.textContent='Descreva o serviço.';return;}
+  if(!clientId){apontarCampo('q-client','Selecione ou crie um cliente.');return;}
+  if(!servico){apontarCampo('q-servico','Descreva o serviço.');return;}
   const comItens=editor.quantos()>0;
   if(comItens){ const erro=editor.validar(); if(erro){msg.textContent=erro;return;} }
   else if(!valor){msg.textContent='Adicione os itens ou informe o valor total.';return;}
