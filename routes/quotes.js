@@ -221,6 +221,7 @@ async function handle(req, res) {
     // Qualquer mudança no conteúdo vira nova versão (o cliente com a página antiga aberta precisa recarregar)
     if (['servico', 'valor', 'validade', 'observacoes', 'usa_itens', 'desconto_cents', 'taxa_cents', 'taxa_nome', 'sinal_pct', 'condicoes'].some(k => updates[k] !== undefined) || novosItens) {
       updates.versao = (Number(quote.versao) || 1) + 1;
+      if (!quote.alteracao_resolvida) updates.alteracao_resolvida = true; // nova versão responde ao pedido de alteração
     }
     if (updates.valor !== undefined && (updates.usa_itens ?? quote.usa_itens)) delete updates.valor; // com itens, o valor é calculado
 

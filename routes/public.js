@@ -5,6 +5,11 @@ const { STATUS, isFinal } = require('../lib/status');
 const { isExpired } = require('../lib/dates');
 const { getSession } = require('./auth');
 const I = require('../lib/itens');
+const { rateLimit } = require('../lib/rateLimit');
+const { sendAlteracaoEmail } = require('../lib/email');
+
+// Motivos de recusa que o cliente pode escolher (vira dado para o prestador entender por que perde vendas)
+const MOTIVOS_RECUSA = ['Achei caro', 'Fechei com outro', 'Desisti do serviço', 'O prazo não atende', 'Outro motivo'];
 
 // O próprio prestador abrindo o link do orçamento (ex.: "Ver página do cliente") não conta como visualização
 async function isOwner(req, quoteUserId) {
@@ -74,6 +79,8 @@ async function handle(req, res) {
       condicoes: quote.condicoes || '',
       versao: Number(quote.versao) || 1,
       aprovacao: quote.aprovacao || null,
+      alteracao: quote.alteracao_texto ? { texto: quote.alteracao_texto, em: quote.alteracao_em, pendente: !quote.alteracao_resolvida } : null,
+      motivosRecusa: MOTIVOS_RECUSA,
     });
   }
 
@@ -134,6 +141,8 @@ async function handle(req, res) {
     }
 
     const observacao = typeof body.observacao === 'string' ? body.observacao.slice(0, 1000) : null;
+    const motivo = newStatus === STATUS.RECUSADO && MOTIVOS_RECUSA.includes(body.motivo) ? body.motivo : null;
+    if (motivo) await query('UPDATE quotes SET recusa_motivo = $2 WHERE id = $1', [quote.id, motivo]);
     const upd = await query(
       `UPDATE quotes SET status = $1, resposta_cliente = $2, responded_at = NOW(),
          aprovacao = COALESCE($5::jsonb, aprovacao), valor = COALESCE($6, valor)
@@ -142,6 +151,27 @@ async function handle(req, res) {
     if (!upd.rows[0]) return badRequest(res, 'Este orçamento já foi finalizado.');
 
     return ok(res, { message: newStatus === STATUS.APROVADO ? 'Orçamento aprovado!' : 'Resposta registrada.' });
+  }
+
+  // POST /api/public/quote/:token/alteracao — cliente pede mudança no orçamento
+  const altMatch = path.match(/^\/api\/public\/quote\/([A-Za-z0-9_-]+)\/alteracao$/);
+  if (req.method === 'POST' && altMatch) {
+    const token = altMatch[1];
+    if (!(await rateLimit(`alteracao:${token}`, 5, 60 * 60_000))) return badRequest(res, 'Muitos pedidos seguidos. Aguarde um pouco ou fale pelo WhatsApp.');
+    if (!(await rateLimit(`alteracao-ip:${ip}`, 15, 60 * 60_000))) return badRequest(res, 'Muitos pedidos seguidos. Aguarde um pouco.');
+    let body = {}; try { body = await readBody(req); } catch { return badRequest(res); }
+    const texto = String(body.texto || '').trim();
+    if (texto.length < 3) return badRequest(res, 'Escreva o que você gostaria de mudar.');
+    if (texto.length > 1000) return badRequest(res, 'Texto muito longo (máximo 1000 caracteres).');
+    const r = await query(`SELECT q.id, q.status, q.validade, q.servico, c.nome AS cliente_nome, u.email AS prestador_email
+      FROM quotes q JOIN clients c ON c.id = q.client_id JOIN users u ON u.id = q.user_id WHERE q.public_token = $1`, [token]);
+    const quote = r.rows[0];
+    if (!quote) return notFound(res, 'Orçamento não encontrado.');
+    if (isFinal(quote.status)) return badRequest(res, 'Este orçamento já foi finalizado.');
+    if (isExpired(quote.validade)) return badRequest(res, 'Este orçamento está expirado.');
+    await query('UPDATE quotes SET alteracao_texto = $2, alteracao_em = NOW(), alteracao_resolvida = false WHERE id = $1', [quote.id, texto]);
+    sendAlteracaoEmail(quote.prestador_email, { cliente: quote.cliente_nome, servico: quote.servico, texto, quoteId: quote.id }).catch(() => {});
+    return ok(res, { message: 'Pedido de alteração enviado.' });
   }
 
   // POST /api/public/quote/:token/view-confirmed — frontend confirma visualização real (JS carregou)

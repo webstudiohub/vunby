@@ -5,6 +5,17 @@
 <meta name="robots" content="noindex,nofollow"/>
 <link rel="stylesheet" href="style.css"/>
 <style>
+.alt-texto{width:100%;padding:12px;border:1.5px solid #CBD2DA;border-radius:10px;font-size:var(--fs-md);margin-bottom:12px;resize:vertical;font-family:inherit}
+.alt-sec{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.alt-btn{min-height:48px;border:1.5px solid #CBD2DA;background:#fff;border-radius:10px;font:inherit;font-size:var(--fs-md);font-weight:700;color:#3A4550;cursor:pointer}
+.alt-painel{background:#F4F6F9;border-radius:12px;padding:16px;margin-top:12px}
+.alt-rot{display:block;font-size:var(--fs-md);font-weight:700;color:#0F1923;margin:0 0 10px}
+.alt-motivo{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #E4E8EE;border-radius:10px;padding:12px 14px;margin:0 0 8px;font-size:var(--fs-md);font-weight:600;color:#0F1923;cursor:pointer;min-height:48px}
+.alt-motivo input{width:22px;height:22px;margin:0;appearance:auto;-webkit-appearance:radio;accent-color:#0F3A8C}
+.alt-azul{background:#0F3A8C}
+.alt-recusa{width:100%;min-height:48px;background:#fff;border:2px solid #C0392B;color:#C0392B;border-radius:10px;font:inherit;font-size:var(--fs-md);font-weight:700;cursor:pointer}
+.alt-ok{background:#E6EEFB;border-radius:12px;padding:16px;margin-top:12px;font-size:var(--fs-md);line-height:1.5}
+.alt-aviso{background:#FFF8E1;border:1.5px solid #E3B23C;border-radius:12px;padding:14px 16px;margin-bottom:14px;font-size:var(--fs-md);line-height:1.5}
 .it-titulo{font-size:var(--fs-lg);font-weight:700;color:#0F1923;margin:24px 0 8px}
 .it-ajuda{font-size:var(--fs-md);color:#5B6675;margin-bottom:10px;line-height:1.45}
 .it-lista{border:1.5px solid #E5E5EA;border-radius:12px;overflow:hidden}
@@ -111,6 +122,38 @@ function itensHtml(q,podeEscolher){
     ${q.condicoes?`<div class="it-cond"><strong>Condições</strong><p>${esc(q.condicoes)}</p></div>`:''}`;
 }
 
+document.addEventListener('change',e=>{ if(e.target.name==='motivo'){ const m=document.getElementById('msg-acao'); if(m) m.textContent=''; } });
+// Painéis de "Pedir alteração" e "Recusar"
+function abrirPainel(qual){
+  const el=document.getElementById('painel'), m=document.getElementById('msg-acao'); if(m) m.textContent='';
+  if(el.dataset.aberto===qual){ el.innerHTML=''; el.dataset.aberto=''; return; }
+  el.dataset.aberto=qual;
+  if(qual==='alterar'){
+    el.innerHTML=`<div class="alt-painel">
+      <label for="alt-texto" class="alt-rot">O que você gostaria de mudar?</label>
+      <textarea id="alt-texto" class="alt-texto" rows="3" maxlength="1000" placeholder="Ex.: tirar a montagem do armário e incluir a geladeira"></textarea>
+      <button class="btn-accept alt-azul" style="width:100%" onclick="enviarAlteracao()">Enviar pedido de alteração</button></div>`;
+    document.getElementById('alt-texto').focus();
+  }else{
+    el.innerHTML=`<div class="alt-painel">
+      <p class="alt-rot">Pode contar o motivo? Isso ajuda a melhorar o atendimento.</p>
+      ${(Q.motivosRecusa||[]).map(t=>`<label class="alt-motivo"><input type="radio" name="motivo" value="${esc(t)}"/> ${esc(t)}</label>`).join('')}
+      <textarea id="rec-obs" class="alt-texto" rows="2" placeholder="Quer comentar algo? (opcional)"></textarea>
+      <button class="alt-recusa" onclick="acao('recusar')">Confirmar recusa</button></div>`;
+  }
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+async function enviarAlteracao(){
+  const t=document.getElementById('alt-texto').value.trim(), m=document.getElementById('msg-acao');
+  if(t.length<3){ m.textContent='Escreva o que você gostaria de mudar.'; return; }
+  try{
+    const r=await fetch(`/api/public/quote/${encodeURIComponent(token)}/alteracao`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({texto:t})});
+    const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Erro');
+    document.getElementById('painel').innerHTML=`<div class="alt-ok">✅ <strong>Pedido enviado!</strong><br>${esc((Q.prestador&&Q.prestador.nome)||'O prestador')} vai ajustar e este mesmo link mostra a versão nova.</div>`;
+    document.getElementById('painel').dataset.aberto='';
+  }catch(e){ m.textContent=e.message; }
+}
+
 async function acao(tipo){
   const obs=document.getElementById('obs-acao')?.value||'';
   const m=document.getElementById('msg-acao');
@@ -128,6 +171,11 @@ async function acao(tipo){
   }
   try{
     const body={observacao:obs,pacoteId:pacoteSel};
+    if(tipo==='recusar'){
+      const mot=document.querySelector('input[name="motivo"]:checked');
+      if(!mot){ if(m) m.textContent='Escolha o motivo da recusa.'; return; }
+      body.motivo=mot.value; body.observacao=document.getElementById('rec-obs')?.value||'';
+    }
     if(Q.usaItens){ body.escolhidos=[...escolhidos]; body.versao=Q.versao; }
     const res=await fetch(`/api/public/quote/${encodeURIComponent(token)}/${tipo==='aceitar'?'accept':'reject'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const d=await res.json().catch(()=>({}));
@@ -176,11 +224,14 @@ async function acao(tipo){
     </div>`:
     q.expirado?`<div style="background:#FFE8D6;padding:16px;border-radius:12px;margin-top:20px"><p style="font-weight:600;color:#C04A00">⏰ Este orçamento está expirado. Entre em contato para renovar.</p></div>`:
     `<div id="acao-area" style="margin-top:20px">
-      <textarea id="obs-acao" style="width:100%;padding:12px;border:1.5px solid #E5E5EA;border-radius:10px;font-size:var(--fs-md);margin-bottom:12px;resize:none;font-family:inherit" rows="2" placeholder="Comentário (opcional)"></textarea>
-      <div class="action-btns">
-        <button class="btn-accept" onclick="acao('aceitar')">✓ Aprovar</button>
-        <button class="btn-reject" onclick="acao('recusar')">✗ Recusar</button>
+      ${q.alteracao&&q.alteracao.pendente?`<div class="alt-aviso">📝 <strong>Você pediu uma alteração</strong> em ${new Date(q.alteracao.em).toLocaleDateString('pt-BR')}: “${esc(q.alteracao.texto)}”<br>Quando a nova versão estiver pronta, este mesmo link é atualizado.</div>`:''}
+      <textarea id="obs-acao" class="alt-texto" rows="2" placeholder="Comentário (opcional)"></textarea>
+      <button class="btn-accept" style="width:100%" onclick="acao('aceitar')">✓ Aprovar orçamento</button>
+      <div class="alt-sec">
+        <button class="alt-btn" onclick="abrirPainel('alterar')">✏️ Pedir alteração</button>
+        <button class="alt-btn" onclick="abrirPainel('recusar')">Recusar</button>
       </div>
+      <div id="painel"></div>
       <div id="confirmar-area"></div>
       <p id="msg-acao" class="error" style="margin-top:10px"></p>
     </div>`;

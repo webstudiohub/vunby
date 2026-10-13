@@ -66,7 +66,7 @@ function filtrar(){
       </div>
       <div class="quote-row-right">
         <div class="quote-row-valor">${brl(q.valor)}</div>
-        <span class="${badgeClass(q.status)}">${q.status}</span>
+        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">✏️ pediu alteração</span>':''}
       </div>
     </a>`).join('');
 }

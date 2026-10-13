@@ -149,7 +149,13 @@ async function renderPage(){
       </div>`;
     }).join('');
 
-  el.innerHTML=`
+  const altCard=q.alteracao_texto&&!q.alteracao_resolvida&&!final?`<div class="card" style="border:2px solid #E3B23C;background:#FFFBEB">
+      <h3>✏️ O cliente pediu uma alteração</h3>
+      <p class="muted" style="font-size:var(--fs-sm)">${new Date(q.alteracao_em).toLocaleString('pt-BR')}</p>
+      <p style="font-size:var(--fs-md);margin:8px 0 12px;white-space:pre-line">“${esc(q.alteracao_texto)}”</p>
+      <button class="btn-primary" onclick="abrirEdicao();document.getElementById('form-edicao').scrollIntoView({behavior:'smooth'})">Ajustar o orçamento</button>
+      <p class="muted" style="font-size:var(--fs-sm);margin-top:8px">Ao salvar, o link do cliente mostra a versão nova e este aviso some.</p></div>`:'';
+  el.innerHTML=`${altCard}
     <div class="card">
       <h2>${esc(q.servico)}</h2>
       <div style="margin-bottom:12px">
@@ -163,6 +169,7 @@ async function renderPage(){
       ${q.usa_itens?listaItensHtml(q):''}
       ${q.validade?`<p><strong>Validade:</strong> ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
       ${q.observacoes?`<p><strong>Obs:</strong> ${esc(q.observacoes)}</p>`:''}
+      ${q.recusa_motivo?`<p><strong>Motivo da recusa:</strong> ${esc(q.recusa_motivo)}</p>`:''}
       ${q.resposta_cliente?`<p><strong>Comentário do cliente:</strong> ${esc(q.resposta_cliente)}</p>`:''}
       ${final?'':`<div style="margin-top:12px">
         <button class="btn-outline btn-sm" id="btn-editar" onclick="abrirEdicao()">✏️ Editar orçamento</button>
