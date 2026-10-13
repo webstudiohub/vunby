@@ -145,7 +145,7 @@ async function gerarPdfOrcamento(dados) {
     dados.itens.forEach((it, k) => {
       const opc = it.tipo && it.tipo !== 'incluido';
       const desc = pdfQuebrar(pdfTexto(it.descricao), 11, true, LARG - COLV - 20);
-      const det = pdfTexto(`${Number(it.qtd).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${it.unidade} × ${R(it.preco_cents)}` + (opc ? (it.tipo === 'recomendado' ? '   ·   recomendado (opcional)' : '   ·   opcional') : ''));
+      const det = pdfTexto(`${Number(it.qtd).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} × ${R(it.preco_cents)} por ${window.VCalc ? VCalc.nomeUnidade(it.unidade) : it.unidade}` + (opc ? (it.tipo === 'recomendado' ? '   ·   recomendado (opcional)' : '   ·   opcional') : ''));
       const alt = 12 + desc.length * 14 + 14;
       garantir(alt);
       if (k % 2 === 1) ret(M, y - alt, LARG, alt, '#F7F9FC');

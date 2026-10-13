@@ -5,6 +5,9 @@
 
   const UNIDADES = ['un', 'm²', 'm', 'm³', 'kg', 'h', 'diária', 'ponto', 'km', 'andar', 'cento', 'vb'];
   const TIPOS = ['incluido', 'opcional', 'recomendado'];
+  // Como a unidade aparece escrita para o prestador e o cliente ("R$ 50 por hora")
+  const NOME_UNIDADE = { un: 'unidade', 'm²': 'm²', m: 'metro', 'm³': 'm³', kg: 'kg', h: 'hora', 'diária': 'diária', ponto: 'ponto', km: 'km', andar: 'andar', cento: 'cento', vb: 'serviço' };
+  const nomeUnidade = u => NOME_UNIDADE[u] || u;
 
   // "1.234,56" | "1234,56" | "1234.56" | 1234.56 → número (NaN se inválido)
   function numeroBR(v) {
@@ -46,7 +49,7 @@
   function reais(c) { return (Number(c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
   function qtdBR(n) { return Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 }); }
 
-  const api = { UNIDADES, TIPOS, numeroBR, centavos, itemConta, linhaCents, calcular, reais, qtdBR };
+  const api = { UNIDADES, TIPOS, NOME_UNIDADE, nomeUnidade, numeroBR, centavos, itemConta, linhaCents, calcular, reais, qtdBR };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.VCalc = api;
 })(typeof window !== 'undefined' ? window : this);

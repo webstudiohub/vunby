@@ -13,6 +13,7 @@ const radarRoute = require('./routes/radar');
 const dashboardRoute = require('./routes/dashboard');
 const pdfRoute = require('./routes/pdf');
 const billingRoute = require('./routes/billing');
+const catalogRoute = require('./routes/catalog');
 const { sendEmail } = require('./lib/email');
 
 const MIME = {
@@ -95,6 +96,7 @@ const server = http.createServer(async (req, res) => {
         await radarRoute.handle(req, res) ??
         await dashboardRoute.handle(req, res) ??
         await billingRoute.handle(req, res) ??
+        await catalogRoute.handle(req, res) ??
         await pdfRoute.handle(req, res);
 
       if (handled === null) {

@@ -91,7 +91,7 @@ function itensHtml(q,podeEscolher){
   const linha=i=>{
     const opc=i.tipo!=='incluido';
     const on=!opc||escolhidos.has(String(i.id));
-    const det=`${VCalc.qtdBR(i.qtd)} ${esc(i.unidade)} × ${R(i.preco_cents)}`;
+    const det=`${VCalc.qtdBR(i.qtd)} × ${R(i.preco_cents)} por ${VCalc.nomeUnidade(i.unidade)}`;
     const controle=opc&&podeEscolher
       ?`<input type="checkbox" class="it-check" ${on?'checked':''} onchange="marcarItem('${i.id}',this.checked)" aria-label="Incluir ${esc(i.descricao)}"/>`
       :`<span class="it-ok" aria-hidden="true">✓</span>`;

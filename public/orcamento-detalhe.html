@@ -13,6 +13,7 @@
 <script src="pdf.js"></script>
 <script src="calc.js"></script>
 <script src="itens-editor.js"></script>
+<script src="montar-tabela.js"></script>
 <script>
 const qid=new URLSearchParams(location.search).get('id');
 
@@ -47,7 +48,7 @@ function abrirEdicao(){
     itens:q.itens, desconto:q.desconto_cents?(q.desconto_cents/100).toFixed(2).replace('.',','):'',
     taxa:q.taxa_cents?(q.taxa_cents/100).toFixed(2).replace('.',','):'', taxaNome:q.taxa_nome||'',
     sinalPct:Number(q.sinal_pct)?String(Number(q.sinal_pct)).replace('.',','):'',
-  },()=>{ document.getElementById('ed-valor-box').style.display=editorEd.quantos()?'none':''; });
+  },()=>{ document.getElementById('ed-valor-box').style.display=editorEd.quantos()?'none':''; },ferramentasItens(()=>editorEd,'ed-obs'));
   document.getElementById('ed-valor-box').style.display=editorEd.quantos()?'none':'';
 }
 function fecharEdicao(){ document.getElementById('form-edicao').style.display='none'; document.getElementById('btn-editar').style.display=''; }
@@ -111,7 +112,7 @@ function listaItensHtml(q){
     const fora=aprovado?i.escolhido===false:false;
     const tag=i.tipo==='incluido'?'':`<span class="flag-followup" style="margin-left:4px">${aprovado?(i.escolhido?'cliente escolheu':'cliente não quis'):(i.tipo==='opcional'?'opcional':'recomendado')}</span>`;
     return `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #F2F2F7;${fora?'opacity:.5':''}">
-      <span style="font-size:var(--fs-md)"><strong>${esc(i.descricao)}</strong>${tag}<br><span class="muted" style="font-size:var(--fs-sm)">${VCalc.qtdBR(i.qtd)} ${esc(i.unidade)} × ${R(i.preco_cents)}</span></span>
+      <span style="font-size:var(--fs-md)"><strong>${esc(i.descricao)}</strong>${tag}<br><span class="muted" style="font-size:var(--fs-sm)">${VCalc.qtdBR(i.qtd)} × ${R(i.preco_cents)} por ${VCalc.nomeUnidade(i.unidade)}</span></span>
       <strong style="white-space:nowrap;font-size:var(--fs-md)">${R(VCalc.linhaCents(i))}</strong></div>`;}).join('');
   const ex=[q.desconto_cents>0?`Desconto: − ${R(q.desconto_cents)}`:'',q.taxa_cents>0?`${esc(q.taxa_nome||'Taxa')}: ${R(q.taxa_cents)}`:'',Number(q.sinal_pct)>0?`Sinal: ${VCalc.qtdBR(q.sinal_pct)}%${q.aprovacao?` (${R(q.aprovacao.sinal)})`:''}`:''].filter(Boolean).join(' · ');
   return `<div style="margin:10px 0 4px">${linhas}</div>${ex?`<p class="muted" style="font-size:var(--fs-sm)">${ex}</p>`:''}`;

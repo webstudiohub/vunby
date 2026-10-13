@@ -86,6 +86,7 @@
 <script src="app.js"></script>
 <script src="calc.js"></script>
 <script src="itens-editor.js"></script>
+<script src="montar-tabela.js"></script>
 <script>
 let clientes=[], pacotes=[], editor=null, itensRascunho=null;
 const selectedPkgs=new Set();
@@ -128,7 +129,7 @@ function descartarRascunho(){
 }
 
 function iniciarEditor(estado){
-  editor=ItensEditor(document.getElementById('itens-editor'),estado,()=>{ mostrarValorFechado(); salvarRascunho(); });
+  editor=ItensEditor(document.getElementById('itens-editor'),estado,()=>{ mostrarValorFechado(); salvarRascunho(); },ferramentasItens(()=>editor,'q-obs'));
   mostrarValorFechado();
 }
 function mostrarValorFechado(){ document.getElementById('valor-fechado').style.display=editor&&editor.quantos()?'none':''; }

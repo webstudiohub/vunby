@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>VUNBY — Minha tabela de preços</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0F3A8C"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+<style>
+.tb-grupo{font-size:var(--fs-lg);font-weight:700;color:var(--dark);margin:var(--sp-6) 0 var(--sp-2)}
+.tb-item{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:var(--white);border:1.5px solid var(--gray2);border-radius:12px;padding:14px 16px;margin-bottom:8px;font:inherit;text-align:left;cursor:pointer;color:inherit;min-height:56px}
+.tb-item:active{background:var(--navy-light)}
+.tb-nome{font-size:var(--fs-md);font-weight:600;color:var(--dark);line-height:1.3}
+.tb-det{display:block;font-size:var(--fs-sm);color:var(--muted);font-weight:400;margin-top:2px}
+.tb-preco{font-size:var(--fs-md);font-weight:700;color:var(--navy);white-space:nowrap;text-align:right}
+.tb-preco small{display:block;font-size:var(--fs-sm);font-weight:400;color:var(--muted)}
+.tb-form{background:var(--white);border:2px solid var(--navy);border-radius:12px;padding:16px;margin-bottom:8px}
+.tb-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tb-tipo{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--gray);padding:4px;border-radius:10px;margin-top:6px}
+.tb-tipo button{border:none;background:transparent;font:inherit;font-size:var(--fs-sm);font-weight:700;color:var(--muted);padding:10px 4px;border-radius:8px;min-height:44px;cursor:pointer}
+.tb-tipo button.ativo{background:var(--white);color:var(--navy);box-shadow:var(--shadow-sm)}
+.tb-acoes{display:flex;gap:8px;margin-top:var(--sp-5)}
+.tb-acoes .btn-primary{flex:1}
+.tb-apagar{background:none;border:1.5px solid #FFD5D2;color:var(--red);border-radius:var(--radius-sm);font:inherit;font-weight:600;padding:0 16px;min-height:48px;cursor:pointer}
+.tb-kits{display:grid;gap:8px;margin-top:var(--sp-3)}
+.tb-kit{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:var(--white);border:1.5px solid var(--gray2);border-radius:12px;padding:14px 16px;font:inherit;font-size:var(--fs-md);font-weight:600;color:var(--dark);cursor:pointer;min-height:56px;text-align:left}
+.tb-kit.sugerido{border-color:var(--gold);background:#FFFBEB}
+.tb-kit span{font-size:var(--fs-sm);font-weight:400;color:var(--muted)}
+.tb-aviso{background:#FFFBEB;border:1.5px solid var(--gold);border-radius:12px;padding:14px 16px;font-size:var(--fs-md);color:var(--dark);margin-bottom:var(--sp-4)}
+</style>
+</head><body>
+<div id="top"></div>
+<div class="container" style="padding-bottom:calc(var(--nav-h) + 40px)">
+  <div class="page-header">
+    <h1>Minha tabela de preços</h1>
+    <p>Seus serviços com o seu preço. Com ela, o orçamento sai em segundos.</p>
+  </div>
+  <div id="conteudo"><p class="muted">Carregando…</p></div>
+</div>
+<div id="nav"></div>
+<script src="app.js"></script>
+<script src="calc.js"></script>
+<script src="kits.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let itens=[], perfil=null, editando=null; // editando: id do item aberto, 'novo' ou null
+const reaisBR=c=>(Number(c||0)/100).toFixed(2).replace('.',',');
+
+function detalhe(i){
+  if(i.capacidade_m3) return `Veículo · cabe ${VCalc.qtdBR(i.capacidade_m3)} m³`;
+  if(i.m3) return `${VCalc.qtdBR(i.m3)} m³`+(i.desmonta?` · desmontar ${VCalc.reais(i.preco_desm_cents)} · montar ${VCalc.reais(i.preco_mont_cents)}`:'');
+  return '';
+}
+function precoHtml(i){
+  if(i.m3 && !i.preco_cents) return `<span class="tb-preco"><small>móvel</small></span>`;
+  return `<span class="tb-preco">${VCalc.reais(i.preco_cents)}<small>por ${VCalc.nomeUnidade(i.unidade)}</small></span>`;
+}
+function tipoDe(i){ return i.capacidade_m3?'veiculo':(i.m3?'movel':'servico'); }
+
+function formHtml(i){
+  const novo=!i; i=i||{grupo:'',nome:'',unidade:'un',preco_cents:0,m3:null,capacidade_m3:null,desmonta:false,preco_desm_cents:0,preco_mont_cents:0};
+  const t=tipoDe(i);
+  const grupos=[...new Set(itens.map(x=>x.grupo))];
+  return `<div class="tb-form" id="form">
+    ${novo?`<label style="margin-top:0">Tipo</label>
+    <div class="tb-tipo" role="radiogroup">
+      ${[['servico','Serviço'],['movel','Móvel'],['veiculo','Veículo']].map(([k,r])=>`<button type="button" data-tipo="${k}" class="${k===t?'ativo':''}" role="radio" aria-checked="${k===t}">${r}</button>`).join('')}
+    </div>`:''}
+    <input type="hidden" id="f-tipo" value="${t}"/>
+    <label${novo?'':' style="margin-top:0"'}>Nome</label>
+    <input id="f-nome" maxlength="80" value="${esc(i.nome)}" placeholder="Ex: Instalação de chuveiro"/>
+    <label>Grupo</label>
+    <input id="f-grupo" maxlength="40" list="grupos" value="${esc(i.grupo)}" placeholder="Ex: Instalação"/>
+    <datalist id="grupos">${grupos.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
+    <div id="campos-servico" ${t==='movel'?'hidden':''}>
+      <div class="tb-2">
+        <div><label>Seu preço (R$)</label><input id="f-preco" inputmode="decimal" value="${i.preco_cents?reaisBR(i.preco_cents):''}" placeholder="0,00"/></div>
+        <div><label>Cobrado por</label><select id="f-unidade">${VCalc.UNIDADES.map(u=>`<option value="${u}"${u===i.unidade?' selected':''}>${VCalc.nomeUnidade(u)}</option>`).join('')}</select></div>
+      </div>
+    </div>
+    <div id="campos-veiculo" ${t==='veiculo'?'':'hidden'}>
+      <label>Quanto cabe (m³)</label><input id="f-cap" inputmode="decimal" value="${i.capacidade_m3?String(i.capacidade_m3).replace('.',','):''}" placeholder="Ex: 20"/>
+    </div>
+    <div id="campos-movel" ${t==='movel'?'':'hidden'}>
+      <label>Volume (m³ por peça)</label><input id="f-m3" inputmode="decimal" value="${i.m3?String(i.m3).replace('.',','):''}" placeholder="Ex: 1,5"/>
+      <p class="muted" style="font-size:var(--fs-sm);margin-top:4px">Não sabe? Largura × altura × profundidade, em metros.</p>
+      <label>Preço para carregar esta peça (R$, opcional)</label><input id="f-preco-movel" inputmode="decimal" value="${i.preco_cents?reaisBR(i.preco_cents):''}" placeholder="Deixe vazio se já está no frete"/>
+      <label style="display:flex;align-items:center;gap:10px"><input type="checkbox" id="f-desmonta" ${i.desmonta?'checked':''} style="width:24px;height:24px;margin:0;appearance:auto;-webkit-appearance:checkbox;accent-color:var(--navy)"/> Precisa desmontar e montar</label>
+      <div class="tb-2" id="campos-desm" ${i.desmonta?'':'hidden'}>
+        <div><label>Desmontar (R$)</label><input id="f-desm" inputmode="decimal" value="${i.preco_desm_cents?reaisBR(i.preco_desm_cents):''}" placeholder="0,00"/></div>
+        <div><label>Montar (R$)</label><input id="f-mont" inputmode="decimal" value="${i.preco_mont_cents?reaisBR(i.preco_mont_cents):''}" placeholder="0,00"/></div>
+      </div>
+    </div>
+    <p class="error" id="f-msg" role="alert"></p>
+    <div class="tb-acoes">
+      ${novo?'':`<button type="button" class="tb-apagar" onclick="apagar('${i.id}')">Apagar</button>`}
+      <button type="button" class="btn-outline" style="flex:0 0 auto" onclick="fecharForm()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="salvar(${novo?'null':`'${i.id}'`})">Salvar</button>
+    </div>
+  </div>`;
+}
+
+function kitsHtml(destaque){
+  const sug=VKits.kitDaProfissao(perfil&&perfil.profissao);
+  return `<div class="tb-kits">${Object.entries(VKits.KITS).sort(([a],[b])=>(b===sug)-(a===sug)).map(([k,v])=>
+    `<button type="button" class="tb-kit${k===sug&&destaque?' sugerido':''}" onclick="carregarKit('${k}')">${esc(v.nome)}<span>${v.itens.length} itens${k===sug?' · sua profissão':''}</span></button>`).join('')}</div>`;
+}
+
+function render(){
+  const el=$('conteudo');
+  if(!itens.length){
+    el.innerHTML=`<div class="card">
+      <h3>Comece com um modelo pronto</h3>
+      <p class="muted">Escolha sua profissão: a tabela já vem com os serviços mais comuns. Depois é só colocar os <strong>seus preços</strong>, apagar o que não faz e adicionar o que faltar.</p>
+      ${kitsHtml(true)}
+      <button type="button" class="btn-outline" style="width:100%;margin-top:var(--sp-4)" onclick="novoItem()">Começar do zero</button>
+    </div><div id="area-novo"></div>`;
+    if(editando==='novo') $('area-novo').innerHTML=formHtml(null);
+    return;
+  }
+  const grupos={};
+  itens.forEach(i=>(grupos[i.grupo]=grupos[i.grupo]||[]).push(i));
+  el.innerHTML=`<div class="tb-aviso">💡 Toque em um item para colocar <strong>o seu preço</strong>. Os preços do modelo são só exemplo.</div>
+    <button type="button" class="btn-primary btn-gold" onclick="novoItem()">+ Adicionar item</button>
+    <div id="area-novo"></div>
+    ${Object.entries(grupos).map(([g,lista])=>`<h2 class="tb-grupo">${esc(g)}</h2>${lista.map(i=>editando===i.id?formHtml(i):`
+      <button type="button" class="tb-item" onclick="abrir('${i.id}')">
+        <span><span class="tb-nome">${esc(i.nome)}</span>${detalhe(i)?`<span class="tb-det">${detalhe(i)}</span>`:''}</span>${precoHtml(i)}
+      </button>`).join('')}`).join('')}
+    <details class="card" style="margin-top:var(--sp-6)"><summary style="font-weight:700;color:var(--navy);cursor:pointer;min-height:44px;display:flex;align-items:center">+ Juntar outro modelo de profissão</summary>
+      <p class="muted" style="margin-top:8px">Para quem trabalha com mais de uma coisa. O que você já tem não é duplicado.</p>${kitsHtml(false)}</details>
+    <p class="muted" style="margin-top:var(--sp-4)">Usa pacotes (Básico, Completo, Premium)? <a href="pacotes.html">Abrir meus pacotes</a></p>`;
+  if(editando==='novo') $('area-novo').innerHTML=formHtml(null);
+}
+
+function abrir(id){ editando=id; render(); $('form')?.scrollIntoView({behavior:'smooth',block:'center'}); }
+function novoItem(){ editando='novo'; render(); $('form')?.scrollIntoView({behavior:'smooth',block:'center'}); $('f-nome')?.focus(); }
+function fecharForm(){ editando=null; render(); }
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-tipo]'); if(!b||!$('form'))return;
+  const t=b.dataset.tipo; $('f-tipo').value=t;
+  document.querySelectorAll('.tb-tipo button').forEach(x=>{x.classList.toggle('ativo',x===b);x.setAttribute('aria-checked',x===b);});
+  $('campos-servico').hidden=t==='movel'; $('campos-veiculo').hidden=t!=='veiculo'; $('campos-movel').hidden=t!=='movel';
+  if(!$('f-grupo').value) $('f-grupo').value=t==='movel'?'Móveis':t==='veiculo'?'Transporte':'';
+  if(t==='veiculo') $('f-unidade').value='vb';
+});
+document.addEventListener('change',e=>{ if(e.target.id==='f-desmonta') $('campos-desm').hidden=!e.target.checked; });
+
+async function salvar(id){
+  const t=$('f-tipo').value, msg=$('f-msg'); msg.textContent='';
+  const body={nome:$('f-nome').value, grupo:$('f-grupo').value||(t==='movel'?'Móveis':t==='veiculo'?'Transporte':'Serviços')};
+  if(t==='movel'){
+    if(!(VCalc.numeroBR($('f-m3').value)>0)){ msg.textContent='Informe o volume da peça em m³ (ex.: 1,5).'; return; }
+    Object.assign(body,{unidade:'un',preco:$('f-preco-movel').value,m3:$('f-m3').value,capacidade_m3:'',desmonta:$('f-desmonta').checked,preco_desm:$('f-desm').value,preco_mont:$('f-mont').value});
+  }else{
+    Object.assign(body,{unidade:$('f-unidade').value,preco:$('f-preco').value,m3:'',capacidade_m3:t==='veiculo'?$('f-cap').value:'',desmonta:false,preco_desm:'',preco_mont:''});
+    if(t==='veiculo'&&!(VCalc.numeroBR($('f-cap').value)>0)){ msg.textContent='Informe quanto cabe no veículo, em m³.'; return; }
+  }
+  try{
+    if(id) await api('/api/catalog/'+id,{method:'PUT',body}); else await api('/api/catalog',{method:'POST',body});
+    editando=null; await carregar();
+  }catch(err){ msg.textContent=err.message; }
+}
+async function apagar(id){
+  const i=itens.find(x=>x.id===id);
+  if(!confirm(`Apagar "${i?i.nome:'item'}" da sua tabela? Orçamentos já enviados não mudam.`))return;
+  try{ await api('/api/catalog/'+id,{method:'DELETE'}); editando=null; await carregar(); }catch(err){ alert(err.message); }
+}
+async function carregarKit(k){
+  try{ const r=await api('/api/catalog/kit',{method:'POST',body:{kit:k}}); await carregar(); window.scrollTo({top:0,behavior:'smooth'}); if(!r.adicionados) alert('Esse modelo já está todo na sua tabela.'); }
+  catch(err){ alert(err.message); }
+}
+async function carregar(){ itens=await api('/api/catalog'); render(); }
+
+(async()=>{
+  perfil=await requireSession(); if(!perfil)return;
+  $('top').innerHTML=topbar(''); $('nav').innerHTML=bottomNav('tabela.html'); wireLogout();
+  await carregar();
+})();
+</script>
+</body></html>

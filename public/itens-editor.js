@@ -9,7 +9,8 @@ const TIPO_DICA = {
   opcional: 'Vem desmarcado. O cliente escolhe se quer adicionar.',
 };
 
-function ItensEditor(el, inicial, aoMudar) {
+function ItensEditor(el, inicial, aoMudar, opcoes) {
+  const ferramentas = (opcoes && opcoes.ferramentas) || []; // ex.: [{ rotulo:'📋 Montar pela minha tabela', acao: fn }]
   const C = window.VCalc;
   const st = {
     itens: (inicial && inicial.itens || []).map(i => ({
@@ -55,7 +56,7 @@ function ItensEditor(el, inicial, aoMudar) {
       </div>
       <div class="ie-nums">
         <label class="ie-campo"><span>Qtd</span><input data-f="qtd" inputmode="decimal" value="${e(i.qtd)}" aria-label="Quantidade"/></label>
-        <label class="ie-campo"><span>Unidade</span><select data-f="unidade" aria-label="Unidade">${C.UNIDADES.map(u => `<option${u === i.unidade ? ' selected' : ''}>${u}</option>`).join('')}</select></label>
+        <label class="ie-campo"><span>Unidade</span><select data-f="unidade" aria-label="Unidade">${C.UNIDADES.map(u => `<option value="${u}"${u === i.unidade ? ' selected' : ''}>${C.nomeUnidade(u)}</option>`).join('')}</select></label>
         <label class="ie-campo ie-preco"><span>Valor (R$)</span><input data-f="preco" inputmode="decimal" placeholder="0,00" value="${e(i.preco)}" aria-label="Valor unitário"/></label>
       </div>
       <div class="ie-linha-total">= <strong data-tot="${k}">${tot}</strong></div>
@@ -78,7 +79,8 @@ function ItensEditor(el, inicial, aoMudar) {
   function render(focarUltimo) {
     el.innerHTML = `
       <div class="ie-lista">${st.itens.length ? st.itens.map(itemHtml).join('') : '<p class="muted ie-vazio">Nenhum item ainda. Adicione o primeiro abaixo.</p>'}</div>
-      <button type="button" class="btn-outline ie-add" data-acao="adicionar">+ Adicionar item</button>
+      ${ferramentas.map((f, k) => `<button type="button" class="btn-primary btn-gold ie-add ie-ferramenta" data-ferr="${k}">${e(f.rotulo)}</button>`).join('')}
+      <button type="button" class="btn-outline ie-add" data-acao="adicionar">+ Adicionar item avulso</button>
       <details class="ie-extras"${temExtras() ? ' open' : ''}>
         <summary>Desconto, taxa e sinal</summary>
         <label>Desconto (R$)</label>
@@ -114,6 +116,7 @@ function ItensEditor(el, inicial, aoMudar) {
   el.addEventListener('change', ev => { if (ev.target.dataset.f === 'unidade') atualizarNumeros(); });
   el.addEventListener('click', ev => {
     const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.ferr !== undefined) { ferramentas[+b.dataset.ferr].acao(); return; }
     const item = b.closest('.ie-item'), k = item ? +item.dataset.k : -1;
     if (b.dataset.tipo) { st.itens[k].tipo = b.dataset.tipo; render(); aoMudar && aoMudar(); return; }
     const a = b.dataset.acao; if (!a) return;
@@ -136,6 +139,11 @@ function ItensEditor(el, inicial, aoMudar) {
     // Estado bruto (para rascunho)
     estado: () => JSON.parse(JSON.stringify(st)),
     quantos: () => st.itens.length,
+    // Acrescenta itens prontos (ex.: vindos da tabela de preços); preço em reais (número)
+    adicionarItens: lista => {
+      for (const i of lista) st.itens.push({ descricao: i.descricao, qtd: C.qtdBR(i.qtd), unidade: i.unidade || 'un', tipo: i.tipo || 'incluido', preco: Number(i.preco || 0).toFixed(2).replace('.', ',') });
+      render(); aoMudar && aoMudar();
+    },
     total: () => C.calcular(paraCalculo(), null).total,
     // Erro de preenchimento (para avisar antes de enviar), ou ''
     validar: () => {
