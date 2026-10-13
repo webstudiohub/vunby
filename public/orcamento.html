@@ -4,7 +4,7 @@
 <title>Orçamento</title>
 <meta name="robots" content="noindex,nofollow"/>
 <link rel="stylesheet" href="style.css"/>
-<style>.pkg-escolhido{outline:2.5px solid #003D6B;background:#EEF4FA}.pkg-radio{display:inline-block;width:16px;height:16px;border:2px solid #003D6B;border-radius:50%;margin-right:8px;vertical-align:-2px}.pkg-escolhido .pkg-radio{background:#003D6B;box-shadow:inset 0 0 0 3px #fff}</style>
+<style>.pkg-escolhido{outline:2.5px solid #0F3A8C;background:#EEF4FA}.pkg-radio{display:inline-block;width:16px;height:16px;border:2px solid #0F3A8C;border-radius:50%;margin-right:8px;vertical-align:-2px}.pkg-escolhido .pkg-radio{background:#0F3A8C;box-shadow:inset 0 0 0 3px #fff}</style>
 </head><body style="background:#F2F2F7">
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
@@ -66,7 +66,7 @@ async function acao(tipo){
             <strong>${podeEscolher&&q.pacotes.length>1?'<span class="pkg-radio"></span>':''}${esc(p.nome)}</strong> ${p.escolhido?'<span class="pkg-badge">escolhido</span>':(p.destaque?'<span class="pkg-badge">mais escolhido</span>':'')}
           </div>
           ${p.conteudo?`<p style="font-size:14px;color:#8E8E93;margin-top:4px">${esc(p.conteudo)}</p>`:''}
-          <div style="font-size:20px;font-weight:800;color:#003D6B;margin-top:6px">${brl(p.preco)}</div>
+          <div style="font-size:20px;font-weight:800;color:#0F3A8C;margin-top:6px">${brl(p.preco)}</div>
         </div>`).join('')}
     </div>`:'';
 

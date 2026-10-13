@@ -2,11 +2,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --navy:      #003D6B;
-  --navy-mid:  #005599;
-  --navy-light:#E8F0F7;
-  --gold:      #F5C000;
-  --gold-dark: #C49800;
+  /* Identidade VUNBY: azul cromado + dourado cromado (13/10/2026) */
+  --navy:      #0F3A8C;
+  --navy-mid:  #2A5FC0;
+  --navy-light:#E6EEFB;
+  --gold:      #E3B23C;
+  --gold-dark: #B8860B;
+  --chrome-blue: linear-gradient(180deg, #6EA5EB 0%, #285FBE 35%, #0F378C 55%, #2D64BE 80%, #0A286E 100%);
+  --chrome-gold: linear-gradient(180deg, #FFF0AA 0%, #EBBE3C 30%, #AA7D14 50%, #F0C850 70%, #B4870F 100%);
   --dark:      #0F1923;
   --body:      #3A4550;
   --white:     #FFFFFF;
@@ -58,7 +61,7 @@ body {
 
 /* ─── Topbar (desktop / scroll header) ─── */
 .topbar {
-  background: var(--navy);
+  background: var(--chrome-blue);
   color: var(--white);
   display: flex;
   align-items: center;
@@ -68,7 +71,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 200;
-  box-shadow: 0 2px 12px rgba(0,61,107,.22);
+  box-shadow: 0 2px 12px rgba(15,58,140,.22);
 }
 .topbar-logo {
   font-weight: 800;
@@ -79,6 +82,11 @@ body {
   flex-shrink: 0;
 }
 .topbar-logo span { color: var(--gold); }
+/* "BY" e logos em dourado cromado */
+.topbar-logo span, .auth-logo span, .hero-logo span {
+  background: var(--chrome-gold); -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.topbar-logo img { height: 30px; width: auto; display: block; }
 .topbar-icon { color: rgba(255,255,255,.7); display:flex; align-items:center; padding: 8px; border-radius: 8px; transition: color .15s, background .15s; text-decoration:none; }
 .topbar-icon:hover, .topbar-icon-active { color: var(--white); background: rgba(255,255,255,.13); }
 .topbar-nav {
@@ -246,7 +254,7 @@ body {
 }
 .stat-card.accent-gold::before { background: var(--gold); }
 .stat-card.accent-green::before { background: var(--green); }
-.stat-card.accent-navy::before { background: var(--navy); }
+.stat-card.accent-navy::before { background: var(--chrome-blue); }
 .stat-label {
   font-size: 11px;
   font-weight: 600;
@@ -268,12 +276,12 @@ body {
 
 /* ─── Hero card (radar) ─── */
 .hero-card {
-  background: linear-gradient(135deg, var(--navy) 0%, #005599 100%);
+  background: var(--chrome-blue);
   color: var(--white);
   border-radius: var(--radius);
   padding: var(--sp-6) var(--sp-5);
   margin-bottom: var(--sp-4);
-  box-shadow: 0 4px 20px rgba(0,61,107,.30);
+  box-shadow: 0 4px 20px rgba(15,58,140,.30);
 }
 .hero-card-label {
   font-size: 11px;
@@ -341,7 +349,7 @@ body {
   white-space: nowrap;
 }
 .filter-chip.active {
-  background: var(--navy);
+  background: var(--chrome-blue);
   border-color: var(--navy);
   color: var(--white);
 }
@@ -416,7 +424,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--navy);
-  box-shadow: 0 0 0 3px rgba(0,61,107,.1);
+  box-shadow: 0 0 0 3px rgba(15,58,140,.1);
 }
 textarea { resize: vertical; min-height: 80px; }
 select {
@@ -432,7 +440,7 @@ select {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: var(--navy);
+  background: var(--chrome-blue);
   color: var(--white);
   border: none;
   border-radius: var(--radius-sm);
@@ -449,7 +457,7 @@ select {
 .btn-primary:active { transform: scale(.98); opacity: .92; }
 
 .btn-gold {
-  background: var(--gold);
+  background: var(--chrome-gold);
   color: var(--dark);
 }
 .btn-gold:active { opacity: .9; }
@@ -538,7 +546,7 @@ select {
   padding-bottom: 0;
 }
 .auth-header {
-  background: var(--navy);
+  background: var(--chrome-blue);
   padding: 40px var(--sp-5) 32px;
   text-align: center;
 }
@@ -584,14 +592,14 @@ select {
   transition: all .2s;
 }
 .auth-toggle button.active {
-  background: var(--navy);
+  background: var(--chrome-blue);
   color: var(--white);
-  box-shadow: 0 2px 8px rgba(0,61,107,.2);
+  box-shadow: 0 2px 8px rgba(15,58,140,.2);
 }
 
 /* ─── Orçamento público ─── */
 .quote-card { background: var(--white); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
-.quote-header { background: var(--navy); color: var(--white); padding: var(--sp-6) var(--sp-5); }
+.quote-header { background: var(--chrome-blue); color: var(--white); padding: var(--sp-6) var(--sp-5); }
 .quote-header h1 { font-size: 20px; font-weight: 800; margin-bottom: var(--sp-2); letter-spacing: -.01em; }
 .quote-body { padding: var(--sp-5); }
 .valor-grande { font-size: 36px; font-weight: 800; color: var(--navy); letter-spacing: -.02em; line-height: 1; }

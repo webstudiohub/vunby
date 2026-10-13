@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>VUNBY — Orçamento</title>
-<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#003D6B"/>
+<link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
 <link rel="stylesheet" href="style.css"/>
 </head><body>
@@ -94,7 +94,7 @@ async function renderPage(){
       </div>
       <p><strong>Cliente:</strong> ${esc(q.cliente.nome)}</p>
       <p><strong>Telefone:</strong> ${esc(q.cliente.telefone)}</p>
-      <p><strong>Valor:</strong> <span style="font-size:20px;font-weight:800;color:#003D6B">${brl(q.valor)}</span></p>
+      <p><strong>Valor:</strong> <span style="font-size:20px;font-weight:800;color:#0F3A8C">${brl(q.valor)}</span></p>
       ${q.validade?`<p><strong>Validade:</strong> ${new Date(String(q.validade).slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR')}</p>`:''}
       ${q.observacoes?`<p><strong>Obs:</strong> ${esc(q.observacoes)}</p>`:''}
       ${q.resposta_cliente?`<p><strong>Comentário do cliente:</strong> ${esc(q.resposta_cliente)}</p>`:''}
