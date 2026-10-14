@@ -136,7 +136,7 @@ function abrirPainel(qual){
     document.getElementById('alt-texto').focus();
   }else{
     el.innerHTML=`<div class="alt-painel">
-      <p class="alt-rot">Pode contar o motivo? Isso ajuda a melhorar o atendimento.</p>
+      <p class="alt-rot">Pode contar o motivo? (opcional) Isso ajuda a melhorar o atendimento.</p>
       ${(Q.motivosRecusa||[]).map(t=>`<label class="alt-motivo"><input type="radio" name="motivo" value="${esc(t)}"/> ${esc(t)}</label>`).join('')}
       <textarea id="rec-obs" class="alt-texto" rows="2" placeholder="Quer comentar algo? (opcional)"></textarea>
       <button class="alt-recusa" onclick="acao('recusar')">Confirmar recusa</button></div>`;
@@ -173,8 +173,7 @@ async function acao(tipo){
     const body={observacao:obs,pacoteId:pacoteSel};
     if(tipo==='recusar'){
       const mot=document.querySelector('input[name="motivo"]:checked');
-      if(!mot){ if(m) m.textContent='Escolha o motivo da recusa.'; return; }
-      body.motivo=mot.value; body.observacao=document.getElementById('rec-obs')?.value||'';
+      body.motivo=mot?mot.value:''; body.observacao=document.getElementById('rec-obs')?.value||'';
     }
     if(Q.usaItens){ body.escolhidos=[...escolhidos]; body.versao=Q.versao; }
     const res=await fetch(`/api/public/quote/${encodeURIComponent(token)}/${tipo==='aceitar'?'accept':'reject'}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});

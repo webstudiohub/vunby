@@ -132,7 +132,7 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
       if (!confirm('Você marcou móveis mas nenhum veículo/frete. Colocar assim mesmo?')) return;
     }
     aoGerarItens(itens);
-    if (moveis.length && aoGerarTexto) aoGerarTexto(`Móveis (${C.qtdBR(Math.round(c.m3 * 10) / 10)} m³): ${moveis.join(', ')}.`);
+    if (moveis.length && aoGerarTexto) aoGerarTexto(`Móveis (${C.qtdBR(Math.round(c.m3 * 10) / 10)} m³): ${moveis.join(', ')}.\nValor estimado pela lista de móveis. Itens a mais no dia da mudança podem alterar o valor.`);
     fechar();
   }
 

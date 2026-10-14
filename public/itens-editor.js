@@ -43,6 +43,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
       + (r.taxa ? linha(e(st.taxaNome || 'Taxa / deslocamento'), C.reais(r.taxa)) : '')
       + linha('Total', C.reais(r.total), 'ie-res-total')
       + (r.sinal ? linha(`Sinal (${C.qtdBR(C.numeroBR(st.sinalPct))}%)`, C.reais(r.sinal)) : '')
+      + (st.itens.filter(i => i.tipo !== 'incluido').length > 3 ? `<p class="ie-res-aviso">⚠️ Muitas opções confundem o cliente e atrasam a decisão. O ideal é até 3 itens opcionais ou recomendados.</p>` : '')
       + (temOpc ? `<p class="ie-res-nota">O cliente escolhe os opcionais: o total pode ir de <strong>${C.reais(minimo)}</strong> a <strong>${C.reais(tudo)}</strong>.</p>` : '');
   }
 

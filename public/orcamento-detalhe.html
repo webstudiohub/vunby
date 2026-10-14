@@ -178,6 +178,7 @@ async function renderPage(){
       <h3>✏️ O cliente pediu uma alteração</h3>
       <p class="muted" style="font-size:var(--fs-sm)">${new Date(q.alteracao_em).toLocaleString('pt-BR')}</p>
       <p style="font-size:var(--fs-md);margin:8px 0 12px;white-space:pre-line">“${esc(q.alteracao_texto)}”</p>
+      ${(q.versao||1)>=3?`<p style="font-size:var(--fs-sm);background:#fff;border-radius:8px;padding:8px 10px;margin:0 0 10px">Este orçamento já está na <strong>versão ${q.versao}</strong>. Se os pedidos continuarem, vale uma conversa rápida com o cliente para fechar o que entra.</p>`:''}
       <button class="btn-primary" onclick="abrirEdicao();document.getElementById('form-edicao').scrollIntoView({behavior:'smooth'})">Ajustar o orçamento</button>
       <p class="muted" style="font-size:var(--fs-sm);margin-top:8px">Ao salvar, o link do cliente mostra a versão nova e este aviso some.</p></div>`:'';
   el.innerHTML=`${altCard}
