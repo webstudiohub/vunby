@@ -115,14 +115,31 @@ async function gerarPix(){
       setTimeout(()=>{ if(b) b.textContent='Copiar código Pix'; },3000);
     });
     const inicio=Date.now();
+    // Guarda o Pix pendente: se a pessoa sair para o app do banco e a página recarregar, conferimos ao voltar
+    try{ localStorage.setItem('vunby_pix',JSON.stringify({id:r.id,em:inicio})); }catch{}
+    PIX_ATUAL=r.id;
     pixTimer=setInterval(async()=>{
-      if(Date.now()-inicio>31*60000){ clearInterval(pixTimer); pixTimer=null;
+      if(Date.now()-inicio>31*60000){ clearInterval(pixTimer); pixTimer=null; PIX_ATUAL=null;
         const s=document.getElementById('pix-status'); if(s) s.innerHTML='Este Pix venceu. <a href="#" onclick="escolher(\'pix\');return false">Gerar outro</a>'; return; }
-      const st=await api('/api/billing/pix/'+encodeURIComponent(r.id)).catch(()=>null);
-      if(st&&st.pago){ clearInterval(pixTimer); pixTimer=null; pagamentoConfirmado(); }
+      conferirPix(r.id);
     },4000);
   }catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Gerar Pix de '+precoBR(ST.precoOferta); }
 }
+
+let PIX_ATUAL=null;
+// Pergunta ao VUNBY se o Pix já foi pago; se sim, mostra a confirmação
+async function conferirPix(id){
+  const st=await api('/api/billing/pix/'+encodeURIComponent(id)).catch(()=>null);
+  if(st&&st.pago){
+    if(pixTimer){clearInterval(pixTimer);pixTimer=null;}
+    PIX_ATUAL=null; try{ localStorage.removeItem('vunby_pix'); }catch{}
+    pagamentoConfirmado();
+    return true;
+  }
+  return false;
+}
+// Voltou do app do banco: confere na hora, sem esperar
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&PIX_ATUAL) conferirPix(PIX_ATUAL); });
 
 function carregarSdk(){
   return new Promise((ok,erro)=>{
@@ -162,7 +179,12 @@ async function abrirCartao(){
 }
 
 function pagamentoConfirmado(){
-  document.getElementById('aviso').innerHTML='<div class="card aviso-plano aviso-plano-trial"><span>🎉 <strong>Pagamento confirmado!</strong> Bem-vindo ao VUNBY.</span></div>';
+  document.getElementById('aviso').innerHTML=`<div class="card pg-ok" role="status">
+    <div class="pg-ok-icone">✅</div>
+    <h2>Pagamento confirmado!</h2>
+    <p>Sua assinatura do VUNBY está liberada. Obrigado por confiar no nosso trabalho.</p>
+    <a href="dashboard.html"><button class="btn-primary btn-gold" style="margin-top:var(--sp-4)">Começar a usar</button></a>
+  </div>`;
   window.scrollTo({top:0,behavior:'smooth'});
   api('/api/billing/status').then(renderPlano).catch(()=>{});
 }
@@ -188,6 +210,12 @@ function pagamentoConfirmado(){
         :'<div class="card aviso-plano aviso-plano-trial"><span>Seu pagamento está sendo processado. Assim que o Mercado Pago confirmar, a assinatura é liberada automaticamente.</span></div>';
     }
     renderPlano(await api('/api/billing/status'));
+    // Tinha um Pix esperando pagamento (ex.: a página recarregou ao voltar do banco)
+    try{
+      const pend=JSON.parse(localStorage.getItem('vunby_pix')||'null');
+      if(pend&&Date.now()-pend.em<35*60000){ PIX_ATUAL=pend.id; await conferirPix(pend.id); }
+      else localStorage.removeItem('vunby_pix');
+    }catch{}
   }catch(e){
     document.getElementById('plano').innerHTML=`<p class="muted">Não foi possível carregar. <a href="" onclick="location.reload()">Tentar novamente</a></p>`;
   }
@@ -198,6 +226,10 @@ function pagamentoConfirmado(){
 .plano-de{font-size:var(--fs-md);color:var(--muted);text-decoration:line-through}
 .plano-valor{font-size:var(--fs-num);font-weight:800;color:var(--navy);letter-spacing:-1px}
 .plano-mes{font-size:var(--fs-md);color:var(--muted);font-weight:600}
+.pg-ok{text-align:center;padding:var(--sp-6) var(--sp-5);border:2px solid #22A35A;background:#EFFBF3}
+.pg-ok-icone{font-size:48px;line-height:1}
+.pg-ok h2{margin-top:var(--sp-3);color:#146C3B}
+.pg-ok p{margin-top:var(--sp-2);font-size:var(--fs-md)}
 .pg-titulo{font-weight:700;font-size:var(--fs-md);margin-top:var(--sp-5)}
 .pg-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--sp-3)}
 .pg-op{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px;border:2px solid var(--border,#D6DCE8);border-radius:14px;background:#fff;text-align:left;cursor:pointer;min-height:72px}
