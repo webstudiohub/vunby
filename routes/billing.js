@@ -43,6 +43,8 @@ async function handle(req, res) {
       if (B.mpConfigurado() && id) {
         if (tipo === 'subscription_preapproval' || tipo === 'preapproval') {
           await B.sincronizarPreapproval(id);
+        } else if (tipo === 'payment') {
+          await B.sincronizarPagamento(id);
         } else if (tipo === 'subscription_authorized_payment' || tipo === 'authorized_payment') {
           if (/^\d{1,30}$/.test(String(id))) {
             const r = await B.mpRequest('GET', '/authorized_payments/' + id);
@@ -73,6 +75,7 @@ async function handle(req, res) {
       precoOferta,
       vagasFundador: vagas,
       pagamentoConfigurado: B.mpConfigurado(),
+      mpPublicKey: B.mpConfigurado() ? (process.env.MP_PUBLIC_KEY || null) : null,
       feedbackPendente: await feedbackPendente(user.id),
     });
   }
@@ -105,6 +108,89 @@ async function handle(req, res) {
       [user.id, r.data.id]
     );
     return ok(res, { url: r.data.init_point, valor, fundador });
+  }
+
+  // POST /api/billing/cartao — assinatura no cartão sem sair do VUNBY.
+  // O formulário do Mercado Pago (na página) transforma o cartão em um "token"; o número do cartão nunca passa pelo VUNBY.
+  if (req.method === 'POST' && path === '/api/billing/cartao') {
+    if (!B.mpConfigurado()) return json(res, 503, { error: 'O pagamento ainda está sendo configurado. Tente de novo mais tarde.' });
+    if (!(await rateLimit('cartao:' + user.id, 6, 10 * 60_000))) return json(res, 429, { error: 'Muitas tentativas. Aguarde alguns minutos.' });
+    let b; try { b = await readBody(req, 10_000); } catch { return badRequest(res); }
+    const token = String(b.token || '');
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(token)) return badRequest(res, 'Confira os dados do cartão e tente de novo.');
+    const u = await B.getBillingUser(user.id);
+    if (u.assinatura_status === 'ativa' || u.assinatura_status === 'cortesia') return conflict(res, 'Sua assinatura já está ativa.');
+    const vagas = await B.vagasFundadorRestantes();
+    const fundador = u.fundador || vagas > 0;
+    const valor = fundador ? B.PRECO_FUNDADOR : B.PRECO_PADRAO;
+    const r = await B.mpRequest('POST', '/preapproval', {
+      reason: fundador ? 'VUNBY — Plano Fundador' : 'VUNBY — Assinatura mensal',
+      external_reference: String(user.id),
+      payer_email: u.email,
+      card_token_id: token,
+      back_url: BASE_URL.replace(/\/$/, '') + '/planos.html',
+      status: 'authorized',
+      auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: valor, currency_id: 'BRL' },
+    }).catch(e => ({ status: 0, data: { message: e.message } }));
+    if ((r.status !== 200 && r.status !== 201) || !r.data.id) {
+      console.error('MP POST preapproval cartão', r.status, JSON.stringify(r.data).slice(0, 500));
+      const m = String((r.data && r.data.message) || '');
+      const erro = /same user/i.test(m) ? 'Este e-mail é o mesmo da conta que recebe os pagamentos. Use outra conta para assinar.'
+        : /card|token|rejected|invalid/i.test(m) ? 'O cartão não foi aceito. Confira os dados ou use outro cartão.'
+        : 'Não foi possível concluir o pagamento agora. Tente novamente em instantes.';
+      return json(res, 400, { error: erro });
+    }
+    await query('UPDATE users SET mp_preapproval_id = $2 WHERE id = $1', [user.id, r.data.id]);
+    await B.aplicarPreapproval(r.data);
+    const u2 = await B.getBillingUser(user.id);
+    const s = B.situacao(u2);
+    if (s.tipo !== 'ativa') return json(res, 400, { error: 'O cartão não foi aprovado. Confira os dados ou use outro cartão.' });
+    return ok(res, s);
+  }
+
+  // POST /api/billing/pix — gera o QR Code do Pix (30 dias de acesso), mostrado na própria página
+  if (req.method === 'POST' && path === '/api/billing/pix') {
+    if (!B.mpConfigurado()) return json(res, 503, { error: 'O pagamento ainda está sendo configurado. Tente de novo mais tarde.' });
+    if (!(await rateLimit('pix:' + user.id, 6, 10 * 60_000))) return json(res, 429, { error: 'Muitas tentativas. Aguarde alguns minutos.' });
+    const u = await B.getBillingUser(user.id);
+    if (u.assinatura_status === 'ativa' || u.assinatura_status === 'cortesia') return conflict(res, 'Sua assinatura já está ativa no cartão.');
+    const vagas = await B.vagasFundadorRestantes();
+    const fundador = u.fundador || vagas > 0;
+    const valor = fundador ? B.PRECO_FUNDADOR : B.PRECO_PADRAO;
+    // Vence em 30 minutos (horário de Brasília)
+    const exp = new Date(Date.now() + 30 * 60_000 - 3 * 3600_000).toISOString().replace('Z', '-03:00');
+    const nome = String(u.nome || '').trim().split(/\s+/);
+    const r = await B.mpRequest('POST', '/v1/payments', {
+      transaction_amount: valor,
+      description: fundador ? 'VUNBY — Plano Fundador (30 dias)' : 'VUNBY — Assinatura (30 dias)',
+      payment_method_id: 'pix',
+      external_reference: 'pix:' + user.id,
+      notification_url: BASE_URL.replace(/\/$/, '') + '/api/billing/webhook',
+      date_of_expiration: exp,
+      payer: { email: u.email, first_name: nome[0] || undefined, last_name: nome.slice(1).join(' ') || undefined },
+    }, { 'X-Idempotency-Key': require('crypto').randomUUID() }).catch(e => ({ status: 0, data: { message: e.message } }));
+    const tx = r.data && r.data.point_of_interaction && r.data.point_of_interaction.transaction_data;
+    if ((r.status !== 200 && r.status !== 201) || !tx || !tx.qr_code) {
+      console.error('MP POST payment pix', r.status, JSON.stringify(r.data).slice(0, 500));
+      const m = String((r.data && r.data.message) || '');
+      return json(res, 502, { error: /same user|collector/i.test(m) ? 'Este e-mail é o mesmo da conta que recebe os pagamentos. Use outra conta para assinar.' : 'Não foi possível gerar o Pix agora. Tente novamente em instantes.' });
+    }
+    await query('INSERT INTO pix_pagamentos (id, user_id, valor, status) VALUES ($1,$2,$3,$4) ON CONFLICT (id) DO NOTHING',
+      [String(r.data.id), user.id, valor, String(r.data.status || 'pending').slice(0, 30)]);
+    return ok(res, { id: String(r.data.id), qrCode: tx.qr_code, qrBase64: tx.qr_code_base64 || null, valor, expira: r.data.date_of_expiration || null });
+  }
+
+  // GET /api/billing/pix/:id — a página pergunta se o Pix já foi pago
+  const mPix = path.match(/^\/api\/billing\/pix\/(\d{1,30})$/);
+  if (req.method === 'GET' && mPix) {
+    const row = await query('SELECT status, creditado FROM pix_pagamentos WHERE id = $1 AND user_id = $2', [mPix[1], user.id]);
+    if (!row.rows.length) return json(res, 404, { error: 'Pagamento não encontrado.' });
+    if (!row.rows[0].creditado && B.mpConfigurado() && (await rateLimit('pixst:' + user.id, 60, 10 * 60_000))) {
+      await B.sincronizarPagamento(mPix[1]).catch(e => console.error('pix status:', e.message));
+    }
+    const row2 = await query('SELECT status, creditado FROM pix_pagamentos WHERE id = $1', [mPix[1]]);
+    const u2 = await B.getBillingUser(user.id);
+    return ok(res, { pago: !!row2.rows[0].creditado, status: row2.rows[0].status, situacao: B.situacao(u2) });
   }
 
   // POST /api/billing/sync — chamado na volta do pagamento (não depende só do webhook)
@@ -185,6 +271,30 @@ async function rodarTarefas(sendEmail) {
           p('Para continuar criando orçamentos, assine o VUNBY. Os <strong>100 primeiros assinantes</strong> pagam <strong>R$29,90/mês para sempre</strong> (preço normal R$49,90).') +
           botao(base + '/planos.html', 'Ver planos') +
           p('<span style="color:#6B7280;font-size:14px">Sem fidelidade: cancele quando quiser, em 1 clique.</span>'),
+      }),
+    });
+  }
+
+  // 1b) Pix vence em até 3 dias: lembrete para pagar o próximo mês (um por período)
+  const pv = await query(
+    `SELECT id, email, nome, acesso_ate FROM users
+     WHERE assinatura_status = 'pix' AND pix_aviso_em IS NULL
+       AND acesso_ate > NOW() AND acesso_ate < NOW() + INTERVAL '3 days'
+     LIMIT 50`
+  );
+  for (const u of pv.rows) {
+    await query('UPDATE users SET pix_aviso_em = NOW() WHERE id = $1', [u.id]);
+    const nome = escHtml(String(u.nome || '').split(' ')[0]);
+    const dia = new Date(u.acesso_ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    await sendEmail({
+      to: u.email,
+      subject: 'Seu acesso ao VUNBY vence em breve',
+      html: layout({
+        preheader: 'Pague o próximo mês pelo Pix para não perder o acesso.',
+        titulo: `${nome}, seu acesso vence dia ${dia}`,
+        corpo: p('Seu mês pago com <strong>Pix</strong> está terminando. Para continuar criando orçamentos, pague o próximo mês. Leva menos de 1 minuto.') +
+          botao(base + '/planos.html', 'Pagar com Pix') +
+          p('<span style="color:#6B7280;font-size:14px">Prefere não lembrar todo mês? Assine no cartão e a cobrança é automática.</span>'),
       }),
     });
   }

@@ -36,17 +36,22 @@
 <script>
 const precoBR=v=>'R$'+Number(v).toFixed(2).replace('.',',');
 
+let ST=null, SESSAO=null, pixTimer=null, brickCarregado=false;
+
 function renderPlano(st){
+  ST=st;
   const el=document.getElementById('plano');
   if(st.tipo==='ativa'||st.tipo==='cortesia'){
     el.innerHTML=`<h3>Sua assinatura está ativa ✅</h3>
-      <p class="muted">${st.tipo==='cortesia'?'Acesso liberado.':`${precoBR(st.precoAssinatura||st.precoOferta)}/mês${st.fundador?' · <strong>Fundador</strong> (preço garantido para sempre)':''}`}</p>
+      <p class="muted">${st.tipo==='cortesia'?'Acesso liberado.':`${precoBR(st.precoAssinatura||st.precoOferta)}/mês no cartão${st.fundador?' · <strong>Fundador</strong> (preço garantido para sempre)':''}`}</p>
       <a href="dashboard.html"><button class="btn-primary" style="margin-top:var(--sp-4)">Ir para o início</button></a>`;
     return;
   }
   const fundador=st.precoOferta===st.precoFundador;
   let topo='';
-  if(st.tipo==='cancelada_com_acesso'){
+  if(st.tipo==='pix'){
+    topo=`<p style="margin-bottom:var(--sp-3)"><strong>Pago com Pix ✅</strong> Seu acesso vai até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}. Você pode pagar o próximo mês abaixo (os dias se somam).</p>`;
+  }else if(st.tipo==='cancelada_com_acesso'){
     topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Sua assinatura foi cancelada. Você continua com acesso até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}.</p>`;
   }else if(st.tipo==='trial'){
     topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Você está no teste grátis: ${st.diasTrial===1?'último dia':'faltam '+st.diasTrial+' dias'}.</p>`;
@@ -58,23 +63,112 @@ function renderPlano(st){
       <span class="plano-valor">${precoBR(st.precoOferta)}</span><span class="plano-mes">/mês</span>
     </div>
     ${fundador?'<p class="muted" style="font-size:var(--fs-sm)">Para os 100 primeiros assinantes: esse preço fica garantido para sempre enquanto a assinatura estiver ativa.</p>':''}
-    <button class="btn-primary btn-gold" id="btn-assinar" style="margin-top:var(--sp-4)" ${st.pagamentoConfigurado?'':'disabled'}>${st.pagamentoConfigurado?'Assinar agora':'Pagamento em configuração'}</button>
+    ${st.pagamentoConfigurado?`
+    <p class="pg-titulo">Como você quer pagar?</p>
+    <div class="pg-opcoes" role="tablist">
+      <button type="button" class="pg-op" id="op-pix" role="tab" aria-selected="false" onclick="escolher('pix')"><span class="pg-op-nome">Pix</span><span class="pg-op-desc">Paga 1 mês por vez</span></button>
+      <button type="button" class="pg-op" id="op-cartao" role="tab" aria-selected="false" onclick="escolher('cartao')"><span class="pg-op-nome">Cartão de crédito</span><span class="pg-op-desc">Cobrança automática todo mês</span></button>
+    </div>
+    <div id="area-pag"></div>`:'<button class="btn-primary btn-gold" disabled style="margin-top:var(--sp-4)">Pagamento em configuração</button>'}
     <div id="msg" class="error"></div>`;
-  const btn=document.getElementById('btn-assinar');
-  if(st.pagamentoConfigurado)btn.addEventListener('click',assinar);
 }
 
-async function assinar(){
-  const btn=document.getElementById('btn-assinar'), msg=document.getElementById('msg');
-  msg.textContent=''; btn.disabled=true; btn.textContent='Abrindo o pagamento…';
+function escolher(qual){
+  document.getElementById('msg').textContent='';
+  document.getElementById('op-pix').setAttribute('aria-selected',qual==='pix');
+  document.getElementById('op-cartao').setAttribute('aria-selected',qual==='cartao');
+  if(pixTimer){clearInterval(pixTimer);pixTimer=null;}
+  const area=document.getElementById('area-pag');
+  if(qual==='pix'){
+    area.innerHTML=`<div class="pg-box">
+      <p>Você paga <strong>${precoBR(ST.precoOferta)}</strong> e libera <strong>30 dias</strong>. Uns dias antes de vencer, avisamos por e-mail para pagar o próximo mês.</p>
+      <button class="btn-primary btn-gold" id="btn-pix" style="margin-top:var(--sp-4)" onclick="gerarPix()">Gerar Pix de ${precoBR(ST.precoOferta)}</button>
+    </div>`;
+  }else{
+    if(!ST.mpPublicKey){ area.innerHTML='<div class="pg-box"><p class="muted">O pagamento no cartão está sendo configurado. Por enquanto, use o Pix.</p></div>'; return; }
+    area.innerHTML=`<div class="pg-box">
+      <p>${precoBR(ST.precoOferta)} cobrados todo mês no cartão. Cancele quando quiser, em 1 clique.</p>
+      <div id="cartao-brick" style="margin-top:var(--sp-3)"><p class="muted">Carregando o formulário seguro…</p></div>
+    </div>`;
+    abrirCartao();
+  }
+}
+
+async function gerarPix(){
+  const btn=document.getElementById('btn-pix'), msg=document.getElementById('msg');
+  msg.textContent=''; btn.disabled=true; btn.textContent='Gerando o Pix…';
   try{
-    const r=await api('/api/billing/checkout',{method:'POST'});
-    window.location.href=r.url;
-  }catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Assinar agora'; }
+    const r=await api('/api/billing/pix',{method:'POST'});
+    const area=document.getElementById('area-pag');
+    area.innerHTML=`<div class="pg-box pg-pix">
+      <p><strong>Pague ${precoBR(r.valor)} pelo app do seu banco</strong></p>
+      ${r.qrBase64?`<img class="pg-qr" alt="QR Code do Pix" src="data:image/png;base64,${r.qrBase64}"/>`:''}
+      <p class="muted" style="font-size:var(--fs-sm)">No celular? Toque em copiar e cole no app do banco, na opção <strong>Pix Copia e Cola</strong>.</p>
+      <button class="btn-primary" id="btn-copiar" style="margin-top:var(--sp-3)">Copiar código Pix</button>
+      <p class="pg-espera" id="pix-status">⏳ Esperando o pagamento… A liberação é automática.</p>
+      <p class="muted" style="font-size:var(--fs-sm)">Este Pix vale por 30 minutos.</p>
+    </div>`;
+    document.getElementById('btn-copiar').addEventListener('click',async()=>{
+      const b=document.getElementById('btn-copiar');
+      try{ await navigator.clipboard.writeText(r.qrCode); b.textContent='✅ Código copiado'; }
+      catch{ prompt('Copie o código Pix:', r.qrCode); }
+      setTimeout(()=>{ if(b) b.textContent='Copiar código Pix'; },3000);
+    });
+    const inicio=Date.now();
+    pixTimer=setInterval(async()=>{
+      if(Date.now()-inicio>31*60000){ clearInterval(pixTimer); pixTimer=null;
+        const s=document.getElementById('pix-status'); if(s) s.innerHTML='Este Pix venceu. <a href="#" onclick="escolher(\'pix\');return false">Gerar outro</a>'; return; }
+      const st=await api('/api/billing/pix/'+encodeURIComponent(r.id)).catch(()=>null);
+      if(st&&st.pago){ clearInterval(pixTimer); pixTimer=null; pagamentoConfirmado(); }
+    },4000);
+  }catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Gerar Pix de '+precoBR(ST.precoOferta); }
+}
+
+function carregarSdk(){
+  return new Promise((ok,erro)=>{
+    if(window.MercadoPago) return ok();
+    const s=document.createElement('script'); s.src='https://sdk.mercadopago.com/js/v2';
+    s.onload=()=>ok(); s.onerror=()=>erro(new Error('Não foi possível carregar o formulário do cartão. Verifique sua internet.'));
+    document.head.appendChild(s);
+  });
+}
+
+async function abrirCartao(){
+  const msg=document.getElementById('msg');
+  try{
+    await carregarSdk();
+    const mp=new MercadoPago(ST.mpPublicKey,{locale:'pt-BR'});
+    if(window.__brick){ try{ await window.__brick.unmount(); }catch{} }
+    window.__brick=await mp.bricks().create('cardPayment','cartao-brick',{
+      initialization:{ amount:Number(ST.precoOferta), payer:{ email:(SESSAO&&SESSAO.email)||'' } },
+      customization:{
+        paymentMethods:{ maxInstallments:1, types:{ excluded:['debit_card','prepaid_card'] } },
+        visual:{ style:{ theme:'default', customVariables:{ baseColor:'#0F3A8C', borderRadiusMedium:'12px' } },
+                 texts:{ formSubmit:'Assinar '+precoBR(ST.precoOferta)+'/mês' } },
+      },
+      callbacks:{
+        onReady:()=>{},
+        onError:(e)=>{ console.error(e); },
+        onSubmit:(dados)=>new Promise(async(ok,falha)=>{
+          msg.textContent='';
+          try{
+            await api('/api/billing/cartao',{method:'POST',body:{token:dados.token}});
+            ok(); pagamentoConfirmado();
+          }catch(e){ msg.textContent=e.message; falha(); }
+        }),
+      },
+    });
+  }catch(e){ msg.textContent=e.message; const c=document.getElementById('cartao-brick'); if(c) c.innerHTML=''; }
+}
+
+function pagamentoConfirmado(){
+  document.getElementById('aviso').innerHTML='<div class="card aviso-plano aviso-plano-trial"><span>🎉 <strong>Pagamento confirmado!</strong> Bem-vindo ao VUNBY.</span></div>';
+  window.scrollTo({top:0,behavior:'smooth'});
+  api('/api/billing/status').then(renderPlano).catch(()=>{});
 }
 
 (async()=>{
-  const session=await requireSession(); if(!session)return;
+  const session=await requireSession(); if(!session)return; SESSAO=session;
   document.getElementById('top').innerHTML=topbar('');
   document.getElementById('nav').innerHTML=bottomNav('');
   wireLogout();
@@ -104,6 +198,16 @@ async function assinar(){
 .plano-de{font-size:var(--fs-md);color:var(--muted);text-decoration:line-through}
 .plano-valor{font-size:var(--fs-num);font-weight:800;color:var(--navy);letter-spacing:-1px}
 .plano-mes{font-size:var(--fs-md);color:var(--muted);font-weight:600}
+.pg-titulo{font-weight:700;font-size:var(--fs-md);margin-top:var(--sp-5)}
+.pg-opcoes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:var(--sp-3)}
+.pg-op{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px;border:2px solid var(--border,#D6DCE8);border-radius:14px;background:#fff;text-align:left;cursor:pointer;min-height:72px}
+.pg-op[aria-selected="true"]{border-color:var(--navy);background:#EEF3FF}
+.pg-op-nome{font-weight:800;font-size:var(--fs-md);color:var(--navy)}
+.pg-op-desc{font-size:var(--fs-sm);color:var(--muted)}
+.pg-box{margin-top:var(--sp-4)}
+.pg-pix{text-align:center}
+.pg-qr{width:220px;height:220px;max-width:100%;margin:var(--sp-3) auto;display:block;image-rendering:pixelated}
+.pg-espera{margin-top:var(--sp-4);font-weight:600}
 .plano-lista{margin:0;padding-left:20px;display:grid;gap:8px;font-size:var(--fs-md);color:var(--dark)}
 </style>
 </body></html>

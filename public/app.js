@@ -36,10 +36,15 @@ function avisoPlano(st) {
   let html = '';
   if (st.tipo === 'expirado') {
     html += `<div class="card aviso-plano aviso-plano-fim">
-      <strong>Seu teste grátis terminou.</strong>
+      <strong>${st.status === 'pix' ? 'Seu mês pago terminou.' : 'Seu teste grátis terminou.'}</strong>
       <p>Seus orçamentos continuam salvos aqui. Para criar novos, assine o VUNBY.</p>
       <a href="planos.html"><button class="btn-primary btn-gold">Ver planos</button></a>
     </div>`;
+  } else if (st.tipo === 'pix' && st.acessoAte && new Date(st.acessoAte) - Date.now() < 3 * 86400000) {
+    html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">
+      <span>📅 Seu acesso vence dia <strong>${new Date(st.acessoAte).toLocaleDateString('pt-BR')}</strong></span>
+      <span class="aviso-plano-link">Pagar com Pix ›</span>
+    </a>`;
   } else if (st.tipo === 'trial') {
     const d = st.diasTrial;
     html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">

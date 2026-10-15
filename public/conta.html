@@ -180,6 +180,7 @@ async function carregarAssinatura(){
     if(st.tipo==='cortesia') el.innerHTML='<p>Acesso liberado ✅</p>';
     else if(st.tipo==='ativa') el.innerHTML=`<p><strong>Ativa ✅</strong> · ${precoBR(st.precoAssinatura||st.precoOferta)}/mês${st.fundador?' · Fundador':''}</p>
       <button class="btn-outline btn-sm" style="margin-top:var(--sp-3)" onclick="cancelarAssinatura()">Cancelar assinatura</button>`;
+    else if(st.tipo==='pix') el.innerHTML=`<p><strong>Pago com Pix ✅</strong> · acesso até ${fim(st.acessoAte)}.</p><a href="planos.html"><button class="btn-primary btn-sm" style="margin-top:var(--sp-3)">Pagar o próximo mês</button></a>`;
     else if(st.tipo==='cancelada_com_acesso') el.innerHTML=`<p>Cancelada. Seu acesso continua até ${fim(st.acessoAte)}.</p><a href="planos.html"><button class="btn-primary btn-sm" style="margin-top:var(--sp-3)">Assinar de novo</button></a>`;
     else if(st.tipo==='trial') el.innerHTML=`<p>Teste grátis: ${st.diasTrial===1?'último dia':'faltam '+st.diasTrial+' dias'}.</p><a href="planos.html"><button class="btn-primary btn-sm btn-gold" style="margin-top:var(--sp-3)">Ver planos</button></a>`;
     else el.innerHTML=`<p>Seu teste grátis terminou. Seus orçamentos continuam salvos.</p><a href="planos.html"><button class="btn-primary btn-sm btn-gold" style="margin-top:var(--sp-3)">Assinar</button></a>`;
