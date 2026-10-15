@@ -2,7 +2,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { PORT, NODE_ENV } = require('./lib/config');
+const { PORT, NODE_ENV, BASE_URL } = require('./lib/config');
 
 const authRoute = require('./routes/auth');
 const clientsRoute = require('./routes/clients');
@@ -84,6 +84,20 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const urlPath = new URL(req.url, 'http://x').pathname;
+
+    // Endereço antigo (*.onrender.com) leva para o domínio oficial (BASE_URL). Só páginas (GET/HEAD);
+    // a API continua respondendo no endereço antigo para não quebrar webhooks já configurados.
+    const host = String(req.headers.host || '').toLowerCase();
+    if (NODE_ENV === 'production' && host.endsWith('.onrender.com') && !urlPath.startsWith('/api/')
+        && (req.method === 'GET' || req.method === 'HEAD')) {
+      let destino = null;
+      try { destino = new URL(BASE_URL); } catch {}
+      if (destino && destino.host !== host && !destino.host.endsWith('.onrender.com')) {
+        res.writeHead(301, { Location: destino.origin + req.url });
+        res.end();
+        return;
+      }
+    }
 
     if (urlPath.startsWith('/api/')) {
       // Rotas da API
