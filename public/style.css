@@ -820,12 +820,13 @@ hr { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-5) 0; }
 
 
 /* ── Fundo com fotos nas telas de entrada (login, cadastro, senha) ── */
-html body .auth-outer{background:#071B4D}
-html body .auth-header{position:relative;background:linear-gradient(180deg,rgba(7,27,77,.15) 0%,rgba(7,27,77,.55) 55%,rgba(7,27,77,.92) 100%),url(/img/login/mosaico-celular.jpg) center 18%/cover no-repeat;padding:72px var(--sp-5) 40px;min-height:330px;display:flex;flex-direction:column;justify-content:flex-end}
-html body .auth-header .auth-tagline{text-shadow:0 1px 8px rgba(0,0,0,.45)}
+html body{background:#071B4D}
+html body .auth-outer{background:linear-gradient(180deg,rgba(7,27,77,.62),rgba(7,27,77,.82)),url(/img/login/mosaico-celular.jpg) center/cover no-repeat;align-items:center;justify-content:center;padding:32px 16px calc(32px + env(safe-area-inset-bottom))}
+html body .auth-header{background:transparent;min-height:0;padding:0 0 18px;text-align:center}
+html body .auth-header .auth-tagline{text-shadow:0 1px 8px rgba(0,0,0,.5)}
+html body .auth-body{flex:none;width:100%;max-width:440px;background:var(--gray);border-radius:22px;padding:24px 20px 28px;box-shadow:0 24px 70px rgba(0,0,0,.45)}
 @media(min-width:900px){
-  html body{background:#071B4D}
-  html body .auth-outer{background:linear-gradient(180deg,rgba(7,27,77,.72),rgba(7,27,77,.86)),url(/img/login/mosaico-pc.jpg) center/cover no-repeat fixed;align-items:center;justify-content:center;padding:48px 16px}
-  html body .auth-header{background:transparent;min-height:0;padding:0 0 22px}
-  html body .auth-body{flex:none;max-width:440px;background:var(--gray);border-radius:24px;padding:28px 28px 32px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  html body .auth-outer{background:linear-gradient(180deg,rgba(7,27,77,.72),rgba(7,27,77,.86)),url(/img/login/mosaico-pc.jpg) center/cover no-repeat fixed;padding:48px 16px}
+  html body .auth-header{padding-bottom:22px}
+  html body .auth-body{padding:28px 28px 32px}
 }
