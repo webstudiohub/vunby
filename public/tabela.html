@@ -37,9 +37,10 @@
     <h1>Minha tabela de preços</h1>
     <p>Seus serviços com o seu preço. Com ela, o orçamento sai em segundos.</p>
   </div>
-  <div id="conteudo"><p class="muted">Carregando…</p></div>
+  <div id="conteudo"><div class="card"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div></div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script src="calc.js"></script>
 <script src="kits.js"></script>
@@ -122,7 +123,7 @@ function render(){
   }
   const grupos={};
   itens.forEach(i=>(grupos[i.grupo]=grupos[i.grupo]||[]).push(i));
-  el.innerHTML=`<div class="tb-aviso">💡 Toque em um item para colocar <strong>o seu preço</strong>. Os preços do modelo são só exemplo.</div>
+  el.innerHTML=`<div class="tb-aviso">${ic('lampada',18)} Toque em um item para colocar <strong>o seu preço</strong>. Os preços do modelo são só exemplo.</div>
     <button type="button" class="btn-primary btn-gold" onclick="novoItem()">+ Adicionar item</button>
     <div id="area-novo"></div>
     ${Object.entries(grupos).map(([g,lista])=>`<h2 class="tb-grupo">${esc(g)}</h2>${lista.map(i=>editando===i.id?formHtml(i):`
@@ -166,12 +167,12 @@ async function salvar(id){
 }
 async function apagar(id){
   const i=itens.find(x=>x.id===id);
-  if(!confirm(`Apagar "${i?i.nome:'item'}" da sua tabela? Orçamentos já enviados não mudam.`))return;
-  try{ await api('/api/catalog/'+id,{method:'DELETE'}); editando=null; await carregar(); }catch(err){ alert(err.message); }
+  if(!(await VUI.confirmar('Orçamentos já enviados não mudam.',{titulo:`Apagar "${i?i.nome:'item'}"?`,sim:'Apagar',perigo:true,icone:'lixeira'})))return;
+  try{ await api('/api/catalog/'+id,{method:'DELETE'}); editando=null; await carregar(); VUI.toast('Item apagado'); }catch(err){ VUI.toast(err.message,'erro'); }
 }
 async function carregarKit(k){
-  try{ const r=await api('/api/catalog/kit',{method:'POST',body:{kit:k}}); await carregar(); window.scrollTo({top:0,behavior:'smooth'}); if(!r.adicionados) alert('Esse modelo já está todo na sua tabela.'); }
-  catch(err){ alert(err.message); }
+  try{ const r=await api('/api/catalog/kit',{method:'POST',body:{kit:k}}); await carregar(); window.scrollTo({top:0,behavior:'smooth'}); if(!r.adicionados) VUI.toast('Esse modelo já está todo na sua tabela.','info'); else VUI.toast(r.adicionados+' itens adicionados à sua tabela'); }
+  catch(err){ VUI.toast(err.message,'erro'); }
 }
 async function carregar(){ itens=await api('/api/catalog'); render(); }
 

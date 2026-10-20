@@ -42,19 +42,19 @@ function avisoPlano(st) {
     </div>`;
   } else if (st.tipo === 'pix' && st.acessoAte && new Date(st.acessoAte) - Date.now() < 3 * 86400000) {
     html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">
-      <span>📅 Seu acesso vence dia <strong>${new Date(st.acessoAte).toLocaleDateString('pt-BR')}</strong></span>
+      <span>${ic('calendario')} Seu acesso vence dia <strong>${new Date(st.acessoAte).toLocaleDateString('pt-BR')}</strong></span>
       <span class="aviso-plano-link">Pagar com Pix ›</span>
     </a>`;
   } else if (st.tipo === 'trial') {
     const d = st.diasTrial;
     html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">
-      <span>🎁 Teste grátis: <strong>${d === 1 ? 'último dia' : 'faltam ' + d + ' dias'}</strong></span>
+      <span>${ic('presente')} Teste grátis: <strong>${d === 1 ? 'último dia' : 'faltam ' + d + ' dias'}</strong></span>
       <span class="aviso-plano-link">Ver planos ›</span>
     </a>`;
   }
   if (st.feedbackPendente) {
     html += `<a href="opiniao.html" class="card aviso-plano aviso-plano-trial">
-      <span>💬 <strong>Como está sendo o VUNBY?</strong> 2 minutos para nos contar.</span>
+      <span>${ic('conversa')} <strong>Como está sendo o VUNBY?</strong> 2 minutos para nos contar.</span>
       <span class="aviso-plano-link">Responder ›</span>
     </a>`;
   }
@@ -185,7 +185,7 @@ function reduzirImagem(file){
 
 // ─── Atalho no editor de itens: montar o orçamento pela tabela de preços do prestador ─────
 function ferramentasItens(editorRef, campoObs) {
-  return { ferramentas: [{ rotulo: '📋 Montar pela minha tabela de preços', acao: () => abrirMontarTabela(
+  return { ferramentas: [{ rotulo: 'Montar pela minha tabela de preços', icone: 'lista', acao: () => abrirMontarTabela(
     itens => editorRef().adicionarItens(itens),
     texto => { const o = document.getElementById(campoObs); if (o) { o.value = (o.value.trim() ? o.value.trim() + '\n' : '') + texto; o.dispatchEvent(new Event('input', { bubbles: true })); } }) }] };
 }
@@ -218,7 +218,7 @@ function abrirEditarCliente(c, aoSalvar) {
   const fundo = document.createElement('div');
   fundo.className = 'ec-fundo'; fundo.setAttribute('role', 'dialog'); fundo.setAttribute('aria-modal', 'true'); fundo.setAttribute('aria-label', 'Editar cliente');
   fundo.innerHTML = `<div class="ec-folha">
-    <h2>✏️ Editar cliente</h2>
+    <h2>${ic('lapis',22)} Editar cliente</h2>
     <label for="ec-nome">Nome</label>
     <input id="ec-nome" maxlength="100" value="${esc(c.nome)}" autocomplete="off"/>
     <label for="ec-tel">Telefone (WhatsApp)</label>

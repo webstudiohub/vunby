@@ -20,7 +20,7 @@ function marcaHtml(p) {
   const ig = String(p.instagram || '').replace(/^@/, '');
   const chip = 'display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);color:#fff;text-decoration:none;font-size:var(--fs-sm);font-weight:600;padding:6px 12px;border-radius:20px';
   const contatos = [
-    wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" style="${chip}">💬 WhatsApp</a>` : '',
+    wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener" style="${chip}">${window.ic ? window.ic('whatsapp', 16) : ''} WhatsApp</a>` : '',
     ig ? `<a href="https://instagram.com/${encodeURIComponent(ig)}" target="_blank" rel="noopener" style="${chip}">@${marcaEsc(ig)}</a>` : '',
   ].filter(Boolean).join('');
   return `<div class="marca-empresa" style="margin-bottom:16px">

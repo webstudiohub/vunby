@@ -29,7 +29,7 @@
     <select id="q-client">
       <option value="">Selecione um cliente…</option>
     </select>
-    <button type="button" id="btn-editar-cliente" class="btn-link-editar" style="display:none" onclick="editarClienteEscolhido()">✏️ Editar nome ou telefone deste cliente</button>
+    <button type="button" id="btn-editar-cliente" class="btn-link-editar" style="display:none" onclick="editarClienteEscolhido()"><i data-ic="lapis" data-tam="16"></i> Editar nome ou telefone deste cliente</button>
 
     <details id="novo-cliente-details" style="margin-top:var(--sp-3)">
       <summary style="font-size:var(--fs-md);color:var(--navy);cursor:pointer;font-weight:600;user-select:none">+ Novo cliente</summary>
@@ -87,6 +87,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script src="calc.js"></script>
 <script src="itens-editor.js"></script>
@@ -192,13 +193,13 @@ function togglePkg(id){
 
 // Leva a tela até o campo que falta, marca em vermelho e mostra o aviso logo abaixo dele
 function apontarCampo(id,texto){
-  const c=document.getElementById(id); document.getElementById('q-msg').textContent=texto;
+  const c0=document.getElementById(id), c=c0._vuiInput||c0; document.getElementById('q-msg').textContent=texto;
   document.querySelectorAll('.campo-erro-msg').forEach(e=>e.remove());
   c.classList.add('campo-erro'); c.setAttribute('aria-invalid','true');
   const m=document.createElement('p'); m.className='campo-erro-msg'; m.setAttribute('role','alert'); m.textContent=texto; c.after(m);
   c.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=>c.focus({preventScroll:true}),350);
   const limpar=()=>{ c.classList.remove('campo-erro'); c.removeAttribute('aria-invalid'); m.remove(); };
-  c.addEventListener('change',limpar,{once:true}); c.addEventListener('input',limpar,{once:true});
+  c.addEventListener('change',limpar,{once:true}); c.addEventListener('input',limpar,{once:true}); if(c0!==c) c0.addEventListener('change',limpar,{once:true});
 }
 async function criarOrcamento(){
   const clientId=document.getElementById('q-client').value;
@@ -244,6 +245,7 @@ async function criarOrcamento(){
     sel.appendChild(opt);
   });
   sel.addEventListener('change',mostrarEditarCliente);
+  if(window.VUI) VUI.buscaSelect(sel,{placeholder:'Buscar cliente pelo nome ou telefone'});
   document.getElementById('nc-extras').innerHTML=camposExtrasCliente('nc');
   const d=new Date(); d.setDate(d.getDate()+7);
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];

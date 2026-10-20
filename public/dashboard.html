@@ -12,7 +12,7 @@
 <div id="top"></div>
 <div class="container">
   <div class="page-header anim">
-    <h1 id="greeting">Carregando…</h1>
+    <h1 id="greeting"><span class="skeleton-line" style="display:block;width:70%;height:30px;border-radius:9px"></span></h1>
     <p>Resumo dos seus orçamentos</p>
   </div>
 
@@ -29,10 +29,11 @@
 
   <div class="card anim anim-5" id="recent-area">
     <h3>Orçamentos recentes</h3>
-    <div id="recent-list"><p class="muted">Carregando…</p></div>
+    <div id="recent-list"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div>
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="instalar.js"></script>
 <script src="app.js"></script>
 <script>
@@ -49,7 +50,7 @@
   document.getElementById('greeting').textContent=`${saudacao}, ${primeiroNome}`;
   if(!session.perfilCompleto){
     document.getElementById('aviso-empresa').innerHTML=`<a href="configurar-empresa.html" class="card aviso-plano aviso-plano-trial">
-      <span>🏢 <strong>Complete os dados da empresa</strong> para seus orçamentos saírem com a sua cara.</span>
+      <span>${ic('empresa')} <strong>Complete os dados da empresa</strong> para seus orçamentos saírem com a sua cara.</span>
       <span class="aviso-plano-link">Completar ›</span>
     </a>`;
   }
@@ -82,7 +83,7 @@
   if(!recentes.length){
     document.getElementById('recent-list').innerHTML=`
       <div style="text-align:center;padding:var(--sp-6) 0">
-        <div style="font-size:var(--fs-num);margin-bottom:var(--sp-3)">📄</div>
+        <div style="font-size:var(--fs-num);margin-bottom:var(--sp-3);color:var(--navy)">${ic('documento',44)}</div>
         <p style="font-weight:600;color:var(--dark);margin-bottom:var(--sp-2)">Nenhum orçamento ainda</p>
         <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-5)">Crie o primeiro e comece a fechar negócios.</p>
         <a href="novo-orcamento.html"><button class="btn-primary btn-gold" style="width:auto;padding:0 var(--sp-6)">Criar primeiro orçamento</button></a>
@@ -97,7 +98,7 @@
       </div>
       <div class="quote-row-right">
         <div class="quote-row-valor">${brl(q.valor)}</div>
-        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">✏️ pediu alteração</span>':''}
+        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">'+ic('lapis',14)+' pediu alteração</span>':''}
       </div>
     </a>`).join('');
 })();

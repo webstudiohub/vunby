@@ -48,6 +48,7 @@ body:has(.it-barra){padding-bottom:96px}
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
 </div>
+<script src="ui.js"></script>
 <script src="marca.js"></script>
 <script src="calc.js"></script>
 <script>
@@ -150,7 +151,7 @@ async function enviarAlteracao(){
   try{
     const r=await fetch(`/api/public/quote/${encodeURIComponent(token)}/alteracao`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({texto:t})});
     const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.error||'Erro');
-    document.getElementById('painel').innerHTML=`<div class="alt-ok">✅ <strong>Pedido enviado!</strong><br>${esc((Q.prestador&&Q.prestador.nome)||'O prestador')} vai ajustar e este mesmo link mostra a versão nova.</div>`;
+    document.getElementById('painel').innerHTML=`<div class="alt-ok">${ic('ok',18)} <strong>Pedido enviado!</strong><br>${esc((Q.prestador&&Q.prestador.nome)||'O prestador')} vai ajustar e este mesmo link mostra a versão nova.</div>`;
     document.getElementById('painel').dataset.aberto='';
   }catch(e){ m.textContent=e.message; }
 }
@@ -183,7 +184,7 @@ async function acao(tipo){
     if(!res.ok) throw new Error(d.error||'Erro');
     document.getElementById('barra-fixa')?.remove();
     document.getElementById('acao-area').innerHTML=`<div style="background:${tipo==='aceitar'?'#D4FBDC':'#F2F2F7'};padding:20px;border-radius:12px;text-align:center">
-      <div style="font-size:var(--fs-2xl)">${tipo==='aceitar'?'🎉':'👍'}</div>
+      <div style="color:var(--green)">${ic(tipo==='aceitar'?'festa':'joinha',44)}</div>
       <p style="font-weight:700;margin-top:8px">${tipo==='aceitar'?'Orçamento aprovado!':'Resposta registrada.'}</p>
     </div>`;
   }catch(e){ if(m) m.textContent=e.message; }
@@ -220,15 +221,15 @@ async function acao(tipo){
 
   const acaoHtml=final?`
     <div style="background:${q.status==='Aprovado'?'#D4FBDC':'#F2F2F7'};padding:20px;border-radius:12px;text-align:center;margin-top:20px">
-      <p style="font-weight:700">${q.status==='Aprovado'?'✅ Aprovado':'❌ Recusado'}</p>
+      <p style="font-weight:700">${q.status==='Aprovado'?'<span style="color:var(--green)">'+ic('ok',18)+'</span> Aprovado':'<span style="color:var(--red)">'+ic('recusado',18)+'</span> Recusado'}</p>
     </div>`:
     q.expirado?`<div style="background:#FFE8D6;padding:16px;border-radius:12px;margin-top:20px"><p style="font-weight:600;color:#C04A00">⏰ Este orçamento está expirado. Entre em contato para renovar.</p></div>`:
     `<div id="acao-area" style="margin-top:20px">
-      ${q.alteracao&&q.alteracao.pendente?`<div class="alt-aviso">📝 <strong>Você pediu uma alteração</strong> em ${new Date(q.alteracao.em).toLocaleDateString('pt-BR')}: “${esc(q.alteracao.texto)}”<br>Quando a nova versão estiver pronta, este mesmo link é atualizado.</div>`:''}
+      ${q.alteracao&&q.alteracao.pendente?`<div class="alt-aviso">${ic('nota',18)} <strong>Você pediu uma alteração</strong> em ${new Date(q.alteracao.em).toLocaleDateString('pt-BR')}: “${esc(q.alteracao.texto)}”<br>Quando a nova versão estiver pronta, este mesmo link é atualizado.</div>`:''}
       <textarea id="obs-acao" class="alt-texto" rows="2" placeholder="Comentário (opcional)"></textarea>
       <button class="btn-accept" style="width:100%" onclick="acao('aceitar')">✓ Aprovar orçamento</button>
       <div class="alt-sec">
-        <button class="alt-btn" onclick="abrirPainel('alterar')">✏️ Pedir alteração</button>
+        <button class="alt-btn" onclick="abrirPainel('alterar')">${ic('lapis',16)} Pedir alteração</button>
         <button class="alt-btn" onclick="abrirPainel('recusar')">Recusar</button>
       </div>
       <div id="painel"></div>

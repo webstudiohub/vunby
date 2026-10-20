@@ -112,7 +112,7 @@
         <div style="display:flex;align-items:center;gap:12px">
           <img src="/icons/icon-192.png" alt="" width="44" height="44" style="border-radius:11px;flex-shrink:0"/>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:800;font-size:var(--fs-md)">📲 Instale o VUNBY no celular</div>
+            <div style="font-weight:800;font-size:var(--fs-md)">Instale o VUNBY no celular</div>
             <div class="muted" style="font-size:var(--fs-sm)">Abra com 1 toque, como um aplicativo.</div>
           </div>
           <button type="button" data-instalar-fechar aria-label="Fechar aviso" style="flex-shrink:0;border:none;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;width:40px;height:40px;align-self:flex-start">×</button>
@@ -130,7 +130,7 @@
   function itemConta(alvo) {
     if (!alvo) return;
     if (instalado()) {
-      alvo.innerHTML = `<p class="muted">✅ Você já está usando o VUNBY instalado no celular.</p>`;
+      alvo.innerHTML = `<p class="muted"><span style="color:var(--green)">${window.ic ? window.ic('ok', 18) : ''}</span> Você já está usando o VUNBY instalado no celular.</p>`;
       return;
     }
     alvo.innerHTML = `<p class="muted" style="margin-bottom:var(--sp-3)">Coloque o VUNBY na tela inicial e abra com 1 toque, como um aplicativo. É grátis e não precisa de loja.</p>

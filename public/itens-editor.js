@@ -10,7 +10,7 @@ const TIPO_DICA = {
 };
 
 function ItensEditor(el, inicial, aoMudar, opcoes) {
-  const ferramentas = (opcoes && opcoes.ferramentas) || []; // ex.: [{ rotulo:'📋 Montar pela minha tabela', acao: fn }]
+  const ferramentas = (opcoes && opcoes.ferramentas) || []; // ex.: [{ rotulo:'Montar pela minha tabela', icone:'lista', acao: fn }]
   const C = window.VCalc;
   const st = {
     itens: (inicial && inicial.itens || []).map(i => ({
@@ -43,7 +43,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
       + (r.taxa ? linha(e(st.taxaNome || 'Taxa / deslocamento'), C.reais(r.taxa)) : '')
       + linha('Total', C.reais(r.total), 'ie-res-total')
       + (r.sinal ? linha(`Sinal (${C.qtdBR(C.numeroBR(st.sinalPct))}%)`, C.reais(r.sinal)) : '')
-      + (st.itens.filter(i => i.tipo !== 'incluido').length > 3 ? `<p class="ie-res-aviso">⚠️ Muitas opções confundem o cliente e atrasam a decisão. O ideal é até 3 itens opcionais ou recomendados.</p>` : '')
+      + (st.itens.filter(i => i.tipo !== 'incluido').length > 3 ? `<p class="ie-res-aviso">${window.ic ? window.ic('alerta', 18) : ''} Muitas opções confundem o cliente e atrasam a decisão. O ideal é até 3 itens opcionais ou recomendados.</p>` : '')
       + (temOpc ? `<p class="ie-res-nota">O cliente escolhe os opcionais: o total pode ir de <strong>${C.reais(minimo)}</strong> a <strong>${C.reais(tudo)}</strong>.</p>` : '');
   }
 
@@ -80,7 +80,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
   function render(focarUltimo) {
     el.innerHTML = `
       <div class="ie-lista">${st.itens.length ? st.itens.map(itemHtml).join('') : '<p class="muted ie-vazio">Nenhum item ainda. Adicione o primeiro abaixo.</p>'}</div>
-      ${ferramentas.map((f, k) => `<button type="button" class="btn-primary btn-gold ie-add ie-ferramenta" data-ferr="${k}">${e(f.rotulo)}</button>`).join('')}
+      ${ferramentas.map((f, k) => `<button type="button" class="btn-primary btn-gold ie-add ie-ferramenta" data-ferr="${k}">${f.icone && window.ic ? window.ic(f.icone) + ' ' : ''}${e(f.rotulo)}</button>`).join('')}
       <button type="button" class="btn-outline ie-add" data-acao="adicionar">+ Adicionar item avulso</button>
       <details class="ie-extras"${temExtras() ? ' open' : ''}>
         <summary>Desconto, taxa e sinal</summary>

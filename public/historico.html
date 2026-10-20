@@ -17,7 +17,7 @@
   </div>
 
   <div class="search-wrap">
-    <span class="search-icon">🔍</span>
+    <span class="search-icon"><i data-ic="busca"></i></span>
     <input id="busca" type="search" placeholder="Buscar por cliente ou serviço…" oninput="filtrar()" autocomplete="off"/>
   </div>
 
@@ -35,6 +35,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script>
 let todos=[], filtroStatus='';
@@ -67,7 +68,7 @@ function filtrar(){
       </div>
       <div class="quote-row-right">
         <div class="quote-row-valor">${brl(q.valor)}</div>
-        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">✏️ pediu alteração</span>':''}
+        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">'+ic('lapis',14)+' pediu alteração</span>':''}
       </div>
     </a>`).join('');
 }

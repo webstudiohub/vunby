@@ -51,6 +51,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script>
 let nota=null, pagaria=null;
@@ -73,7 +74,7 @@ document.getElementById('btn-enviar').onclick=async()=>{
   btn.disabled=true; btn.textContent='Enviando…';
   try{
     await api('/api/feedback',{method:'POST',body:{nota,pagaria,experiencia:val('experiencia'),gostando:val('gostando'),naoGostou:val('naoGostou'),melhorar:val('melhorar'),falta:val('falta'),comentarioPreco:val('comentarioPreco')}});
-    document.getElementById('form').innerHTML='<h3>Muito obrigado! 🙏</h3><p class="muted">Lemos cada resposta. É assim que o VUNBY melhora.</p><a href="dashboard.html"><button class="btn-primary" style="margin-top:var(--sp-4)">Voltar ao início</button></a>';
+    document.getElementById('form').innerHTML='<h3>Muito obrigado! <span style="color:var(--red)">'+ic('coracao',20)+'</span></h3><p class="muted">Lemos cada resposta. É assim que o VUNBY melhora.</p><a href="dashboard.html"><button class="btn-primary" style="margin-top:var(--sp-4)">Voltar ao início</button></a>';
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Enviar minha opinião';}
 };
 document.getElementById('btn-depois').onclick=async()=>{

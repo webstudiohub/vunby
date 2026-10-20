@@ -34,6 +34,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script>
 let data=[], filtroAtual='';
@@ -60,7 +61,7 @@ function renderLista(){
       </div>
       <div class="quote-row-right">
         <div class="quote-row-valor">${brl(q.valor)}</div>
-        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">✏️ pediu alteração</span>':''}
+        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">'+ic('lapis',14)+' pediu alteração</span>':''}
       </div>
     </a>`).join('');
 }

@@ -41,6 +41,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script>
 async function criarPacote(){
@@ -64,7 +65,7 @@ async function criarPacote(){
 }
 
 async function excluir(id){
-  if(!confirm('Excluir este modelo?'))return;
+  if(!(await VUI.confirmar('Orçamentos já enviados não mudam.',{titulo:'Excluir este modelo?',sim:'Excluir',perigo:true,icone:'lixeira'})))return;
   await api('/api/packages/'+id,{method:'DELETE'});
   await renderLista();
 }
@@ -86,7 +87,7 @@ async function renderLista(){
         ${p.conteudo?`<div class="muted" style="font-size:var(--fs-sm);margin-top:2px">${esc(p.conteudo)}</div>`:''}
         <div style="font-size:var(--fs-lg);font-weight:800;color:var(--navy);margin-top:var(--sp-2)">${brl(p.preco)}</div>
       </div>
-      <button onclick="excluir(${p.id})" style="background:none;border:none;color:var(--red);font-size:var(--fs-xl);cursor:pointer;padding:var(--sp-2);margin-left:var(--sp-2);flex-shrink:0" aria-label="Excluir">🗑</button>
+      <button onclick="excluir(${p.id})" style="background:none;border:none;color:var(--red);font-size:var(--fs-xl);cursor:pointer;padding:var(--sp-2);margin-left:var(--sp-2);flex-shrink:0" aria-label="Excluir">${ic('lixeira',22)}</button>
     </div>`).join('');
 }
 

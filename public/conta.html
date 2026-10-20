@@ -19,7 +19,7 @@
   <!-- Perfil -->
   <div class="card anim anim-1">
     <h3>Dados pessoais</h3>
-    <div id="perfil"><p class="muted">Carregando…</p></div>
+    <div id="perfil"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div>
   </div>
 
   <!-- Marca no orçamento -->
@@ -50,7 +50,7 @@
   <!-- Assinatura -->
   <div class="card anim anim-2">
     <h3>Assinatura</h3>
-    <div id="assinatura"><p class="muted">Carregando…</p></div>
+    <div id="assinatura"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div>
     <div id="msg-assinatura" class="error"></div>
   </div>
 
@@ -71,7 +71,7 @@
 
   <!-- Excluir conta -->
   <div class="card anim anim-2">
-    <h3>📲 Instalar o app</h3>
+    <h3><i data-ic="celular"></i> Instalar o app</h3>
     <div id="instalar-conta"></div>
   </div>
 
@@ -82,6 +82,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="instalar.js"></script>
 <script src="app.js"></script>
 <script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));</script>
@@ -143,12 +144,11 @@ async function alterarSenha(){
 }
 
 async function excluirConta(){
-  if(!confirm('Tem certeza? Esta ação não pode ser desfeita.'))return;
-  if(!confirm('Confirme: TODOS os seus dados serão apagados permanentemente.'))return;
+  if(!(await VUI.confirmar('Todos os seus orçamentos, clientes, pacotes e dados serão apagados para sempre. Esta ação não pode ser desfeita.',{titulo:'Excluir sua conta?',sim:'Excluir minha conta',nao:'Manter conta',perigo:true})))return;
   try{
     await api('/api/auth/account',{method:'DELETE'});
     location.href='/';
-  }catch(e){alert(e.message);}
+  }catch(e){VUI.toast(e.message,'erro');}
 }
 
 (async()=>{
@@ -185,17 +185,17 @@ async function carregarAssinatura(){
   try{
     const st=await api('/api/billing/status');
     const fim=d=>new Date(d).toLocaleDateString('pt-BR');
-    if(st.tipo==='cortesia') el.innerHTML='<p>Acesso liberado ✅</p>';
-    else if(st.tipo==='ativa') el.innerHTML=`<p><strong>Ativa ✅</strong> · ${precoBR(st.precoAssinatura||st.precoOferta)}/mês${st.fundador?' · Fundador':''}</p>
+    if(st.tipo==='cortesia') el.innerHTML='<p>Acesso liberado <span style="color:var(--green)">'+ic('ok',18)+'</span></p>';
+    else if(st.tipo==='ativa') el.innerHTML=`<p><strong>Ativa <span style="color:var(--green)">${ic('ok',18)}</span></strong> · ${precoBR(st.precoAssinatura||st.precoOferta)}/mês${st.fundador?' · Fundador':''}</p>
       <button class="btn-outline btn-sm" style="margin-top:var(--sp-3)" onclick="cancelarAssinatura()">Cancelar assinatura</button>`;
-    else if(st.tipo==='pix') el.innerHTML=`<p><strong>Pago com Pix ✅</strong> · acesso até ${fim(st.acessoAte)}.</p><a href="planos.html"><button class="btn-primary btn-sm" style="margin-top:var(--sp-3)">Pagar o próximo mês</button></a>`;
+    else if(st.tipo==='pix') el.innerHTML=`<p><strong>Pago com Pix <span style="color:var(--green)">${ic('ok',18)}</span></strong> · acesso até ${fim(st.acessoAte)}.</p><a href="planos.html"><button class="btn-primary btn-sm" style="margin-top:var(--sp-3)">Pagar o próximo mês</button></a>`;
     else if(st.tipo==='cancelada_com_acesso') el.innerHTML=`<p>Cancelada. Seu acesso continua até ${fim(st.acessoAte)}.</p><a href="planos.html"><button class="btn-primary btn-sm" style="margin-top:var(--sp-3)">Assinar de novo</button></a>`;
     else if(st.tipo==='trial') el.innerHTML=`<p>Teste grátis: ${st.diasTrial===1?'último dia':'faltam '+st.diasTrial+' dias'}.</p><a href="planos.html"><button class="btn-primary btn-sm btn-gold" style="margin-top:var(--sp-3)">Ver planos</button></a>`;
     else el.innerHTML=`<p>Seu teste grátis terminou. Seus orçamentos continuam salvos.</p><a href="planos.html"><button class="btn-primary btn-sm btn-gold" style="margin-top:var(--sp-3)">Assinar</button></a>`;
   }catch{ el.innerHTML='<p class="muted">Não foi possível carregar.</p>'; }
 }
 async function cancelarAssinatura(){
-  if(!confirm('Cancelar a assinatura? Você continua com acesso até o fim do mês já pago. Seus orçamentos continuam salvos.'))return;
+  if(!(await VUI.confirmar('Você continua com acesso até o fim do mês já pago. Seus orçamentos continuam salvos.',{titulo:'Cancelar a assinatura?',sim:'Cancelar assinatura',nao:'Continuar assinando',perigo:true})))return;
   const msg=document.getElementById('msg-assinatura'); msg.textContent='';
   try{ await api('/api/billing/cancel',{method:'POST'}); carregarAssinatura(); }
   catch(e){ msg.textContent=e.message; }

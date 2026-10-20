@@ -8,7 +8,7 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
   const e = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const R = c => C.reais(c);
   let tabela = [];
-  try { tabela = await api('/api/catalog'); } catch (err) { alert(err.message); return; }
+  try { tabela = await api('/api/catalog'); } catch (err) { VUI.toast(err.message, 'erro'); return; }
 
   const q = {};       // id → quantidade (texto, aceita "2,5")
   const desm = {};    // id → peças a desmontar (null = igual à quantidade)
@@ -72,7 +72,7 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
         <div><span>Montar <small>${R(i.preco_mont_cents)} cada</small></span>${contador('m|' + i.id, mont[i.id] == null ? C.qtdBR(x) : mont[i.id], 'montar ' + i.nome)}</div></div>`;
     }
     if (i.unidade === 'm²' && !i.m3) {
-      extra += `<details class="mt-m2"><summary>📐 Calcular m²</summary>
+      extra += `<details class="mt-m2"><summary>${window.ic ? window.ic('regua', 18) : ''} Calcular m²</summary>
         <div class="mt-m2-campos"><label class="cm-campo"><span>Largura (m)</span><input data-l="${i.id}" inputmode="decimal" placeholder="3,00"/></label>
         <span class="mt-x">×</span><label class="cm-campo"><span>Comprimento / altura (m)</span><input data-c="${i.id}" inputmode="decimal" placeholder="4,00"/></label></div>
         <button type="button" class="btn-outline btn-sm" data-m2="${i.id}" style="margin-top:8px">Somar à quantidade</button>
@@ -96,11 +96,11 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
 
   function render() {
     folha.innerHTML = `
-      <div class="cm-topo"><div><h2>📋 Montar pela minha tabela</h2><p>Marque as quantidades. Os itens entram no orçamento com o seu preço.</p></div>
+      <div class="cm-topo"><div><h2>${window.ic ? window.ic('lista', 22) : ''} Montar pela minha tabela</h2><p>Marque as quantidades. Os itens entram no orçamento com o seu preço.</p></div>
         <button type="button" class="cm-x" data-fechar aria-label="Fechar">✕</button></div>
       <div class="cm-resumo" id="mt-resumo">${resumoHtml()}</div>
       <div class="cm-corpo">
-        ${tabela.length > 8 ? `<input class="mt-busca" id="mt-busca" type="search" placeholder="🔎 Procurar na tabela" value="${e(busca)}" aria-label="Procurar na tabela"/>` : ''}
+        ${tabela.length > 8 ? `<input class="mt-busca" id="mt-busca" type="search" placeholder="Procurar na tabela" value="${e(busca)}" aria-label="Procurar na tabela"/>` : ''}
         <div id="mt-lista">${corpoHtml()}</div>
         ${tabela.length ? '<p class="cm-dica" style="margin-top:16px">Falta algum serviço? Adicione depois no orçamento ou em <a href="tabela.html">Minha tabela de preços</a>.</p>' : ''}
       </div>
@@ -115,7 +115,7 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
     if (aberto) folha.querySelector(`.mt-linha[data-id="${id}"] .mt-m2`).open = true;
   }
 
-  function gerar() {
+  async function gerar() {
     const c = contas(), itens = [], moveis = [];
     for (const i of tabela) {
       const x = n(q[i.id]); if (!x) continue;
@@ -129,7 +129,7 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
     }
     if (!itens.length && !moveis.length) { folha.querySelector('#mt-msg').textContent = 'Marque pelo menos uma quantidade.'; return; }
     if (moveis.length && !tabela.some(i => i.capacidade_m3 && n(q[i.id])) && tabela.some(i => i.capacidade_m3)) {
-      if (!confirm('Você marcou móveis mas nenhum veículo/frete. Colocar assim mesmo?')) return;
+      if (!(await VUI.confirmar('Você marcou móveis, mas nenhum veículo ou frete. Quer colocar no orçamento assim mesmo?', { titulo: 'Falta o veículo', sim: 'Colocar assim mesmo', nao: 'Voltar e escolher', icone: 'caminhao' }))) return;
     }
     aoGerarItens(itens);
     if (moveis.length && aoGerarTexto) aoGerarTexto(`Móveis (${C.qtdBR(Math.round(c.m3 * 10) / 10)} m³): ${moveis.join(', ')}.\nValor estimado pela lista de móveis. Itens a mais no dia da mudança podem alterar o valor.`);

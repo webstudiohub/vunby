@@ -18,7 +18,7 @@
 
   <div id="aviso"></div>
 
-  <div class="card anim anim-1" id="plano"><p class="muted">Carregando…</p></div>
+  <div class="card anim anim-1" id="plano"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div>
 
   <div class="card anim anim-2">
     <h3>O que está incluído</h3>
@@ -33,6 +33,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="ui.js"></script>
 <script src="app.js"></script>
 <script>
 const precoBR=v=>'R$'+Number(v).toFixed(2).replace('.',',');
@@ -43,7 +44,7 @@ function renderPlano(st){
   ST=st;
   const el=document.getElementById('plano');
   if(st.tipo==='ativa'||st.tipo==='cortesia'){
-    el.innerHTML=`<h3>Sua assinatura está ativa ✅</h3>
+    el.innerHTML=`<h3>Sua assinatura está ativa <span style="color:var(--green)">${ic('ok',20)}</span></h3>
       <p class="muted">${st.tipo==='cortesia'?'Acesso liberado.':`${precoBR(st.precoAssinatura||st.precoOferta)}/mês no cartão${st.fundador?' · <strong>Fundador</strong> (preço garantido para sempre)':''}`}</p>
       <a href="dashboard.html"><button class="btn-primary" style="margin-top:var(--sp-4)">Ir para o início</button></a>`;
     return;
@@ -51,7 +52,7 @@ function renderPlano(st){
   const fundador=st.precoOferta===st.precoFundador;
   let topo='';
   if(st.tipo==='pix'){
-    topo=`<p style="margin-bottom:var(--sp-3)"><strong>Pago com Pix ✅</strong> Seu acesso vai até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}. Você pode pagar o próximo mês abaixo (os dias se somam).</p>`;
+    topo=`<p style="margin-bottom:var(--sp-3)"><strong>Pago com Pix <span style="color:var(--green)">${ic('ok',18)}</span></strong> Seu acesso vai até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}. Você pode pagar o próximo mês abaixo (os dias se somam).</p>`;
   }else if(st.tipo==='cancelada_com_acesso'){
     topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Sua assinatura foi cancelada. Você continua com acesso até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}.</p>`;
   }else if(st.tipo==='trial'){
@@ -111,7 +112,7 @@ async function gerarPix(){
     </div>`;
     document.getElementById('btn-copiar').addEventListener('click',async()=>{
       const b=document.getElementById('btn-copiar');
-      try{ await navigator.clipboard.writeText(r.qrCode); b.textContent='✅ Código copiado'; }
+      try{ await navigator.clipboard.writeText(r.qrCode); b.innerHTML=ic('ok',18)+' Código copiado'; }
       catch{ prompt('Copie o código Pix:', r.qrCode); }
       setTimeout(()=>{ if(b) b.textContent='Copiar código Pix'; },3000);
     });
@@ -181,7 +182,7 @@ async function abrirCartao(){
 
 function pagamentoConfirmado(){
   document.getElementById('aviso').innerHTML=`<div class="card pg-ok" role="status">
-    <div class="pg-ok-icone">✅</div>
+    <div class="pg-ok-icone" style="color:var(--green)">${ic('ok',52)}</div>
     <h2>Pagamento confirmado!</h2>
     <p>Sua assinatura do VUNBY está liberada. Obrigado por confiar no nosso trabalho.</p>
     <a href="dashboard.html"><button class="btn-primary btn-gold" style="margin-top:var(--sp-4)">Começar a usar</button></a>
@@ -207,7 +208,7 @@ function pagamentoConfirmado(){
       // O Mercado Pago pode levar alguns segundos para confirmar
       for(let i=0;i<3&&s&&s.tipo!=='ativa';i++){ await new Promise(r=>setTimeout(r,3000)); s=await api('/api/billing/sync',{method:'POST'}).catch(()=>null); }
       aviso.innerHTML=s&&s.tipo==='ativa'
-        ?'<div class="card aviso-plano aviso-plano-trial"><span>🎉 <strong>Pagamento confirmado!</strong> Bem-vindo ao VUNBY.</span></div>'
+        ?'<div class="card aviso-plano aviso-plano-trial"><span>'+ic('festa')+' <strong>Pagamento confirmado!</strong> Bem-vindo ao VUNBY.</span></div>'
         :'<div class="card aviso-plano aviso-plano-trial"><span>Seu pagamento está sendo processado. Assim que o Mercado Pago confirmar, a assinatura é liberada automaticamente.</span></div>';
     }
     renderPlano(await api('/api/billing/status'));
