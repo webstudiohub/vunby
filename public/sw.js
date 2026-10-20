@@ -1,8 +1,8 @@
 /* VUNBY Service Worker — versão atualizada a cada deploy */
-const CACHE = 'vunby-v27';
+const CACHE = 'vunby-v28';
 const STATIC = [
   '/', '/entrar', '/cadastro',
-  '/style.css', '/app.js',
+  '/style.css', '/app.js', '/instalar.js',
   '/dashboard.html', '/radar.html', '/historico.html',
   '/pacotes.html', '/novo-orcamento.html',
   '/conta.html', '/configurar-empresa.html', '/marca.js', '/pdf.js', '/calc.js', '/itens-editor.js', '/montar-tabela.js', '/kits.js', '/tabela.html', '/manifest.json', '/icons/icon-192.png',

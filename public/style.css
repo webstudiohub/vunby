@@ -820,7 +820,6 @@ hr { border: none; border-top: 1px solid var(--gray2); margin: var(--sp-5) 0; }
 
 
 /* ── Fundo com fotos nas telas de entrada (login, cadastro, senha) ── */
-html body{background:#071B4D}
 html body .auth-outer{background:linear-gradient(180deg,rgba(7,27,77,.62),rgba(7,27,77,.82)),url(/img/login/mosaico-celular.jpg) center/cover no-repeat;align-items:center;justify-content:center;padding:32px 16px calc(32px + env(safe-area-inset-bottom))}
 html body .auth-header{background:transparent;min-height:0;padding:0 0 18px;text-align:center}
 html body .auth-header .auth-tagline{text-shadow:0 1px 8px rgba(0,0,0,.5)}

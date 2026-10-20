@@ -18,6 +18,7 @@
 
   <div id="aviso-plano"></div>
   <div id="aviso-empresa"></div>
+  <div id="aviso-instalar"></div>
 
   <div id="stats-area" class="stat-grid">
     <div class="stat-card anim anim-1"><div class="stat-label">Em aberto</div><div class="stat-value">—</div></div>
@@ -32,6 +33,7 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="instalar.js"></script>
 <script src="app.js"></script>
 <script>
 (async()=>{
@@ -39,6 +41,7 @@
   document.getElementById('top').innerHTML=topbar('dashboard.html');
   document.getElementById('nav').innerHTML=bottomNav('dashboard.html');
   wireLogout();
+  if(window.VunbyInstalar) VunbyInstalar.banner(document.getElementById('aviso-instalar'));
 
   const primeiroNome=(session.nome||'').split(' ')[0];
   const hora=new Date().getHours();

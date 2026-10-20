@@ -70,6 +70,11 @@
   </div>
 
   <!-- Excluir conta -->
+  <div class="card anim anim-2">
+    <h3>📲 Instalar o app</h3>
+    <div id="instalar-conta"></div>
+  </div>
+
   <div class="card anim anim-3" style="border:1.5px solid #FFE0DE;margin-bottom:calc(var(--nav-h) + var(--sp-5))">
     <h3 style="color:#C0392B">Zona de perigo</h3>
     <p class="muted" style="margin-bottom:var(--sp-4)">Excluir a conta é irreversível. Todos os orçamentos, pacotes e dados serão apagados permanentemente.</p>
@@ -77,7 +82,9 @@
   </div>
 </div>
 <div id="nav"></div>
+<script src="instalar.js"></script>
 <script src="app.js"></script>
+<script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));</script>
 <script>
 // ─── Marca (logo + nome da empresa) ───
 let logoNova; // undefined = sem mudança; null = remover; string = nova imagem
