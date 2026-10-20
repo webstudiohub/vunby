@@ -193,6 +193,12 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
  .hero-notif{left:12px;right:auto;top:calc(min(98vw,480px) * .56)}
 }
 @media(prefers-reduced-motion:reduce){.hero-notif{animation:none}}
+
+.combo{position:relative;padding-bottom:120px}
+.combo .foto{width:100%;height:auto;border-radius:22px;box-shadow:0 18px 50px rgba(15,25,35,.18)}
+.shot.mini{position:absolute;left:4%;bottom:0;width:40%;margin:0;padding:6px;border-radius:26px}
+.shot.mini img{border-radius:21px}
+@media(max-width:859px){.combo{padding-bottom:150px}.shot.mini{width:46%}}
 :focus-visible{outline:3px solid var(--gold-2);outline-offset:2px;border-radius:6px}
 </style>
 </head>
@@ -294,7 +300,7 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
         <div class="tx"><span class="num">O QUE O CLIENTE VÊ</span><h3>O cliente monta o serviço e aprova pelo celular</h3>
           <p>Ele recebe um link com a sua marca. Marca os opcionais que quer, vê o total mudar na hora e aprova com um toque.</p>
           <ul><li>Não precisa baixar nada</li><li>Mostra o sinal para reservar a data</li><li>Ele também pode pedir uma alteração pelo link</li></ul></div>
-        <div class="shot"><img src="/img/landing/opcionais.jpg" alt="Cliente marcando um item opcional e o total mudando para R$ 1.650" loading="lazy" width="390" height="844"/></div>
+        <div class="combo"><img class="foto" src="/img/landing/cliente-foto.jpg" alt="Cliente feliz olhando o orçamento no celular, em casa, com caixas de mudança" loading="lazy" width="1152" height="768"/><div class="shot mini"><img src="/img/landing/opcionais.jpg" alt="Cliente marcando um item opcional e o total mudando para R$ 1.650" loading="lazy" width="390" height="844"/></div></div>
       </div>
       <div class="trow">
         <div class="tx"><span class="num">TABELA DE PREÇOS</span><h3>Seus preços prontos: orçamento em segundos</h3>
