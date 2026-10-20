@@ -3,7 +3,7 @@
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>VUNBY — Orçamentos que fecham negócio</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png"/><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
-<meta name="description" content="Envie orçamentos pelo WhatsApp, acompanhe em tempo real e nunca perca um cliente por falta de follow-up."/>
+<meta name="description" content="Monte orçamentos bonitos em minutos, envie pelo WhatsApp e saiba quando o cliente abriu. 14 dias grátis, sem cartão."/>
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="VUNBY — Orçamentos que fecham negócio"/>
 <meta property="og:description" content="Envie orçamentos pelo WhatsApp, acompanhe em tempo real e nunca perca um cliente."/>
@@ -11,71 +11,412 @@
 <meta property="og:image" content="https://vunby.com.br/icons/og-image.png"/>
 <meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<link rel="stylesheet" href="style.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-.landing-body{background:#fff}
-.features{background:#fff;padding:40px 20px}
-.features-grid{max-width:600px;margin:0 auto;display:grid;gap:14px}
-.feature{display:flex;gap:14px;align-items:flex-start;padding:16px;background:#F2F2F7;border-radius:12px}
-.feature-icon{font-size:var(--fs-2xl);flex-shrink:0}
-.feature h3{font-size:var(--fs-md);font-weight:700;margin-bottom:4px}
-.feature p{font-size:var(--fs-md);color:#5B6675;line-height:1.5}
-.pricing{background:#0F3A8C;color:#fff;padding:48px 20px;text-align:center}
-.pricing h2{font-size:var(--fs-2xl);font-weight:800;margin-bottom:8px}
-.pricing p{opacity:.8;margin-bottom:28px;font-size:var(--fs-md)}
-.price-card{background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:16px;padding:28px 20px;max-width:340px;margin:0 auto 20px}
-.price-main{font-size:var(--fs-num);font-weight:800;color:#F5C000}
-.price-main small{font-size:var(--fs-lg)}
-.price-desc{font-size:var(--fs-md);opacity:.88;margin-bottom:20px}
-.price-features{list-style:none;text-align:left;margin-bottom:24px}
-.price-features li{padding:6px 0;font-size:var(--fs-md);border-bottom:1px solid rgba(255,255,255,.1)}
-.price-features li::before{content:"✓ ";color:#F5C000;font-weight:800}
-footer{background:#1C1C1E;color:rgba(255,255,255,.5);text-align:center;padding:24px;font-size:var(--fs-sm)}
-footer a{color:rgba(255,255,255,.5)}
+:root{
+  --navy:#0F3A8C;--navy-2:#0A286E;--navy-3:#071B4D;--navy-light:#E6EEFB;
+  --gold:#E3B23C;--gold-2:#F5C000;
+  --chrome-blue:linear-gradient(180deg,#6EA5EB 0%,#285FBE 35%,#0F378C 55%,#2D64BE 80%,#0A286E 100%);
+  --chrome-gold:linear-gradient(180deg,#FFF0AA 0%,#EBBE3C 30%,#AA7D14 50%,#F0C850 70%,#B4870F 100%);
+  --dark:#0F1923;--body:#3A4550;--muted:#5B6675;--line:#E4E8EE;--bg:#F4F6F9;--white:#fff;--green:#2DB56D;
+  --r:16px;--wrap:1080px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--dark);background:var(--white);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{max-width:100%;display:block}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 20px}
+h1,h2,h3{line-height:1.2;letter-spacing:-.01em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:0 26px;border-radius:12px;font-weight:800;font-size:17px;text-decoration:none;transition:transform .12s,box-shadow .12s}
+.btn:active{transform:scale(.98)}
+.btn-gold{background:var(--chrome-gold);color:#1C1C1E;box-shadow:0 6px 20px rgba(227,178,60,.35)}
+.btn-gold:hover{box-shadow:0 8px 26px rgba(227,178,60,.5)}
+.btn-ghost{border:2px solid rgba(255,255,255,.55);color:#fff}
+.btn-ghost:hover{background:rgba(255,255,255,.1)}
+.tag{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);background:var(--navy-light);padding:6px 12px;border-radius:999px;margin-bottom:14px}
+section{padding:72px 0}
+.sec-title{font-size:clamp(26px,4.5vw,38px);font-weight:800;margin-bottom:12px}
+.sec-sub{font-size:18px;color:var(--muted);max-width:640px}
+.center{text-align:center}.center .sec-sub{margin:0 auto}
+
+/* topo */
+.top{position:sticky;top:0;z-index:20;background:rgba(7,27,77,.92);backdrop-filter:blur(10px)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.top img{height:30px;width:auto}
+.top a.entrar{color:#fff;font-weight:700;text-decoration:none;padding:10px 16px;border-radius:10px;border:1.5px solid rgba(255,255,255,.35);font-size:15px}
+
+/* hero */
+.hero{background:radial-gradient(120% 90% at 80% 0%,#2D64BE 0%,var(--navy) 40%,var(--navy-3) 100%);color:#fff;padding:56px 0 72px;overflow:hidden}
+.hero .wrap{display:grid;gap:44px;align-items:center}
+@media(min-width:900px){.hero .wrap{grid-template-columns:1.1fr .9fr}.hero{padding:80px 0 96px}}
+.selo{display:inline-flex;align-items:center;gap:8px;background:rgba(245,192,0,.14);border:1px solid rgba(245,192,0,.45);color:#FFE38A;font-weight:700;font-size:14px;padding:7px 14px;border-radius:999px;margin-bottom:20px}
+.hero h1{font-size:clamp(34px,6.4vw,56px);font-weight:800;margin-bottom:18px}
+.hero h1 em{font-style:normal;background:var(--chrome-gold);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:clamp(18px,2.4vw,21px);color:rgba(255,255,255,.86);max-width:560px;margin-bottom:28px}
+.hero .ctas{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.hero .mini{font-size:15px;color:rgba(255,255,255,.75);display:flex;flex-wrap:wrap;gap:6px 18px}
+.hero .mini span::before{content:"✓ ";color:var(--gold-2);font-weight:800}
+
+/* celular */
+.phone{width:min(330px,88vw);margin:52px auto 0;background:#0B0F17;border-radius:42px;padding:12px;box-shadow:0 30px 80px rgba(0,0,0,.45),inset 0 0 0 2px #2a3242;position:relative}
+.screen{background:var(--bg);border-radius:32px;overflow:hidden;color:var(--dark)}
+.scr-top{background:var(--chrome-blue);color:#fff;padding:22px 18px 18px}
+.scr-top .emp{display:flex;align-items:center;gap:10px}
+.scr-top .av{width:40px;height:40px;border-radius:10px;background:#fff;color:var(--navy);display:grid;place-items:center;font-weight:800}
+.scr-top b{display:block;font-size:15px}.scr-top small{opacity:.85;font-size:12.5px}
+.scr-body{padding:14px}
+.card{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.card .l{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.card .l:last-child{border-bottom:0}
+.card .op{color:var(--muted)}
+.card .op i{font-style:normal;font-size:11px;font-weight:700;background:var(--navy-light);color:var(--navy);padding:2px 6px;border-radius:6px;margin-left:4px}
+.tot{display:flex;justify-content:space-between;align-items:center;font-weight:800}
+.tot span:last-child{font-size:22px;color:var(--navy)}
+.aprovar{display:block;text-align:center;background:var(--green);color:#fff;font-weight:800;border-radius:12px;padding:12px;font-size:15px}
+.notif{position:absolute;right:-10px;top:-50px;background:#fff;color:var(--dark);border-radius:14px;padding:10px 12px;font-size:13px;font-weight:600;box-shadow:0 12px 30px rgba(0,0,0,.25);display:flex;gap:8px;align-items:center;max-width:210px}
+.notif .dot{width:30px;height:30px;border-radius:9px;background:var(--navy-light);display:grid;place-items:center;flex-shrink:0;font-size:16px}
+@media(max-width:420px){.notif{right:-4px}}
+
+/* dores */
+.dores{background:var(--bg)}
+.grid3{display:grid;gap:16px;margin-top:36px}
+@media(min-width:760px){.grid3{grid-template-columns:repeat(3,1fr)}}
+.dor{background:#fff;border-radius:var(--r);padding:24px;border:1px solid var(--line)}
+.dor .ic{font-size:30px;margin-bottom:10px}
+.dor h3{font-size:19px;margin-bottom:6px}
+.dor p{color:var(--muted);font-size:16px}
+.virada{margin-top:30px;background:var(--navy);color:#fff;border-radius:var(--r);padding:22px 24px;font-size:18px;font-weight:600}
+.virada b{color:var(--gold-2)}
+
+/* passos */
+.passos{display:grid;gap:18px;margin-top:40px;counter-reset:p}
+@media(min-width:760px){.passos{grid-template-columns:repeat(3,1fr)}}
+.passo{position:relative;padding:26px 22px 22px;border-radius:var(--r);border:1px solid var(--line);background:#fff}
+.passo::before{counter-increment:p;content:counter(p);position:absolute;top:-18px;left:22px;width:40px;height:40px;border-radius:12px;background:var(--chrome-blue);color:#fff;font-weight:800;display:grid;place-items:center;font-size:18px;box-shadow:0 6px 16px rgba(15,58,140,.3)}
+.passo h3{font-size:19px;margin:8px 0 6px}
+.passo p{color:var(--muted);font-size:16px}
+
+/* recursos */
+.recursos{background:linear-gradient(180deg,#fff 0%,var(--bg) 100%)}
+.grid-rec{display:grid;gap:14px;margin-top:36px}
+@media(min-width:640px){.grid-rec{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:980px){.grid-rec{grid-template-columns:repeat(3,1fr)}}
+.rec{background:#fff;border-radius:var(--r);padding:22px;border:1px solid var(--line);display:flex;gap:14px}
+.rec .ic{width:46px;height:46px;border-radius:12px;background:var(--navy-light);display:grid;place-items:center;font-size:22px;flex-shrink:0}
+.rec h3{font-size:18px;margin-bottom:4px}
+.rec p{color:var(--muted);font-size:15.5px}
+.rec.destaque{border:2px solid var(--gold);background:linear-gradient(180deg,#FFFBEA 0%,#fff 60%)}
+.rec.destaque .ic{background:var(--chrome-gold)}
+
+/* profissões */
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:30px}
+.chip{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:10px 16px;font-weight:600;font-size:15.5px}
+
+/* preço */
+.preco{background:radial-gradient(120% 100% at 50% 0%,#2D64BE 0%,var(--navy) 45%,var(--navy-3) 100%);color:#fff}
+.preco .sec-sub{color:rgba(255,255,255,.8)}
+.pcard{max-width:420px;margin:36px auto 0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:22px;padding:30px 26px;text-align:left}
+.pcard .fund{display:inline-block;background:var(--chrome-gold);color:#1C1C1E;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;padding:6px 12px;border-radius:8px;margin-bottom:16px}
+.pcard .de{text-decoration:line-through;opacity:.7;font-size:17px}
+.pcard .valor{font-size:56px;font-weight:800;line-height:1;margin:4px 0 6px}
+.pcard .valor small{font-size:22px;vertical-align:top;margin-right:4px}
+.pcard .valor span{font-size:18px;font-weight:600;opacity:.8}
+.pcard .obs{opacity:.85;font-size:15.5px;margin-bottom:20px}
+.pcard ul{list-style:none;margin-bottom:26px}
+.pcard li{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.1);font-size:16px}
+.pcard li::before{content:"✓  ";color:var(--gold-2);font-weight:800}
+.pcard .btn{width:100%}
+.pcard .pag{margin-top:14px;text-align:center;font-size:14px;opacity:.75}
+
+/* faq */
+.faq{max-width:760px;margin:36px auto 0}
+details{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;background:#fff}
+summary{cursor:pointer;list-style:none;padding:18px 20px;font-weight:700;font-size:17px;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-size:24px;line-height:1;color:var(--navy);flex-shrink:0}
+details[open] summary::after{content:"–"}
+details p{padding:0 20px 18px;color:var(--muted);font-size:16px}
+
+/* final */
+.final{text-align:center}
+.final .box{background:var(--bg);border-radius:24px;padding:48px 24px}
+.final h2{font-size:clamp(26px,4.5vw,36px);font-weight:800;margin-bottom:10px}
+.final p{color:var(--muted);font-size:18px;margin-bottom:26px}
+footer{background:#0B1220;color:rgba(255,255,255,.6);padding:34px 0;font-size:14.5px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center;justify-content:space-between}
+footer img{height:26px;width:auto}
+footer a{color:rgba(255,255,255,.75);text-decoration:none}
+footer a:hover{color:#fff}
+footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
+
+/* barra fixa no celular */
+.barra{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:none}
+.barra .btn{width:100%;min-height:50px}
+@media(max-width:760px){.barra.on{display:block}body{padding-bottom:76px}}
+
+.screen img{width:100%;height:auto;display:block}
+.shot{width:min(290px,78vw);margin:0 auto;background:#0B0F17;border-radius:38px;padding:10px;box-shadow:0 24px 60px rgba(15,25,35,.22),inset 0 0 0 2px #2a3242}
+.shot img{border-radius:29px;width:100%;height:auto;display:block}
+.tour{display:grid;gap:56px;margin-top:44px}
+.trow{display:grid;gap:28px;align-items:center;text-align:left}
+@media(min-width:860px){.trow{grid-template-columns:1fr 1fr;gap:56px}.trow.inv .tx{order:2}}
+.trow .tx h3{font-size:clamp(24px,3.4vw,30px);font-weight:800;margin-bottom:10px}
+.trow .tx p{font-size:17.5px;color:var(--body);margin-bottom:14px}
+.trow .tx ul{list-style:none}
+.trow .tx li{padding:7px 0 7px 30px;position:relative;font-size:16.5px;color:var(--body)}
+.trow .tx li::before{content:"✓";position:absolute;left:0;top:6px;width:22px;height:22px;border-radius:7px;background:var(--navy-light);color:var(--navy);font-weight:800;font-size:13px;display:grid;place-items:center}
+.trow .num{display:inline-block;font-size:13px;font-weight:800;color:var(--gold-2);background:var(--navy);padding:5px 11px;border-radius:8px;margin-bottom:12px;letter-spacing:.04em}
+.comp{display:grid;gap:16px;margin-top:36px;text-align:left}
+@media(min-width:760px){.comp{grid-template-columns:1fr 1fr}}
+.col{border-radius:var(--r);padding:24px;border:1px solid var(--line);background:#fff}
+.col h3{font-size:19px;margin-bottom:12px;display:flex;gap:8px;align-items:center}
+.col li{list-style:none;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px;display:flex;gap:10px}
+.col li:last-child{border-bottom:0}
+.col.ruim li::before{content:"✕";color:#C53030;font-weight:800}
+.col.bom{border:2px solid var(--navy);box-shadow:0 10px 30px rgba(15,58,140,.12)}
+.col.bom h3{color:var(--navy)}
+.col.bom li::before{content:"✓";color:var(--green);font-weight:800}
+.passo .dica{margin-top:10px;font-size:14.5px;color:var(--navy);background:var(--navy-light);border-radius:10px;padding:8px 10px}
+@media(min-width:760px){.passos.cinco{grid-template-columns:repeat(5,1fr)}}
+
+.hero{position:relative;background:linear-gradient(90deg,rgba(7,27,77,.96) 0%,rgba(7,27,77,.86) 34%,rgba(7,27,77,.35) 58%,rgba(7,27,77,0) 75%),url(/img/landing/hero.jpg) center right/cover no-repeat,var(--navy-3);min-height:640px;display:flex;align-items:center}
+.hero .wrap{display:block;width:100%}
+.hero-tx{max-width:580px}
+.hero-notif{position:absolute;right:23%;top:30%;max-width:none;white-space:nowrap;animation:sobe .8s ease-out .4s both}
+@keyframes sobe{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media(max-width:899px){
+ .hero{min-height:0;display:block;padding:0 0 40px;background:var(--navy-3)}
+ .hero::before{content:"";display:block;height:min(98vw,480px);background:linear-gradient(180deg,rgba(7,27,77,0) 60%,var(--navy-3) 100%),url(/img/landing/hero-celular.jpg) center top/cover no-repeat}
+ .hero .wrap{margin-top:-70px;position:relative}
+ .hero-notif{left:12px;right:auto;top:calc(min(98vw,480px) * .56)}
+}
+@media(prefers-reduced-motion:reduce){.hero-notif{animation:none}}
+:focus-visible{outline:3px solid var(--gold-2);outline-offset:2px;border-radius:6px}
 </style>
 </head>
-<body class="landing-body">
-<div class="hero">
-  <div class="hero-logo"><img src="/icons/logo-email.png" alt="VUNBY"/></div>
-  <h1>Orçamentos que fecham<br>negócio pelo WhatsApp</h1>
-  <p>Crie, envie e acompanhe seus orçamentos.<br>Saiba quando o cliente abriu. Nunca perca um follow-up.</p>
-  <div class="cta">
-    <a href="/cadastro" class="cta-primary">Começar grátis</a>
-    <a href="/entrar" class="cta-outline">Já tenho conta</a>
-  </div>
-</div>
+<body>
 
-<div class="features">
-  <div class="features-grid">
-    <div class="feature"><div class="feature-icon">📲</div><div><h3>Envio pelo WhatsApp</h3><p>Gere o link do orçamento e abra o WhatsApp com um toque. Você confirma o envio — nunca automático.</p></div></div>
-    <div class="feature"><div class="feature-icon">👁️</div><div><h3>Saiba quando o cliente abriu</h3><p>Status "Visualizado" assim que o cliente abre o link. Sem achismo — você sabe a hora certa de ligar.</p></div></div>
-    <div class="feature"><div class="feature-icon">🎯</div><div><h3>Radar de vendas</h3><p>Veja de uma vez todos os orçamentos em aberto e o total em jogo. Foque no que importa.</p></div></div>
-    <div class="feature"><div class="feature-icon">🔔</div><div><h3>Follow-up sem esquecer</h3><p>Marque quem precisa de um empurrão. O VUNBY te lembra. Um toque e o WhatsApp já abre com a mensagem.</p></div></div>
-    <div class="feature"><div class="feature-icon">📦</div><div><h3>Pacotes de serviço</h3><p>Crie modelos de pacotes uma vez (Básico, Completo, Premium) e use em qualquer orçamento.</p></div></div>
-    <div class="feature"><div class="feature-icon">✅</div><div><h3>Cliente aceita online</h3><p>O cliente pode aprovar ou recusar pelo link. Sem papelada, sem ligação — direto no celular.</p></div></div>
+<header class="top">
+  <div class="wrap">
+    <a href="/" aria-label="VUNBY, início"><img src="/icons/logo-email.png" alt="VUNBY"/></a>
+    <a class="entrar" href="/entrar">Entrar</a>
   </div>
-</div>
+</header>
 
-<div class="pricing">
-  <h2>Simples assim</h2>
-  <p>14 dias grátis, sem cartão de crédito</p>
-  <div class="price-card">
-    <div class="price-desc" style="text-decoration:line-through;opacity:.88">de R$49,90/mês</div>
-    <div class="price-main"><small>R$</small>29,90</div>
-    <div class="price-desc">por mês, para sempre, para os 100 primeiros assinantes</div>
-    <ul class="price-features">
-      <li>Orçamentos ilimitados</li>
-      <li>Link do orçamento com sua logo</li>
-      <li>Radar de vendas</li>
-      <li>Lembretes de follow-up</li>
-      <li>Histórico completo</li>
-      <li>Cancele quando quiser, em 1 clique</li>
-    </ul>
-    <a href="/cadastro" style="display:block;background:#F5C000;color:#1C1C1E;padding:14px;border-radius:10px;text-align:center;font-weight:800;text-decoration:none;font-size:var(--fs-md);">Criar conta grátis</a>
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-tx">
+      <div class="selo">⭐ Oferta de fundador: só para os 100 primeiros</div>
+      <h1>Seu orçamento bonito no WhatsApp. <em>E você sabe quando o cliente abriu.</em></h1>
+      <p class="lead">Monte orçamentos profissionais em minutos, envie pelo WhatsApp e acompanhe cada cliente até fechar. Feito para quem presta serviço.</p>
+      <div class="ctas">
+        <a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a>
+        <a href="#tour" class="btn btn-ghost">Ver o app por dentro</a>
+      </div>
+      <div class="mini"><span>Sem cartão de crédito</span><span>Funciona no celular</span><span>Cancele em 1 clique</span></div>
+    </div>
   </div>
-</div>
+  <div class="notif hero-notif" aria-hidden="true"><div class="dot">👁️</div><div>Carlos abriu seu orçamento<br><span style="color:var(--muted);font-weight:500">agora mesmo · R$ 1.850</span></div></div>
+</section>
+
+<!-- DORES -->
+<section class="dores">
+  <div class="wrap center">
+    <span class="tag">Isso acontece com você?</span>
+    <h2 class="sec-title">Você manda o orçamento e o cliente some?</h2>
+    <p class="sec-sub">Quem vende pelo WhatsApp perde cliente todo dia por causa de detalhes.</p>
+    <div class="grid3" style="text-align:left">
+      <div class="dor"><div class="ic">😶</div><h3>Você não sabe se ele viu</h3><p>Mandou o valor, recebeu dois risquinhos e ficou no escuro. Liga agora ou espera?</p></div>
+      <div class="dor"><div class="ic">📝</div><h3>Orçamento feito na pressa</h3><p>Texto solto no WhatsApp, sem a sua marca. O cliente compara e escolhe quem parece mais profissional.</p></div>
+      <div class="dor"><div class="ic">🧠</div><h3>Esquece de cobrar a resposta</h3><p>Com tanta coisa na cabeça, o cliente que estava quase fechando cai no esquecimento.</p></div>
+    </div>
+    <div class="virada">Com o VUNBY, cada orçamento vira um <b>link profissional</b> com a sua marca, e você acompanha cada cliente até ele dizer sim.</div>
+  </div>
+</section>
+
+
+<!-- DIFERENCIAL -->
+<section>
+  <div class="wrap center">
+    <span class="tag">O nosso diferencial</span>
+    <h2 class="sec-title">Não é só um gerador de orçamento</h2>
+    <p class="sec-sub">Outros apps fazem o orçamento e param aí. O VUNBY acompanha cada cliente até ele fechar com você.</p>
+    <div class="comp">
+      <div class="col ruim"><h3>Orçamento comum</h3><ul>
+        <li>Texto solto ou PDF no WhatsApp</li>
+        <li>Você não sabe se o cliente leu</li>
+        <li>Cliente que some é cliente perdido</li>
+        <li>Recalcula tudo na mão a cada mudança</li>
+        <li>Cada orçamento é feito do zero</li></ul></div>
+      <div class="col bom"><h3>Com o VUNBY</h3><ul>
+        <li>Link profissional com a sua marca</li>
+        <li>Aviso de "Visualizado" na hora que ele abre</li>
+        <li><b>Radar de vendas</b> e lembrete de quem cobrar</li>
+        <li>Cliente escolhe os opcionais e o total muda sozinho</li>
+        <li>Sua tabela de preços pronta: orçamento em segundos</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMO FUNCIONA -->
+<section id="como" style="background:var(--bg)">
+  <div class="wrap center">
+    <span class="tag">Passo a passo</span>
+    <h2 class="sec-title">Seu primeiro orçamento em 5 minutos</h2>
+    <p class="sec-sub">Não precisa entender de tecnologia. É assim:</p>
+    <div class="passos cinco" style="text-align:left">
+      <div class="passo"><h3>Crie a conta</h3><p>Nome, e-mail e WhatsApp. Pronto: 14 dias grátis, sem cartão.</p></div>
+      <div class="passo"><h3>Coloque sua marca</h3><p>Nome da empresa, profissão, cidade e logo. Aparecem em todo orçamento.</p></div>
+      <div class="passo"><h3>Monte sua tabela</h3><p>Escolha o modelo da sua profissão e ajuste os preços.</p><div class="dica">Faz uma vez só e usa sempre.</div></div>
+      <div class="passo"><h3>Faça o orçamento</h3><p>Escolha o cliente, toque nos itens e marque o que é opcional. O total sai sozinho.</p></div>
+      <div class="passo"><h3>Envie e acompanhe</h3><p>Um toque abre o WhatsApp com o link. Depois é só olhar o Radar.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- TOUR -->
+<section id="tour">
+  <div class="wrap center">
+    <span class="tag">Conheça por dentro</span>
+    <h2 class="sec-title">Veja o VUNBY funcionando</h2>
+    <p class="sec-sub">Telas reais do aplicativo, com dados de exemplo.</p>
+    <div class="tour">
+      <div class="trow">
+        <div class="tx"><span class="num">RADAR DE VENDAS</span><h3>Saiba quanto dinheiro está em jogo e em quem focar</h3>
+          <p>O Radar junta todos os orçamentos que ainda não tiveram resposta e mostra o valor total esperando por você.</p>
+          <ul><li>Veja quem já abriu e quem ainda não viu</li><li>Filtre por Enviado, Visualizado ou Sem resposta</li><li>Orçamento parado vira "Sem resposta" sozinho, para você cobrar</li></ul></div>
+        <div class="shot"><img src="/img/landing/radar.jpg" alt="Tela do Radar de Vendas com R$ 8.400 em aberto" loading="lazy" width="390" height="844"/></div>
+      </div>
+      <div class="trow inv">
+        <div class="tx"><span class="num">O QUE O CLIENTE VÊ</span><h3>O cliente monta o serviço e aprova pelo celular</h3>
+          <p>Ele recebe um link com a sua marca. Marca os opcionais que quer, vê o total mudar na hora e aprova com um toque.</p>
+          <ul><li>Não precisa baixar nada</li><li>Mostra o sinal para reservar a data</li><li>Ele também pode pedir uma alteração pelo link</li></ul></div>
+        <div class="shot"><img src="/img/landing/opcionais.jpg" alt="Cliente marcando um item opcional e o total mudando para R$ 1.650" loading="lazy" width="390" height="844"/></div>
+      </div>
+      <div class="trow">
+        <div class="tx"><span class="num">TABELA DE PREÇOS</span><h3>Seus preços prontos: orçamento em segundos</h3>
+          <p>Cadastre seus serviços uma vez. Na hora do orçamento é só tocar no que vai entrar.</p>
+          <ul><li>Modelos prontos para mais de 10 profissões</li><li>Preço por serviço, por viagem, por pessoa ou por unidade</li><li>Na mudança: volume dos móveis e preço de desmontar e montar</li></ul></div>
+        <div class="shot"><img src="/img/landing/tabela.jpg" alt="Tela Minha tabela de preços com serviços e móveis" loading="lazy" width="390" height="844"/></div>
+      </div>
+      <div class="trow inv">
+        <div class="tx"><span class="num">PAINEL</span><h3>Tudo do seu negócio numa tela só</h3>
+          <p>Abra o app e veja na hora quanto está em aberto, quantos clientes precisam de follow-up e quantos já aprovaram.</p>
+          <ul><li>Lembrete de quem cobrar, com a mensagem pronta no WhatsApp</li><li>Histórico com busca por cliente ou serviço</li><li>Funciona como aplicativo na tela inicial do celular</li></ul></div>
+        <div class="shot"><img src="/img/landing/painel.jpg" alt="Painel com valor em aberto, follow-ups e orçamentos recentes" loading="lazy" width="390" height="844"/></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RECURSOS -->
+<section class="recursos">
+  <div class="wrap center">
+    <span class="tag">Tudo o que você precisa</span>
+    <h2 class="sec-title">Todas as ferramentas do VUNBY</h2>
+    <p class="sec-sub">Letra grande, botões fáceis e tudo pensado para usar no celular, entre um serviço e outro.</p>
+    <div class="grid-rec" style="text-align:left">
+      <div class="rec destaque"><div class="ic">🎯</div><div><h3>Radar de vendas</h3><p>Todos os orçamentos em aberto e o valor em jogo numa tela só. Você vê na hora em quem focar.</p></div></div>
+      <div class="rec"><div class="ic">👁️</div><div><h3>Saiba quando o cliente abriu</h3><p>O status muda para "Visualizado" assim que ele abre o link. Chega de achismo.</p></div></div>
+      <div class="rec"><div class="ic">🔔</div><div><h3>Lembrete de follow-up</h3><p>O VUNBY te avisa quem precisa de um empurrão. Um toque e a mensagem já abre no WhatsApp.</p></div></div>
+      <div class="rec"><div class="ic">🧾</div><div><h3>Itens e opcionais</h3><p>O cliente escolhe os opcionais e o total se ajusta sozinho. Ele sente que montou o próprio serviço.</p></div></div>
+      <div class="rec"><div class="ic">💲</div><div><h3>Sua tabela de preços</h3><p>Comece com um modelo pronto da sua profissão e ajuste os preços do seu jeito.</p></div></div>
+      <div class="rec"><div class="ic">✅</div><div><h3>Cliente aprova online</h3><p>Ele aprova ou pede alteração pelo próprio link, sem baixar nada e sem papelada.</p></div></div>
+      <div class="rec"><div class="ic">🏷️</div><div><h3>Com a sua marca</h3><p>Sua logo, seu nome e seu WhatsApp no topo de cada orçamento. Passa confiança na hora.</p></div></div>
+      <div class="rec"><div class="ic">📄</div><div><h3>PDF quando precisar</h3><p>Baixe o orçamento em PDF para mandar por e-mail ou imprimir.</p></div></div>
+      <div class="rec"><div class="ic">📦</div><div><h3>Pacotes prontos</h3><p>Crie Básico, Completo e Premium uma vez e use em qualquer orçamento.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROFISSÕES -->
+<section>
+  <div class="wrap center">
+    <span class="tag">Para quem é</span>
+    <h2 class="sec-title">Para todo prestador de serviço</h2>
+    <p class="sec-sub">Já vem com modelos de tabela prontos para várias profissões. E serve para qualquer outra também.</p>
+    <div class="chips">
+      <span class="chip">🚚 Mudança e frete</span><span class="chip">🪛 Montagem de móveis</span><span class="chip">⚡ Eletricista</span>
+      <span class="chip">❄️ Ar-condicionado</span><span class="chip">🎨 Pintor</span><span class="chip">🧱 Pedreiro e reforma</span>
+      <span class="chip">🔧 Encanador</span><span class="chip">🧽 Limpeza</span><span class="chip">🌿 Jardinagem</span>
+      <span class="chip">🎂 Confeitaria</span><span class="chip">🛠️ Marido de aluguel</span><span class="chip">➕ E muito mais</span>
+    </div>
+  </div>
+</section>
+
+<!-- PREÇO -->
+<section class="preco" id="preco">
+  <div class="wrap center">
+    <h2 class="sec-title">Um preço simples. Para sempre.</h2>
+    <p class="sec-sub">Teste 14 dias grátis. Se gostar, garanta o preço de fundador.</p>
+    <div class="pcard">
+      <span class="fund">Preço de fundador</span>
+      <div class="de">de R$ 49,90/mês</div>
+      <div class="valor"><small>R$</small>29,90 <span>/mês</span></div>
+      <div class="obs">Para sempre, para os 100 primeiros assinantes.</div>
+      <ul>
+        <li>Orçamentos ilimitados</li>
+        <li>Radar de vendas e lembretes de follow-up</li>
+        <li>Saiba quando o cliente abriu</li>
+        <li>Itens, opcionais e tabela de preços</li>
+        <li>Orçamento com a sua logo e PDF</li>
+        <li>Sem fidelidade: cancele em 1 clique</li>
+      </ul>
+      <a href="/cadastro" class="btn btn-gold">Começar meus 14 dias grátis</a>
+      <div class="pag">Depois do teste, pague com Pix ou cartão.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section>
+  <div class="wrap center">
+    <span class="tag">Dúvidas</span>
+    <h2 class="sec-title">Perguntas frequentes</h2>
+    <div class="faq" style="text-align:left">
+      <details><summary>Preciso colocar cartão para testar?</summary><p>Não. Você cria a conta e usa grátis por 14 dias, sem cartão. Só paga se quiser continuar.</p></details>
+      <details><summary>O que acontece quando o teste acaba?</summary><p>Seus orçamentos continuam salvos e você continua vendo todos eles. Para criar novos, é só assinar.</p></details>
+      <details><summary>Meu cliente precisa baixar algum aplicativo?</summary><p>Não. Ele recebe um link pelo WhatsApp e abre direto no celular. Pode aprovar ou pedir alteração ali mesmo.</p></details>
+      <details><summary>Funciona no celular?</summary><p>Sim, foi feito para o celular. Você também pode adicionar o VUNBY na tela inicial, como um aplicativo.</p></details>
+      <details><summary>O VUNBY manda mensagem sozinho para os meus clientes?</summary><p>Nunca. Ele abre o WhatsApp com a mensagem pronta, mas quem confere e aperta "enviar" é sempre você.</p></details>
+      <details><summary>Como funciona o pagamento?</summary><p>Pix todo mês ou cartão com cobrança automática, direto na página do VUNBY. Sem fidelidade: cancele quando quiser.</p></details>
+      <details><summary>Serve para a minha profissão?</summary><p>Serve para qualquer prestador de serviço. Já existem modelos prontos para várias profissões, e você pode criar seus próprios itens e preços.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL -->
+<section class="final" style="padding-top:0">
+  <div class="wrap">
+    <div class="box">
+      <h2>Seu próximo cliente pode estar esperando um orçamento.</h2>
+      <p>Faça o primeiro em menos de 5 minutos.</p>
+      <a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a>
+    </div>
+  </div>
+</section>
 
 <footer>
-  <p>© 2026 VUNBY — <a href="/termos.html">Termos</a> · <a href="/privacidade.html">Privacidade</a></p>
+  <div class="wrap">
+    <img src="/icons/logo-email.png" alt="VUNBY"/>
+    <nav>
+      <a href="/termos.html">Termos de Uso</a>
+      <a href="/privacidade.html">Privacidade</a>
+      <a href="mailto:contato@vunby.com.br">contato@vunby.com.br</a>
+    </nav>
+    <div>© 2026 VUNBY</div>
+  </div>
 </footer>
+
+<div class="barra" id="barra"><a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a></div>
+<script>
+(function(){
+  var b=document.getElementById('barra'), h=document.querySelector('.hero');
+  if(!('IntersectionObserver' in window)||!b||!h) return;
+  new IntersectionObserver(function(e){ b.classList.toggle('on', !e[0].isIntersecting); },{threshold:0}).observe(h);
+})();
+</script>
 </body></html>
