@@ -6,10 +6,10 @@
   --navy:      #0F3A8C;
   --navy-mid:  #2A5FC0;
   --navy-light:#E6EEFB;
-  --gold:      #E3B23C;
+  --gold:      #C9A24D;
   --gold-dark: #B8860B;
-  --chrome-blue: linear-gradient(180deg, #6EA5EB 0%, #285FBE 35%, #0F378C 55%, #2D64BE 80%, #0A286E 100%);
-  --chrome-gold: linear-gradient(180deg, #FFF0AA 0%, #EBBE3C 30%, #AA7D14 50%, #F0C850 70%, #B4870F 100%);
+  --chrome-blue: linear-gradient(#0F3A8C, #0F3A8C);
+  --chrome-gold: linear-gradient(#D4AF55, #D4AF55);
   --dark:      #0F1923;
   --body:      #3A4550;
   --white:     #FFFFFF;
@@ -597,7 +597,7 @@ select {
 .auth-toggle button.active {
   background: var(--chrome-blue);
   color: var(--white);
-  box-shadow: 0 2px 8px rgba(15,58,140,.2);
+  box-shadow: none;
 }
 
 /* ─── Orçamento público ─── */
