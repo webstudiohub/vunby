@@ -52,7 +52,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
     const tot = C.reais(Math.round((C.numeroBR(i.qtd) || 0) * (C.centavos(i.preco) || 0)));
     return `<div class="ie-item ie-${i.tipo}" data-k="${k}">
       <div class="ie-topo">
-        <span class="ie-num ie-ico" title="Item ${k + 1}" aria-hidden="true">${C.iconeItem(i.descricao)}</span>
+        <span class="ie-num">${k + 1}</span>
         <textarea class="ie-desc" data-f="descricao" maxlength="200" rows="2" placeholder="Ex: Desmontagem de guarda-roupa" aria-label="Descrição do item ${k + 1}">${e(i.descricao)}</textarea>
       </div>
       <div class="ie-nums">
@@ -109,10 +109,7 @@ function ItensEditor(el, inicial, aoMudar, opcoes) {
 
   el.addEventListener('input', ev => {
     const t = ev.target, item = t.closest('.ie-item');
-    if (item && t.dataset.f) {
-      st.itens[+item.dataset.k][t.dataset.f] = t.value;
-      if (t.dataset.f === 'descricao') { const ico = item.querySelector('.ie-ico'); if (ico) ico.textContent = C.iconeItem(t.value); }
-    }
+    if (item && t.dataset.f) st.itens[+item.dataset.k][t.dataset.f] = t.value;
     else if (t.dataset.x) st[t.dataset.x] = t.value;
     else return;
     atualizarNumeros();

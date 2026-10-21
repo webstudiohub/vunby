@@ -5,7 +5,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/>
 <link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=37"/>
+<link rel="stylesheet" href="style.css?v=33"/>
 <style>
 /* Barra fixa de salvar enquanto edita: o botão fica sempre à vista */
 .ed-barra{position:fixed;left:0;right:0;bottom:0;z-index:300;background:#fff;border-top:1px solid var(--gray2);box-shadow:0 -4px 16px rgba(0,0,0,.1);padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
@@ -21,9 +21,9 @@ body.editando{padding-bottom:120px}
 <script src="app.js?v=36"></script>
 <script src="marca.js?v=33"></script>
 <script src="pdf.js?v=33"></script>
-<script src="calc.js?v=37"></script>
-<script src="itens-editor.js?v=37"></script>
-<script src="montar-tabela.js?v=37"></script>
+<script src="calc.js?v=33"></script>
+<script src="itens-editor.js?v=33"></script>
+<script src="montar-tabela.js?v=33"></script>
 <script>
 const qid=new URLSearchParams(location.search).get('id');
 
@@ -139,7 +139,7 @@ function listaItensHtml(q){
     const fora=aprovado?i.escolhido===false:false;
     const tag=i.tipo==='incluido'?'':`<span class="flag-followup" style="margin-left:4px">${aprovado?(i.escolhido?'cliente escolheu':'cliente não quis'):(i.tipo==='opcional'?'opcional':'recomendado')}</span>`;
     return `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #F2F2F7;${fora?'opacity:.5':''}">
-      <span style="font-size:var(--fs-md);display:flex;gap:10px;align-items:flex-start"><span aria-hidden="true" style="font-size:22px;line-height:1.1">${VCalc.iconeItem(i.descricao)}</span><span><strong>${esc(i.descricao)}</strong>${tag}<br><span class="muted" style="font-size:var(--fs-sm)">${VCalc.qtdBR(i.qtd)} × ${R(i.preco_cents)} por ${VCalc.nomeUnidade(i.unidade)}</span></span></span>
+      <span style="font-size:var(--fs-md)"><strong>${esc(i.descricao)}</strong>${tag}<br><span class="muted" style="font-size:var(--fs-sm)">${VCalc.qtdBR(i.qtd)} × ${R(i.preco_cents)} por ${VCalc.nomeUnidade(i.unidade)}</span></span>
       <strong style="white-space:nowrap;font-size:var(--fs-md)">${R(VCalc.linhaCents(i))}</strong></div>`;}).join('');
   const ex=[q.desconto_cents>0?`Desconto: − ${R(q.desconto_cents)}`:'',q.taxa_cents>0?`${esc(q.taxa_nome||'Taxa')}: ${R(q.taxa_cents)}`:'',Number(q.sinal_pct)>0?`Sinal: ${VCalc.qtdBR(q.sinal_pct)}%${q.aprovacao?` (${R(q.aprovacao.sinal)})`:''}`:''].filter(Boolean).join(' · ');
   return `<div style="margin:10px 0 4px">${linhas}</div>${ex?`<p class="muted" style="font-size:var(--fs-sm)">${ex}</p>`:''}`;
