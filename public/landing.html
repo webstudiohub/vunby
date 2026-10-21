@@ -427,7 +427,8 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
 <script>
 // Veio por convite: mostra os 21 dias grátis nos botões
 if (window.VunbyRef && VunbyRef.codigo()) {
-  document.querySelectorAll('a[href="/cadastro"]').forEach(function (a) { a.textContent = a.textContent.replace('14 dias', '21 dias'); });
+  var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), n;
+  while ((n = w.nextNode())) { if (/14 dias/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/14 dias/g, '21 dias'); }
 }
 </script>
 <script>
