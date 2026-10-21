@@ -32,22 +32,22 @@ async function handle(req, res) {
           COUNT(*) FILTER (WHERE assinatura_status IN ('nenhuma','pendente','cancelada','pausada') AND COALESCE(acesso_ate, trial_ate) <= NOW())::int AS vencidos,
           COUNT(*) FILTER (WHERE assinatura_status = 'pix' AND acesso_ate BETWEEN NOW() AND NOW() + INTERVAL '3 days')::int AS vencendo,
           COALESCE(SUM(preco_assinatura) FILTER (WHERE assinatura_status = 'ativa' OR (assinatura_status = 'pix' AND acesso_ate > NOW())),0)::float AS receita_mensal,
-          (SELECT COUNT(*)::int FROM quotes) AS orcamentos,
-          (SELECT COUNT(*)::int FROM quotes WHERE created_at > NOW() - INTERVAL '7 days') AS orcamentos_7d,
-          (SELECT COUNT(*)::int FROM push_inscricoes) AS aparelhos_push
-        FROM users`),
+          (SELECT COUNT(*)::int FROM quotes q JOIN users x ON x.id = q.user_id WHERE lower(x.email) <> $1) AS orcamentos,
+          (SELECT COUNT(*)::int FROM quotes q JOIN users x ON x.id = q.user_id WHERE lower(x.email) <> $1 AND q.created_at > NOW() - INTERVAL '7 days') AS orcamentos_7d,
+          (SELECT COUNT(*)::int FROM push_inscricoes p JOIN users x ON x.id = p.user_id WHERE lower(x.email) <> $1) AS aparelhos_push
+        FROM users WHERE lower(email) <> $1`, [ADMIN_EMAIL]),   // a conta do administrador (testes) não entra nos números
       query(`SELECT u.id, u.nome, u.email, u.nome_empresa, u.created_at, u.assinatura_status, u.trial_ate, u.acesso_ate,
                     u.preco_assinatura::float AS preco, u.fundador,
                     (SELECT COUNT(*)::int FROM quotes q WHERE q.user_id = u.id) AS orcamentos
                FROM users u ORDER BY u.created_at DESC LIMIT 200`),
       query(`SELECT f.id, f.nota, f.experiencia, f.gostando, f.melhorar, f.nao_gostou, f.falta, f.pagaria_4990, f.comentario_preco, f.created_at, u.nome, u.email
-               FROM feedbacks f JOIN users u ON u.id = f.user_id ORDER BY f.created_at DESC LIMIT 30`),
+               FROM feedbacks f JOIN users u ON u.id = f.user_id WHERE lower(u.email) <> $1 ORDER BY f.created_at DESC LIMIT 30`, [ADMIN_EMAIL]),
       query(`SELECT p.id, p.nota, p.comentario, p.created_at, u.nome, u.email
-               FROM pulso p JOIN users u ON u.id = p.user_id ORDER BY p.created_at DESC LIMIT 30`),
+               FROM pulso p JOIN users u ON u.id = p.user_id WHERE lower(u.email) <> $1 ORDER BY p.created_at DESC LIMIT 30`, [ADMIN_EMAIL]),
       query(`SELECT s.id, s.tipo, s.mensagem, s.created_at, u.nome, u.email
-               FROM sugestoes s JOIN users u ON u.id = s.user_id ORDER BY s.created_at DESC LIMIT 50`),
+               FROM sugestoes s JOIN users u ON u.id = s.user_id WHERE lower(u.email) <> $1 ORDER BY s.created_at DESC LIMIT 50`, [ADMIN_EMAIL]),
       query(`SELECT x.id, x.valor::float AS valor, x.status, x.criado_em, x.aprovado_em, u.nome, u.email
-               FROM pix_pagamentos x JOIN users u ON u.id = x.user_id ORDER BY x.criado_em DESC LIMIT 30`),
+               FROM pix_pagamentos x JOIN users u ON u.id = x.user_id WHERE lower(u.email) <> $1 ORDER BY x.criado_em DESC LIMIT 30`, [ADMIN_EMAIL]),
       // Indicações por código: parceiros (ex.: mellos) e usuários que trouxeram alguém
       query(`WITH cods AS (
                SELECT codigo, nome AS dono, 'parceiro' AS tipo FROM parceiros
