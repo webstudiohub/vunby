@@ -829,3 +829,5 @@ html body .auth-body{flex:none;width:100%;max-width:440px;background:var(--gray)
   html body .auth-header{padding-bottom:22px}
   html body .auth-body{padding:28px 28px 32px}
 }
+
+.topbar-acoes{display:flex;align-items:center;gap:4px}

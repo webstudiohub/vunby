@@ -78,10 +78,15 @@ function wireLogout() {
 
 // ─── Topbar ───────────────────────────────────────────────────
 const ICON_CONTA = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
+const ICON_PLANO = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`;
+
 function topbar(active) {
   return `<nav class="topbar">
     <a class="topbar-logo" href="dashboard.html"><img src="/icons/logo-app.png" alt="VUNBY"/></a>
+    <span class="topbar-acoes">
+    <a href="planos.html" class="topbar-icon${active==='planos.html'?' topbar-icon-active':''}" aria-label="Meu plano e pagamento">${ICON_PLANO}<span class="topbar-icon-txt">Plano</span></a>
     <a href="conta.html" class="topbar-icon${active==='conta.html'?' topbar-icon-active':''}" aria-label="Minha conta">${ICON_CONTA}<span class="topbar-icon-txt">Conta</span></a>
+    </span>
   </nav>`;
 }
 

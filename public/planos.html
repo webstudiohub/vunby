@@ -193,7 +193,7 @@ function pagamentoConfirmado(){
 
 (async()=>{
   const session=await requireSession(); if(!session)return; SESSAO=session;
-  document.getElementById('top').innerHTML=topbar('');
+  document.getElementById('top').innerHTML=topbar('planos.html');
   document.getElementById('nav').innerHTML=bottomNav('');
   wireLogout();
   const params=new URLSearchParams(location.search);
