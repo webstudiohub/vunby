@@ -59,6 +59,23 @@ function serveStatic(req, res) {
     res.writeHead(403); res.end('Forbidden'); return;
   }
 
+  // Vídeo: responde por partes (Range), exigido pelo Safari do iPhone
+  if (path.extname(filePath).toLowerCase() === '.mp4') {
+    fs.stat(filePath, (err, st) => {
+      if (err || !st.isFile()) { res.writeHead(404, { 'Content-Type': 'text/plain' }); res.end('Not found'); return; }
+      const total = st.size;
+      const m = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers.range || ''));
+      const base = { 'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'public, max-age=3600' };
+      if (!m) { res.writeHead(200, { ...base, 'Content-Length': total }); fs.createReadStream(filePath).pipe(res); return; }
+      let ini = m[1] === '' ? Math.max(0, total - Number(m[2] || 0)) : Number(m[1]);
+      let fim = m[1] !== '' && m[2] !== '' ? Math.min(Number(m[2]), total - 1) : total - 1;
+      if (ini > fim || ini >= total) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); res.end(); return; }
+      res.writeHead(206, { ...base, 'Content-Range': `bytes ${ini}-${fim}/${total}`, 'Content-Length': fim - ini + 1 });
+      fs.createReadStream(filePath, { start: ini, end: fim }).pipe(res);
+    });
+    return;
+  }
+
   fs.readFile(filePath, (err, data) => {
     if (err) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });

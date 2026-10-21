@@ -159,7 +159,7 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
 
 .screen img{width:100%;height:auto;display:block}
 .shot{width:min(290px,78vw);margin:0 auto;background:#0B0F17;border-radius:38px;padding:10px;box-shadow:0 24px 60px rgba(15,25,35,.22),inset 0 0 0 2px #2a3242}
-.shot img{border-radius:29px;width:100%;height:auto;display:block}
+.shot img,.shot video{border-radius:29px;width:100%;height:auto;display:block;aspect-ratio:9/16;object-fit:cover;background:#fff}
 .tour{display:grid;gap:56px;margin-top:44px}
 .trow{display:grid;gap:28px;align-items:center;text-align:left}
 @media(min-width:860px){.trow{grid-template-columns:1fr 1fr;gap:56px}.trow.inv .tx{order:2}}
@@ -294,24 +294,30 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
     <p class="sec-sub">Telas reais do aplicativo, com dados de exemplo.</p>
     <div class="tour">
       <div class="trow">
+        <div class="tx"><span class="num">EM 30 SEGUNDOS</span><h3>Do orçamento à aprovação, sem sair do celular</h3>
+          <p>Veja o caminho completo: você monta pela sua tabela, envia pelo WhatsApp, o cliente aprova pelo link e você recebe o aviso na hora.</p>
+          <ul><li>Monte pela tabela de preços com poucos toques</li><li>O cliente aprova sem baixar nada</li><li>Você é avisado quando ele abre e quando aprova</li></ul></div>
+        <div class="shot"><video src="/img/landing/vunby-demo.mp4" poster="/img/landing/vunby-demo.jpg" autoplay muted loop playsinline preload="metadata" aria-label="Vídeo mostrando um orçamento sendo criado no VUNBY e aprovado pelo cliente"></video></div>
+      </div>
+      <div class="trow inv">
         <div class="tx"><span class="num">RADAR DE VENDAS</span><h3>Saiba quanto dinheiro está em jogo e em quem focar</h3>
           <p>O Radar junta todos os orçamentos que ainda não tiveram resposta e mostra o valor total esperando por você.</p>
           <ul><li>Veja quem já abriu e quem ainda não viu</li><li>Filtre por Enviado, Visualizado ou Sem resposta</li><li>Orçamento parado vira "Sem resposta" sozinho, para você cobrar</li></ul></div>
         <div class="shot"><img src="/img/landing/radar.jpg" alt="Tela do Radar de Vendas com R$ 8.400 em aberto" loading="lazy" width="390" height="844"/></div>
       </div>
-      <div class="trow inv">
+      <div class="trow">
         <div class="tx"><span class="num">O QUE O CLIENTE VÊ</span><h3>O cliente monta o serviço e aprova pelo celular</h3>
           <p>Ele recebe um link com a sua marca. Marca os opcionais que quer, vê o total mudar na hora e aprova com um toque.</p>
           <ul><li>Não precisa baixar nada</li><li>Mostra o sinal para reservar a data</li><li>Ele também pode pedir uma alteração pelo link</li></ul></div>
         <div class="combo"><img class="foto" src="/img/landing/cliente-foto.jpg" alt="Cliente feliz olhando o orçamento no celular, em casa, com caixas de mudança" loading="lazy" width="1152" height="768"/><div class="shot mini"><img src="/img/landing/opcionais.jpg" alt="Cliente marcando um item opcional e o total mudando para R$ 1.650" loading="lazy" width="390" height="844"/></div></div>
       </div>
-      <div class="trow">
+      <div class="trow inv">
         <div class="tx"><span class="num">TABELA DE PREÇOS</span><h3>Seus preços prontos: orçamento em segundos</h3>
           <p>Cadastre seus serviços uma vez. Na hora do orçamento é só tocar no que vai entrar.</p>
           <ul><li>Modelos prontos para mais de 10 profissões</li><li>Preço por serviço, por viagem, por pessoa ou por unidade</li><li>Na mudança: volume dos móveis e preço de desmontar e montar</li></ul></div>
         <div class="shot"><img src="/img/landing/tabela.jpg" alt="Tela Minha tabela de preços com serviços e móveis" loading="lazy" width="390" height="844"/></div>
       </div>
-      <div class="trow inv">
+      <div class="trow">
         <div class="tx"><span class="num">PAINEL</span><h3>Tudo do seu negócio numa tela só</h3>
           <p>Abra o app e veja na hora quanto está em aberto, quantos clientes precisam de follow-up e quantos já aprovaram.</p>
           <ul><li>Lembrete de quem cobrar, com a mensagem pronta no WhatsApp</li><li>Histórico com busca por cliente ou serviço</li><li>Funciona como aplicativo na tela inicial do celular</li></ul></div>
