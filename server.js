@@ -104,7 +104,7 @@ const server = http.createServer(async (req, res) => {
   // "adivinhar" tipos de arquivo e não vaza o link do orçamento (com o token) para outros sites
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('Referrer-Policy', 'same-origin');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');   // só o domínio (sem o caminho) vai para outros sites; o botão do Google precisa disso
   if (NODE_ENV === 'production') res.setHeader('Strict-Transport-Security', 'max-age=31536000');
 
   try {

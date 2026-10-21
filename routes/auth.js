@@ -121,6 +121,60 @@ async function handle(req, res) {
     return created(res, { message: 'Conta criada. Verifique seu e-mail.', requiresVerification: true });
   }
 
+  // GET /api/auth/google/config — o ID público do app no Google (para o botão "Continuar com Google")
+  if (req.method === 'GET' && path === '/api/auth/google/config') {
+    const G = require('../lib/google');
+    return ok(res, { clientId: G.configurado() ? G.CLIENT_ID : null });
+  }
+
+  // POST /api/auth/google { credential, telefone?, ref? } — entra (ou cria a conta) com a conta do Google
+  if (req.method === 'POST' && path === '/api/auth/google') {
+    if (!(await rateLimit(`google:${ip}`, 20, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
+    let body;
+    try { body = await readBody(req, 10_000); } catch { return badRequest(res, 'Dados inválidos'); }
+    const G = require('../lib/google');
+    let g;
+    try { g = await G.verificarIdToken(body.credential); }
+    catch (e) { console.error('google login:', e.message); return unauthorized(res, 'Não foi possível entrar com o Google. Tente de novo.'); }
+
+    // Já tem conta (pelo Google ou pelo mesmo e-mail): entra direto
+    const exist = await query('SELECT id, email_verificado, google_sub FROM users WHERE google_sub = $1 OR email = $2 ORDER BY (google_sub = $1) DESC LIMIT 1', [g.sub, g.email]);
+    if (exist.rows[0]) {
+      const u = exist.rows[0];
+      await query('UPDATE users SET google_sub = COALESCE(google_sub, $2), email_verificado = true WHERE id = $1', [u.id, g.sub]);
+      await query('DELETE FROM email_verifications WHERE user_id = $1', [u.id]);
+      await createSession(res, u.id);
+      return ok(res, { entrou: true, novo: false });
+    }
+
+    // Conta nova: precisa do WhatsApp (é ele que garante um teste grátis por pessoa)
+    const telNorm = normalizePhone(body.telefone);
+    if (!telNorm) return ok(res, { precisaTelefone: true, nome: g.nome.split(/\s+/)[0] || '' });
+
+    let nome = g.nome.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ ]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (nome.length < 2) nome = g.email.split('@')[0].slice(0, 40);
+    const telHash = hashToken(telNorm);
+    const trialUsed = await query('SELECT 1 FROM verified_trial_phones WHERE phone_hash = $1', [telHash]);
+    const trialConcedido = trialUsed.rows.length === 0;
+    const IND = require('../lib/indicacao');
+    const indic = body.ref ? await IND.resolver(body.ref).catch(() => null) : null;
+    const diasTeste = 14 + (indic && trialConcedido ? IND.BONUS_INDICADO_DIAS : 0);
+    const senhaHash = await hashPassword(require('crypto').randomBytes(24).toString('base64url'));   // senha aleatória: entra pelo Google
+    let novoId;
+    try {
+      const r = await query(
+        `INSERT INTO users (nome, email, senha_hash, telefone, trial_concedido, telefone_verificado, trial_ate, indicado_por, indicacao_codigo, email_verificado, google_sub)
+         VALUES ($1,$2,$3,$4,$5,false, CASE WHEN $5 THEN NOW() + make_interval(days => $6::int) ELSE NOW() END, $7, $8, true, $9) RETURNING id`,
+        [nome, g.email, senhaHash, telNorm, trialConcedido, diasTeste, indic && indic.userId ? indic.userId : null, indic ? indic.codigo : null, g.sub]);
+      novoId = r.rows[0].id;
+    } catch (e) {
+      if (e.code === '23505') return conflict(res, 'Este e-mail já está cadastrado. Tente entrar.');
+      throw e;
+    }
+    await createSession(res, novoId);
+    return created(res, { entrou: true, novo: true });
+  }
+
   // POST /api/auth/verify-email
   if (req.method === 'POST' && path === '/api/auth/verify-email') {
     let body;

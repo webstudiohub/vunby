@@ -342,3 +342,6 @@ CREATE TABLE IF NOT EXISTS site_visitas (
   PRIMARY KEY (dia, pagina, origem)
 );
 ALTER TABLE site_visitas ENABLE ROW LEVEL SECURITY;
+
+-- Entrar com Google (21/10/2026)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub TEXT UNIQUE;

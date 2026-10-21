@@ -25,6 +25,19 @@ body { background: var(--navy); padding-bottom: 0; }
   </div>
 
   <div class="auth-body">
+    <div id="google-box" style="display:none">
+      <div id="g-botao" style="display:flex;justify-content:center;min-height:44px"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin:18px 0 6px;color:var(--muted);font-size:var(--fs-sm)"><span style="flex:1;height:1px;background:var(--gray2)"></span>ou com e-mail<span style="flex:1;height:1px;background:var(--gray2)"></span></div>
+    </div>
+    <div id="g-telefone" style="display:none">
+      <h2 style="font-size:var(--fs-lg);margin-bottom:6px">Só falta seu WhatsApp<span id="g-nome"></span></h2>
+      <p class="muted" style="margin-bottom:12px">É por ele que seus clientes falam com você. Usamos também para garantir um teste grátis por pessoa.</p>
+      <label style="margin-top:0">WhatsApp</label>
+      <input id="g-tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="(21) 99999-9999"/>
+      <div style="margin-top:var(--sp-5)"><button class="btn-primary btn-gold" id="g-concluir" onclick="googleConcluir()">Criar minha conta</button></div>
+      <div id="g-msg" class="error"></div>
+      <p class="muted mt text-center" style="font-size:var(--fs-sm)">Ao criar conta você aceita os <a href="/termos.html">Termos</a> e a <a href="/privacidade.html">Privacidade</a>.</p>
+    </div>
     <div class="auth-toggle">
       <button id="btn-tab-login" class="active" onclick="showTab('login')">Entrar</button>
       <button id="btn-tab-register" onclick="showTab('register')">Criar conta</button>
@@ -117,6 +130,55 @@ async function register(){
     location.href='/verificar-email.html?email='+encodeURIComponent(email);
   }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Criar conta grátis';}
 }
+
+// ─── Continuar com Google ───
+let gCredencial=null;
+async function googleEnviar(extra){
+  const r=await fetch('/api/auth/google',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({credential:gCredencial,ref:(window.VunbyRef&&VunbyRef.codigo())||undefined,...(extra||{})})});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.error||'Não foi possível entrar com o Google.');
+  return d;
+}
+async function aoEntrarGoogle(resp){
+  gCredencial=resp.credential;
+  const msgEl=document.getElementById('tab-register').style.display==='none'?document.getElementById('l-msg'):document.getElementById('r-msg');
+  msgEl.textContent='';
+  try{
+    const d=await googleEnviar();
+    if(d.precisaTelefone){
+      ['google-box','tab-login','tab-register'].forEach(id=>document.getElementById(id).style.display='none');
+      document.querySelector('.auth-toggle').style.display='none';
+      document.getElementById('g-telefone').style.display='';
+      document.getElementById('g-nome').textContent=d.nome?', '+d.nome:'';
+      document.getElementById('g-tel').focus();
+      return;
+    }
+    location.href=d.novo?'/configurar-empresa.html':destinoAposLogin();
+  }catch(e){ msgEl.textContent=e.message; }
+}
+async function googleConcluir(){
+  const btn=document.getElementById('g-concluir'), msg=document.getElementById('g-msg');
+  msg.textContent=''; btn.disabled=true; btn.textContent='Criando conta…';
+  try{
+    const d=await googleEnviar({telefone:document.getElementById('g-tel').value});
+    if(d.precisaTelefone) throw new Error('Confira o número do WhatsApp (com DDD).');
+    location.href='/configurar-empresa.html';
+  }catch(e){ msg.textContent=e.message; btn.disabled=false; btn.textContent='Criar minha conta'; }
+}
+(async()=>{
+  try{
+    const c=await (await fetch('/api/auth/google/config')).json();
+    if(!c.clientId) return;
+    const sc=document.createElement('script'); sc.src='https://accounts.google.com/gsi/client'; sc.async=true;
+    sc.onload=()=>{
+      google.accounts.id.initialize({client_id:c.clientId,callback:aoEntrarGoogle,ux_mode:'popup',locale:'pt-BR',use_fedcm_for_prompt:true});
+      const box=document.getElementById('g-botao');
+      google.accounts.id.renderButton(box,{theme:'outline',size:'large',text:'continue_with',shape:'pill',width:Math.min(box.clientWidth||320,400),locale:'pt-BR'});
+      document.getElementById('google-box').style.display='';
+    };
+    document.head.appendChild(sc);
+  }catch(e){}
+})();
 
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'){
