@@ -107,6 +107,39 @@ async function handle(req, res) {
     return ok(res, { ok: true });
   }
 
+  // POST /api/admin/excluir { userId } — apaga a conta de um usuário (cancela o cartão no Mercado Pago antes)
+  if (req.method === 'POST' && path === '/api/admin/excluir') {
+    let b; try { b = await readBody(req, 2_000); } catch { return badRequest(res); }
+    const id = Number(b.userId);
+    if (!Number.isInteger(id) || id <= 0 || id === user.id) return badRequest(res, 'Não dá para excluir esta conta.');
+    const r = await query('SELECT id, email, assinatura_status, mp_preapproval_id FROM users WHERE id = $1', [id]);
+    const alvo = r.rows[0];
+    if (!alvo) return json(res, 404, { error: 'Usuário não encontrado.' });
+    if (String(alvo.email).toLowerCase() === ADMIN_EMAIL) return badRequest(res, 'Não dá para excluir a conta do administrador.');
+    if (alvo.mp_preapproval_id && ['ativa', 'pausada', 'pendente'].includes(alvo.assinatura_status)) {
+      const B = require('../lib/billing');
+      if (B.mpConfigurado()) {
+        const mp = await B.mpRequest('PUT', '/preapproval/' + encodeURIComponent(alvo.mp_preapproval_id), { status: 'cancelled' }).catch(() => ({ status: 0 }));
+        if (mp.status !== 200 && alvo.assinatura_status === 'ativa') return json(res, 502, { error: 'Não consegui cancelar o cartão no Mercado Pago. Tente de novo.' });
+      }
+    }
+    await query('DELETE FROM sessions WHERE user_id = $1', [id]);
+    await query('DELETE FROM users WHERE id = $1', [id]);
+    return ok(res, { ok: true });
+  }
+
+  // POST /api/admin/limpar-teste — apaga os dados de teste da conta do administrador e zera o contador de visitas
+  if (req.method === 'POST' && path === '/api/admin/limpar-teste') {
+    for (const t of ['quotes', 'clients', 'feedbacks', 'pulso', 'sugestoes', 'pix_pagamentos']) {
+      await query(`DELETE FROM ${t} WHERE user_id = $1`, [user.id]);
+    }
+    await query(`UPDATE users SET nome_empresa = NULL, profissao = NULL, cidade = NULL, fundador = false,
+                   feedback_adiado_ate = NULL, pulso_adiado_ate = NULL WHERE id = $1`, [user.id]);
+    await query('DELETE FROM ref_visitas');
+    await query('DELETE FROM site_visitas');
+    return ok(res, { ok: true });
+  }
+
   // POST /api/admin/parceiro { codigo, nome } — cria um link de parceiro (ex.: vunby.com.br/?ref=mellos)
   if (req.method === 'POST' && path === '/api/admin/parceiro') {
     let b; try { b = await readBody(req, 2_000); } catch { return badRequest(res); }

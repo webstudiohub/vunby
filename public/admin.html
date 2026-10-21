@@ -52,7 +52,9 @@ function numeros() {
 }
 
 function listaUsuarios() {
-  return `<div class="adm-lista">` + D.usuarios.map(u => {
+  return `<div class="adm-item" style="margin-bottom:10px"><strong>Dados de teste</strong><small>Apaga os orçamentos, clientes, opiniões e Pix de teste da sua conta e zera o contador de visitas.</small>
+    <div class="adm-acoes"><button class="btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="limparTeste()">Limpar dados de teste</button></div></div>
+    <div class="adm-lista">` + D.usuarios.map(u => {
     const [rot, cor, det] = situacao(u);
     return `<div class="adm-item">
       <div class="adm-item-topo"><div><strong>${esc(u.nome)}</strong>${u.fundador ? ' ⭐' : ''}<small>${esc(u.email)}</small>${u.nome_empresa ? `<small>${esc(u.nome_empresa)}</small>` : ''}</div>
@@ -61,6 +63,7 @@ function listaUsuarios() {
       <div class="adm-acoes">
         <button class="btn-outline btn-sm" onclick="darDias(${u.id},7)">+7 dias</button>
         <button class="btn-outline btn-sm" onclick="darDias(${u.id},30)">+30 dias</button>
+        ${u.email.toLowerCase() !== 'adiminvunby@gmail.com' ? `<button class="btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B" onclick="excluirUsuario(${u.id}, '${esc(u.nome).replace(/'/g, '')}')">Excluir</button>` : ''}
         ${u.assinatura_status === 'cortesia'
           ? `<button class="btn-outline btn-sm" onclick="cortesia(${u.id},false)">Tirar cortesia</button>`
           : u.assinatura_status !== 'ativa' ? `<button class="btn-outline btn-sm" onclick="cortesia(${u.id},true)">Dar cortesia</button>` : ''}
@@ -149,6 +152,14 @@ async function carregar() {
 async function darDias(id, dias) {
   if (!(await VUI.confirmar('Liberar +' + dias + ' dias de acesso para este usuário?', { titulo: 'Liberar acesso', sim: 'Liberar', nao: 'Cancelar' }))) return;
   try { await api('/api/admin/acesso', { method: 'POST', body: { userId: id, dias } }); VUI.toast('Acesso liberado', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+async function excluirUsuario(id, nome) {
+  if (!(await VUI.confirmar('A conta de ' + nome + ' e todos os dados dela (orçamentos, clientes, pagamentos) serão apagados para sempre.', { titulo: 'Excluir esta conta?', sim: 'Excluir', nao: 'Cancelar', perigo: true }))) return;
+  try { await api('/api/admin/excluir', { method: 'POST', body: { userId: id } }); VUI.toast('Conta excluída', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+async function limparTeste() {
+  if (!(await VUI.confirmar('Apaga os orçamentos, clientes, opiniões e Pix de teste da SUA conta e zera o contador de visitas. A sua conta continua.', { titulo: 'Limpar dados de teste?', sim: 'Limpar', nao: 'Cancelar', perigo: true }))) return;
+  try { await api('/api/admin/limpar-teste', { method: 'POST' }); VUI.toast('Dados de teste apagados', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
 }
 async function cortesia(id, ativo) {
   if (!(await VUI.confirmar(ativo ? 'Acesso grátis e sem prazo.' : 'O usuário volta ao estado sem assinatura.', { titulo: ativo ? 'Dar cortesia?' : 'Tirar cortesia?', sim: 'Confirmar', nao: 'Cancelar' }))) return;
