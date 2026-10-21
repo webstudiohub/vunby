@@ -49,7 +49,30 @@
   function reais(c) { return (Number(c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
   function qtdBR(n) { return Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 }); }
 
-  const api = { UNIDADES, TIPOS, NOME_UNIDADE, nomeUnidade, numeroBR, centavos, itemConta, linhaCents, calcular, reais, qtdBR };
+  // Desenho ilustrativo do item pelo nome (ex.: "Sofá 3 lugares" → 🛋️). A ordem importa: o mais específico primeiro.
+  const ICONES = [
+    [/guarda.?roupa|arm[aá]rio|roupeiro/, '🚪'], [/sof[aá]|poltrona|estofad/, '🛋️'], [/cama|beliche|ber[cç]o|colch[aã]o/, '🛏️'],
+    [/geladeira|freezer|refrigerador/, '🧊'], [/fog[aã]o|cooktop/, '🍳'], [/micro.?ondas/, '♨️'], [/m[aá]quina de lavar|lavadora|tanquinho/, '🧺'],
+    [/\btv\b|televis|monitor/, '📺'], [/ar.?condicionado|split|climatiz/, '❄️'], [/cadeira|banco\b/, '🪑'], [/mesa|escrivaninha|bancada/, '🪵'],
+    [/estante|rack|prateleira|nicho|aparador|buffet|c[oô]moda|criado/, '🗄️'], [/espelho/, '🪞'], [/quadro|pintura de quadro/, '🖼️'],
+    [/bicicleta|bike/, '🚲'], [/piano|instrumento/, '🎹'], [/planta|vaso|jardim|grama|poda|muda\b|paisag/, '🌿'],
+    [/caixa|embalag|pl[aá]stico|papel[aã]o|fita/, '📦'], [/caminh[aã]o|ba[uú]|frete|carreto|utilit[aá]rio|transporte|viagem|km|quil[oô]metro/, '🚚'],
+    [/ajudante|carregador|pessoa|m[aã]o de obra|di[aá]ria|equipe/, '🧑‍🔧'], [/desmont|montag|montar|mont/, '🔧'], [/i[cç]amento|guincho|corda/, '🏗️'],
+    [/escada|andar|elevador/, '🪜'], [/seguro|prote[cç][aã]o/, '🛡️'], [/pintura|pintar|tinta|massa corrida|textura/, '🎨'],
+    [/el[eé]tric|tomada|fia[cç][aã]o|disjuntor|chuveiro|l[aâ]mpada|ilumina/, '💡'], [/encan|hidr[aá]ul|vazamento|torneira|cano|esgoto|desentup/, '🚿'],
+    [/piso|azulejo|cer[aâ]mica|porcelanato|revestimento/, '🧱'], [/parede|alvenaria|reboco|concreto|cimento|obra|reforma|pedreiro|gesso|drywall/, '🧱'],
+    [/limpeza|faxina|lavagem|higieniza|diarista/, '🧹'], [/vidro|janela/, '🪟'], [/bolo/, '🎂'], [/doce|brigadeiro|cupcake|sobremesa/, '🧁'],
+    [/salgad|coxinha|empada/, '🥟'], [/p[aã]o|padaria/, '🥖'], [/entrega|taxa de entrega|motoboy/, '🛵'], [/cabelo|corte|escova|progressiva|barba/, '💇'],
+    [/unha|manicure|pedicure/, '💅'], [/maquiagem|make/, '💄'], [/sobrancelha|c[ií]lio/, '👁️'], [/foto|fotograf|ensaio/, '📸'], [/v[ií]deo|filmag/, '🎥'],
+    [/decora[cç]|bal[aã]o|festa|evento/, '🎉'], [/som|dj|m[uú]sica/, '🎵'], [/visita|or[cç]amento|avalia/, '📋'], [/hora\b|horas|\bh\b/, '⏱️'],
+  ];
+  function iconeItem(nome) {
+    const t = String(nome || '').toLowerCase();
+    for (const [re, em] of ICONES) if (re.test(t)) return em;
+    return '🔹';
+  }
+
+  const api = { iconeItem, UNIDADES, TIPOS, NOME_UNIDADE, nomeUnidade, numeroBR, centavos, itemConta, linhaCents, calcular, reais, qtdBR };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else raiz.VCalc = api;
 })(typeof window !== 'undefined' ? window : this);

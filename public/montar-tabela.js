@@ -79,7 +79,7 @@ async function abrirMontarTabela(aoGerarItens, aoGerarTexto) {
         <p class="cm-dica">Pode somar várias paredes ou cômodos, um de cada vez.</p></details>`;
     }
     return `<div class="cm-movel mt-linha${x ? ' cm-on' : ''}" data-id="${i.id}">
-      <div class="mt-topo"><div class="cm-movel-nome">${e(i.nome)}<span>${sub}</span></div>${contador('q|' + i.id, q[i.id], i.nome)}</div>${extra}</div>`;
+      <div class="mt-topo"><span class="mt-ico" aria-hidden="true">${window.VCalc ? VCalc.iconeItem(i.nome) : ''}</span><div class="cm-movel-nome">${e(i.nome)}<span>${sub}</span></div>${contador('q|' + i.id, q[i.id], i.nome)}</div>${extra}</div>`;
   }
 
   function corpoHtml() {
