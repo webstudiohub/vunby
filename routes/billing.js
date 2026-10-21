@@ -7,7 +7,7 @@ const { rateLimit } = require('../lib/rateLimit');
 const { BASE_URL } = require('../lib/config');
 const B = require('../lib/billing');
 
-const FEEDBACK_DIAS = 30;
+const FEEDBACK_DIAS = 20;
 
 function texto(v, max = 2000) {
   if (typeof v !== 'string') return null;
@@ -299,7 +299,7 @@ async function rodarTarefas(sendEmail) {
     });
   }
 
-  // 2) Pesquisa de opinião 30 dias depois de assinar
+  // 2) Pesquisa de opinião 20 dias depois de assinar (longe do aviso de vencimento)
   const fb = await query(
     `SELECT u.id, u.email, u.nome FROM users u
      WHERE u.assinado_em IS NOT NULL AND u.assinado_em < NOW() - make_interval(days => $1)
@@ -317,7 +317,7 @@ async function rodarTarefas(sendEmail) {
       html: layout({
         preheader: '2 minutos para nos contar o que está bom e o que falta.',
         titulo: `${nome}, queremos ouvir você`,
-        corpo: p('Você é um dos <strong>fundadores do VUNBY</strong> e já faz 1 mês que está com a gente. Queremos saber sua opinião de verdade: o que está bom, o que não está e o que falta.') +
+        corpo: p('Você é um dos <strong>fundadores do VUNBY</strong> e já faz quase 3 semanas que está com a gente. Queremos saber sua opinião de verdade: o que está bom, o que não está e o que falta.') +
           p('São perguntas rápidas, leva uns 2 minutos.') +
           botao(base + '/opiniao.html', 'Dar minha opinião') +
           p('Obrigado por construir o VUNBY com a gente. 💛'),
