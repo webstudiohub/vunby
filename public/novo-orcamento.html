@@ -82,13 +82,13 @@
   </div>
 
   <div class="card-acao" style="margin-bottom:var(--sp-6)">
-    <button class="btn-primary btn-gold" onclick="criarOrcamento()">Criar e abrir WhatsApp</button>
+    <button class="btn-primary btn-gold" onclick="criarOrcamento()">Criar orçamento</button>
     <div id="q-msg" class="error"></div>
   </div>
 </div>
 <div id="nav"></div>
 <script src="ui.js?v=33"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 <script src="calc.js?v=33"></script>
 <script src="itens-editor.js?v=33"></script>
 <script src="montar-tabela.js?v=33"></script>
@@ -220,9 +220,8 @@ async function criarOrcamento(){
   try{
     const r=await api('/api/quotes',{method:'POST',body:{clientId:parseInt(clientId),servico,valor:comItens?0:valor,validade,observacoes,pacoteIds:[...selectedPkgs],precisaFollowUp,...(comItens?editor.dados():{})}});
     criado=true; limparRascunho();
-    window.open(r.whatsappLink,'_blank');
-    location.href='orcamento-detalhe.html?id='+r.id;
-  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Criar e abrir WhatsApp';}
+    location.href='orcamento-detalhe.html?id='+r.id+'&enviar=1';
+  }catch(e){msg.textContent=e.message; btn.disabled=false; btn.textContent='Criar orçamento';}
 }
 
 (async()=>{

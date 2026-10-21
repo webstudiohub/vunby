@@ -102,11 +102,11 @@
     if (/eletric/.test(p)) return 'eletricista';
     if (/ar-cond|ar cond|refrig|climat/.test(p)) return 'ar';
     if (/pint/.test(p)) return 'pintor';
-    if (/pedreir|constru|reform|obra/.test(p)) return 'pedreiro';
+    if (/pedreir|gess|constru|reform|obra/.test(p) && !/limpez/.test(p)) return 'pedreiro';
     if (/encan|hidr|bombeir/.test(p)) return 'encanador';
     if (/limpez|faxin|diarist/.test(p)) return 'limpeza';
-    if (/jardin/.test(p)) return 'jardinagem';
-    if (/confeit|bolo|doce|salgad/.test(p)) return 'confeitaria';
+    if (/jardin|paisag/.test(p)) return 'jardinagem';
+    if (/confeit|bolo|doce|salgad|padar/.test(p)) return 'confeitaria';
     if (/marido|reparo|manuten/.test(p)) return 'reparos';
     return null;
   }

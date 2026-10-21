@@ -112,9 +112,9 @@
 </div>
 <div id="nav"></div>
 <script src="ui.js?v=33"></script>
-<script src="instalar.js?v=33"></script>
+<script src="instalar.js?v=36"></script>
 <script src="push.js?v=33"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 <script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));
 if(window.VunbyPush) VunbyPush.itemConta(document.getElementById('push-conta'));</script>
 <script>
@@ -128,7 +128,7 @@ function mostrarLogo(src){
 document.addEventListener('change',async e=>{
   if(e.target.id!=='m-logo'||!e.target.files[0])return;
   const msg=document.getElementById('msg-marca'); msg.textContent='';
-  try{ logoNova=await reduzirImagem(e.target.files[0]); mostrarLogo(logoNova); }
+  try{ const f=e.target.files[0]; e.target.value=''; const cortada=window.VunbyCortar?await VunbyCortar(f):await reduzirImagem(f); if(cortada===null)return; logoNova=cortada; mostrarLogo(logoNova); }
   catch(err){ msg.textContent=err.message; }
 });
 function removerLogo(){ logoNova=null; mostrarLogo(null); document.getElementById('m-logo').value=''; }
@@ -284,4 +284,6 @@ async function enviarSugestao(){
 .pagaria button{min-height:40px;border:1.5px solid var(--gray2);background:#fff;border-radius:8px;font-weight:700;color:var(--dark);cursor:pointer;padding:0}
 .pagaria button.sel{background:var(--navy);border-color:var(--navy);color:#fff}
 </style>
+<script src="/senha.js?v=1"></script>
+<script src="/cortar.js?v=1"></script>
 </body></html>

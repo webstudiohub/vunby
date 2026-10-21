@@ -269,3 +269,24 @@ function abrirEditarCliente(c, aoSalvar) {
   document.body.appendChild(fundo);
   fundo.querySelector('#ec-nome').focus();
 }
+
+// ─── Botões grandes para enviar pelo WhatsApp ─────────────────
+// No Android dá para escolher o app certo (WhatsApp ou WhatsApp Business); "Outro WhatsApp" abre o seletor do celular.
+function botoesWhatsApp(telefone, mensagem) {
+  const num = String(telefone || '').replace(/\D/g, '');
+  const txt = encodeURIComponent(mensagem || '');
+  const waMe = `https://wa.me/${num}?text=${txt}`;
+  const android = /Android/i.test(navigator.userAgent || '');
+  const intent = pkg => `intent://send?phone=${num}&text=${txt}#Intent;scheme=whatsapp;package=${pkg};S.browser_fallback_url=${encodeURIComponent(waMe)};end`;
+  const estilo = 'display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;border-radius:14px;font-weight:800;font-size:17px;text-decoration:none';
+  const verde = estilo + ';background:#25D366;color:#fff';
+  const claro = estilo + ';background:#fff;color:#128C4B;border:2px solid #25D366';
+  const icone = '<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
+  if (!android) return `<a href="${waMe}" target="_blank" rel="noopener" style="${verde}">${icone} Enviar pelo WhatsApp</a>`;
+  return `<div style="display:grid;gap:10px">
+    <a href="${intent('com.whatsapp')}" style="${verde}">${icone} Enviar pelo WhatsApp</a>
+    <a href="${intent('com.whatsapp.w4b')}" style="${claro}">${icone} Enviar pelo WhatsApp Business</a>
+    <a href="${waMe}" target="_blank" rel="noopener" style="text-align:center;font-weight:700;color:var(--navy);padding:8px">Usa outro WhatsApp? Toque aqui</a>
+  </div>`;
+}
+

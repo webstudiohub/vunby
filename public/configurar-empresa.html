@@ -13,6 +13,13 @@
 .ce-dica{font-size:var(--fs-sm);color:var(--muted);margin-top:4px}
 .ce-previa-titulo{font-size:var(--fs-sm);font-weight:700;color:var(--muted);margin-bottom:var(--sp-2)}
 .ce-acoes{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-5)}
+.prof-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.prof-op{border:2px solid var(--gray2);background:var(--white);border-radius:14px;padding:12px 6px;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:14px;font-weight:700;color:var(--dark);cursor:pointer;line-height:1.2;text-align:center}
+.prof-op .em{font-size:30px;line-height:1}
+.prof-op.on{border-color:var(--navy);background:var(--navy-light);color:var(--navy)}
+.prof-sub{display:flex;flex-wrap:wrap;gap:8px}
+.prof-chip{border:2px solid var(--gray2);background:var(--white);border-radius:999px;padding:10px 16px;min-height:44px;font:inherit;font-size:15px;font-weight:700;color:var(--dark);cursor:pointer}
+.prof-chip.on{border-color:var(--navy);background:var(--navy);color:#fff}
 .ce-depois{background:none;border:none;color:var(--muted);font:inherit;font-size:var(--fs-md);font-weight:600;padding:12px;cursor:pointer;text-decoration:underline}
 body.ce-onboarding .container{padding-bottom:var(--sp-8)}
 </style>
@@ -42,25 +49,13 @@ body.ce-onboarding .container{padding-bottom:var(--sp-8)}
     <input id="f-empresa" maxlength="80" placeholder="Ex: Silva Reformas" autocomplete="organization"/>
     <p class="ce-dica">Não tem empresa? Use seu nome, ex.: "João Eletricista".</p>
 
-    <label for="f-profissao">Profissão</label>
-    <select id="f-profissao">
-      <option value="">Escolha…</option>
-      <option>Construção e reforma</option>
-      <option>Pedreiro</option>
-      <option>Pintor</option>
-      <option>Eletricista</option>
-      <option>Encanador</option>
-      <option>Ar-condicionado</option>
-      <option>Mudança e frete</option>
-      <option>Montagem de móveis</option>
-      <option>Marido de aluguel</option>
-      <option>Limpeza</option>
-      <option>Jardinagem</option>
-      <option>Confeitaria</option>
-      <option>Beleza e estética</option>
-      <option>Fotografia e eventos</option>
-      <option value="__outra">Outra</option>
-    </select>
+    <label>O que você faz?</label>
+    <div id="prof-grade" class="prof-grade" role="radiogroup" aria-label="Profissão"></div>
+    <div id="prof-sub-box" style="display:none">
+      <label id="prof-sub-rot" style="margin-top:var(--sp-4)">Qual tipo?</label>
+      <div id="prof-sub" class="prof-sub" role="radiogroup"></div>
+    </div>
+    <p id="prof-nota" class="ce-dica" style="display:none"></p>
     <input id="f-profissao-outra" maxlength="60" placeholder="Qual é a sua profissão?" style="display:none;margin-top:var(--sp-2)"/>
 
     <label for="f-whatsapp">WhatsApp da empresa</label>
@@ -95,7 +90,7 @@ body.ce-onboarding .container{padding-bottom:var(--sp-8)}
 </div>
 <div id="nav"></div>
 <script src="ui.js?v=33"></script>
-<script src="app.js?v=35"></script>
+<script src="app.js?v=36"></script>
 <script src="marca.js?v=33"></script>
 <script>
 // ?editar=1 → aberta pela Minha Conta (com menu). Sem isso → logo após confirmar o e-mail.
@@ -104,9 +99,53 @@ const $=id=>document.getElementById(id);
 let logoAtual=null;   // logo salva
 let logoNova;         // undefined = sem mudança; null = remover; string = nova imagem
 
+// Profissões em cartões com ícone; algumas têm um segundo passo ("Qual tipo?")
+const PROFS=[
+  {id:'mudanca',em:'🚚',nome:'Mudança e frete',sub:['Mudança residencial','Mudança comercial','Frete e carreto'],nota:'Já inclui desmontagem, montagem de móveis e embalagem: você coloca isso na sua tabela de preços.'},
+  {id:'montagem',em:'🪑',nome:'Montagem de móveis'},
+  {id:'reforma',em:'🧱',nome:'Construção e reforma',sub:['Pedreiro','Pintor','Eletricista','Encanador','Gesseiro','Reforma em geral']},
+  {id:'ar',em:'❄️',nome:'Ar-condicionado',sub:['Instalação de ar-condicionado','Manutenção de ar-condicionado']},
+  {id:'marido',em:'🔧',nome:'Marido de aluguel'},
+  {id:'limpeza',em:'🧹',nome:'Limpeza',sub:['Limpeza residencial','Limpeza comercial','Limpeza pós-obra','Limpeza de estofados','Diarista']},
+  {id:'jardim',em:'🌿',nome:'Jardinagem',sub:['Jardinagem','Paisagismo','Piscineiro']},
+  {id:'confeitaria',em:'🎂',nome:'Confeitaria',sub:['Bolos e doces por encomenda','Salgados para festas','Padaria','Barraca / food truck']},
+  {id:'beleza',em:'💇',nome:'Beleza e estética',sub:['Cabeleireiro(a)','Barbeiro','Manicure e pedicure','Sobrancelha e cílios','Maquiagem','Estética facial e corporal']},
+  {id:'eventos',em:'📸',nome:'Fotografia e eventos',sub:['Fotografia','Filmagem','Decoração de festas','Buffet','Som e DJ']},
+  {id:'outra',em:'➕',nome:'Outra'},
+];
+let profSel=null, subSel=null;
 function profissao(){
-  const v=$('f-profissao').value;
-  return v==='__outra'?$('f-profissao-outra').value.trim():v;
+  if(!profSel) return '';
+  if(profSel.id==='outra') return $('f-profissao-outra').value.trim();
+  return subSel||profSel.nome;
+}
+function desenharProfs(){
+  $('prof-grade').innerHTML=PROFS.map(p=>`<button type="button" role="radio" aria-checked="${profSel===p}" class="prof-op${profSel===p?' on':''}" data-prof="${p.id}"><span class="em" aria-hidden="true">${p.em}</span>${p.nome}</button>`).join('');
+  const box=$('prof-sub-box');
+  if(profSel&&profSel.sub){
+    box.style.display='';
+    $('prof-sub').innerHTML=profSel.sub.map(t=>`<button type="button" role="radio" aria-checked="${subSel===t}" class="prof-chip${subSel===t?' on':''}" data-sub="${t}">${t}</button>`).join('');
+  } else box.style.display='none';
+  const nota=$('prof-nota'); nota.style.display=profSel&&profSel.nota?'':'none'; nota.textContent=profSel&&profSel.nota||'';
+  $('f-profissao-outra').style.display=profSel&&profSel.id==='outra'?'':'none';
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-prof]');
+  if(b){ const p=PROFS.find(x=>x.id===b.dataset.prof); if(profSel!==p){profSel=p; subSel=null;} desenharProfs(); if(p.id==='outra') $('f-profissao-outra').focus(); atualizarPrevia(); return; }
+  const c=e.target.closest('[data-sub]');
+  if(c){ subSel=subSel===c.dataset.sub?null:c.dataset.sub; desenharProfs(); atualizarPrevia(); }
+});
+function carregarProfissao(v){
+  v=String(v||'').trim(); if(!v){desenharProfs();return;}
+  for(const p of PROFS){
+    if(p.nome===v){profSel=p;subSel=null;break;}
+    if(p.sub&&p.sub.includes(v)){profSel=p;subSel=v;break;}
+  }
+  if(!profSel){
+    // valores antigos: Pedreiro, Pintor... já estão como subopção; o resto vira "Outra"
+    profSel=PROFS.find(p=>p.id==='outra'); $('f-profissao-outra').value=v;
+  }
+  desenharProfs();
 }
 function mascaraTelefone(v){
   const d=v.replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'').slice(0,11);
@@ -135,15 +174,9 @@ document.addEventListener('input',e=>{
   atualizarPrevia();
 });
 document.addEventListener('change',async e=>{
-  if(e.target.id==='f-profissao'){
-    const outra=e.target.value==='__outra';
-    $('f-profissao-outra').style.display=outra?'':'none';
-    if(outra) $('f-profissao-outra').focus();
-    atualizarPrevia(); return;
-  }
   if(e.target.id!=='f-logo'||!e.target.files[0])return;
   $('msg').textContent='';
-  try{ logoNova=await reduzirImagem(e.target.files[0]); atualizarPrevia(); }
+  try{ const f=e.target.files[0]; e.target.value=''; const cortada=window.VunbyCortar?await VunbyCortar(f):await reduzirImagem(f); if(cortada===null)return; logoNova=cortada; atualizarPrevia(); }
   catch(err){ $('msg').textContent=err.message; }
 });
 
@@ -187,13 +220,10 @@ async function salvar(){
   $('f-instagram').value=u.instagram?'@'+u.instagram:'';
   // WhatsApp: se ainda não tem, sugere o telefone do cadastro
   $('f-whatsapp').value=mascaraTelefone(u.whatsapp||u.telefone||'');
-  const sel=$('f-profissao');
-  if(u.profissao){
-    if([...sel.options].some(o=>o.value===u.profissao)) sel.value=u.profissao;
-    else { sel.value='__outra'; $('f-profissao-outra').value=u.profissao; $('f-profissao-outra').style.display=''; }
-  }
+  carregarProfissao(u.profissao);
   if(u.temLogo){ try{ logoAtual=(await api('/api/auth/logo')).logo; }catch{} }
   atualizarPrevia();
 })();
 </script>
+<script src="/cortar.js?v=1"></script>
 </body></html>

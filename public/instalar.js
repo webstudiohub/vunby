@@ -11,6 +11,7 @@
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     pedido = e;
+    if (/Android/i.test(navigator.userAgent || '') && !ehChromeAndroid()) return;   // fora do Chrome: sempre "Como instalar"
     document.querySelectorAll('[data-instalar-btn]').forEach(b => { b.textContent = 'Instalar agora'; });
   });
   window.addEventListener('appinstalled', () => {
@@ -31,6 +32,20 @@
     const ua = navigator.userAgent || '';
     return ehIOS() && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
   }
+  // Android fora do Chrome (navegador da Xiaomi, Opera, navegador dentro do WhatsApp/Instagram…):
+  // alguns desses criam um aplicativo "antigo" que o Google Play Protect bloqueia como "app de risco".
+  // Por isso no Android a instalação é sempre pelo Chrome.
+  function ehAndroid() { return /Android/i.test(navigator.userAgent || ''); }
+  function ehChromeAndroid() {
+    const ua = navigator.userAgent || '';
+    return ehAndroid() && /Chrome\/\d+/.test(ua) &&
+      !/SamsungBrowser|MiuiBrowser|XiaoMi|OPR\/|Opera|EdgA|YaBrowser|UCBrowser|HeyTapBrowser|VivoBrowser|HuaweiBrowser|Brave|DuckDuckGo|FBAN|FBAV|Instagram|WhatsApp|; wv\)/i.test(ua);
+  }
+  function linkChrome() {
+    const destino = location.host + '/dashboard.html';
+    return 'intent://' + destino + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent('https://play.google.com/store/apps/details?id=com.android.chrome') + ';end';
+  }
+
   function fechado() {
     try { return localStorage.getItem(CHAVE_FECHADO) === '1'; } catch (e) { return false; }
   }
@@ -58,6 +73,15 @@
         ${passo(3, `Toque em <strong>Adicionar</strong>, no canto de cima.`)}
         ${passo(4, `Pronto! O ícone do <strong>VUNBY</strong> aparece na tela do celular, como um aplicativo.`)}
       </ol>`;
+    }
+    if (ehAndroid() && !ehChromeAndroid()) {
+      return `<p style="background:#FFF7E0;border-radius:10px;padding:12px;margin-bottom:10px;font-size:var(--fs-md);line-height:1.45">Para instalar com segurança, use o <strong>Google Chrome</strong>. Por outros navegadores o celular pode mostrar um aviso de "app de risco".</p>
+        <a href="${linkChrome()}" class="btn-primary btn-gold" style="display:block;text-align:center;text-decoration:none;margin-bottom:6px">Abrir o VUNBY no Chrome</a>
+        <ol style="list-style:none;margin:0;padding:0">
+          ${passo(1, `Toque em <strong>Abrir o VUNBY no Chrome</strong> (ou abra o Chrome e digite <strong>vunby.com.br</strong>).`)}
+          ${passo(2, `No Chrome, toque nos ${chip(ICONE_MENU, '3 pontinhos')} e em <strong>Instalar app</strong>.`)}
+          ${passo(3, `Pronto! O ícone do <strong>VUNBY</strong> aparece na tela do celular.`)}
+        </ol>`;
     }
     return `<ol style="list-style:none;margin:0;padding:0">
       ${passo(1, `Toque nos ${chip(ICONE_MENU, '3 pontinhos')} no canto de cima do Chrome.`)}
@@ -96,7 +120,7 @@
   }
 
   async function instalar() {
-    if (pedido) {
+    if (pedido && (!ehAndroid() || ehChromeAndroid())) {
       pedido.prompt();
       try { await pedido.userChoice; } catch (e) { /* ignora */ }
       pedido = null;
@@ -117,7 +141,7 @@
           </div>
           <button type="button" data-instalar-fechar aria-label="Fechar aviso" style="flex-shrink:0;border:none;background:transparent;font-size:24px;color:var(--muted);cursor:pointer;width:40px;height:40px;align-self:flex-start">×</button>
         </div>
-        <button type="button" data-instalar-btn style="margin-top:12px;width:100%;border:none;border-radius:10px;padding:12px 14px;font-weight:800;font-family:inherit;font-size:var(--fs-md);background:var(--chrome-gold);color:#1C1C1E;cursor:pointer;min-height:48px">${pedido ? 'Instalar agora' : 'Como instalar'}</button>
+        <button type="button" data-instalar-btn style="margin-top:12px;width:100%;border:none;border-radius:10px;padding:12px 14px;font-weight:800;font-family:inherit;font-size:var(--fs-md);background:var(--chrome-gold);color:#1C1C1E;cursor:pointer;min-height:48px">${pedido && (!ehAndroid() || ehChromeAndroid()) ? 'Instalar agora' : 'Como instalar'}</button>
       </div>`;
     alvo.querySelector('[data-instalar-btn]').addEventListener('click', instalar);
     alvo.querySelector('[data-instalar-fechar]').addEventListener('click', () => {
@@ -134,7 +158,7 @@
       return;
     }
     alvo.innerHTML = `<p class="muted" style="margin-bottom:var(--sp-3)">Coloque o VUNBY na tela inicial e abra com 1 toque, como um aplicativo. É grátis e não precisa de loja.</p>
-      <button type="button" class="btn-primary" data-instalar-btn>${pedido ? 'Instalar agora' : 'Ver como instalar'}</button>`;
+      <button type="button" class="btn-primary" data-instalar-btn>${pedido && (!ehAndroid() || ehChromeAndroid()) ? 'Instalar agora' : 'Ver como instalar'}</button>`;
     alvo.querySelector('[data-instalar-btn]').addEventListener('click', instalar);
   }
 
