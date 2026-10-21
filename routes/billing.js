@@ -6,6 +6,39 @@ const { json, ok, badRequest, conflict, readBody } = require('../lib/http');
 const { rateLimit } = require('../lib/rateLimit');
 const { BASE_URL } = require('../lib/config');
 const B = require('../lib/billing');
+const E = require('../lib/email');
+const PUSH = require('../lib/push');
+
+const PULSO_DIAS = 90;          // pesquisa curta a cada 3 meses
+const NOTA_BAIXA = 6;           // nota até 6 avisa o fundador na hora
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'adiminvunby@gmail.com';
+
+// Avisa o fundador (e-mail) para ele chamar o cliente no WhatsApp
+async function avisarAdmin(assunto, linhas) {
+  const corpo = linhas.map(l => E.p(l)).join('');
+  return E.sendEmail({ to: ADMIN_EMAIL, subject: assunto, html: E.layout({ preheader: assunto, titulo: E.escHtml(assunto), corpo }) }).catch(() => ({ ok: false }));
+}
+async function dadosCliente(userId) {
+  const r = await query('SELECT nome, email, telefone FROM users WHERE id = $1', [userId]);
+  const u = r.rows[0] || {};
+  return `<strong>${E.escHtml(u.nome || '(sem nome)')}</strong> · ${E.escHtml(u.email || '')}${u.telefone ? ' · ' + E.escHtml(u.telefone) : ''}`;
+}
+
+// Pesquisa curta: só depois que a completa foi respondida, e a cada 90 dias desde a última resposta
+async function pulsoPendente(userId) {
+  const r = await query(
+    `SELECT 1 FROM users u
+     WHERE u.id = $1 AND u.assinado_em IS NOT NULL
+       AND (u.pulso_adiado_ate IS NULL OR u.pulso_adiado_ate < NOW())
+       AND EXISTS (SELECT 1 FROM feedbacks f WHERE f.user_id = u.id)
+       AND GREATEST(
+             COALESCE((SELECT MAX(created_at) FROM feedbacks WHERE user_id = u.id), 'epoch'),
+             COALESCE((SELECT MAX(created_at) FROM pulso WHERE user_id = u.id), 'epoch')
+           ) < NOW() - make_interval(days => $2::int)`,
+    [userId, PULSO_DIAS]
+  );
+  return r.rows.length > 0;
+}
 
 const FEEDBACK_DIAS = 20;
 
@@ -77,6 +110,7 @@ async function handle(req, res) {
       pagamentoConfigurado: B.mpConfigurado(),
       mpPublicKey: B.mpConfigurado() ? (process.env.MP_PUBLIC_KEY || null) : null,
       feedbackPendente: await feedbackPendente(user.id),
+      pulsoPendente: await pulsoPendente(user.id),
     });
   }
 
@@ -234,6 +268,44 @@ async function handle(req, res) {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
       [user.id, nota, texto(b.experiencia), texto(b.gostando), texto(b.melhorar), texto(b.naoGostou), texto(b.falta), pagaria, texto(b.comentarioPreco, 500)]
     );
+    if (nota <= NOTA_BAIXA) {
+      const quem = await dadosCliente(user.id);
+      avisarAdmin(`Nota ${nota} no VUNBY: chame esse cliente`, [quem, `Nota: <strong>${nota}</strong>. Não gostou: ${E.escHtml(texto(b.naoGostou) || '-')}. Melhorar: ${E.escHtml(texto(b.melhorar) || '-')}.`]);
+    }
+    return ok(res, { obrigado: true });
+  }
+
+  // POST /api/feedback/pulso — pesquisa curta (nota + comentário opcional)
+  if (req.method === 'POST' && path === '/api/feedback/pulso') {
+    if (!(await rateLimit('pulso:' + user.id, 5, 60 * 60_000))) return json(res, 429, { error: 'Muitas tentativas. Tente mais tarde.' });
+    let b; try { b = await readBody(req, 10_000); } catch { return badRequest(res); }
+    const nota = parseInt(b.nota, 10);
+    if (!(nota >= 0 && nota <= 10)) return badRequest(res, 'Escolha uma nota de 0 a 10.');
+    const comentario = texto(b.comentario, 1000);
+    await query('INSERT INTO pulso (user_id, nota, comentario) VALUES ($1,$2,$3)', [user.id, nota, comentario]);
+    if (nota <= NOTA_BAIXA) {
+      const quem = await dadosCliente(user.id);
+      avisarAdmin(`Nota ${nota} no VUNBY: chame esse cliente`, [quem, `Nota: <strong>${nota}</strong>. Comentário: ${E.escHtml(comentario || '-')}.`]);
+    }
+    return ok(res, { obrigado: true });
+  }
+
+  // POST /api/feedback/pulso/adiar
+  if (req.method === 'POST' && path === '/api/feedback/pulso/adiar') {
+    await query(`UPDATE users SET pulso_adiado_ate = NOW() + INTERVAL '7 days' WHERE id = $1`, [user.id]);
+    return ok(res, {});
+  }
+
+  // POST /api/feedback/sugestao — sugestão livre, a qualquer momento (botão na Conta)
+  if (req.method === 'POST' && path === '/api/feedback/sugestao') {
+    if (!(await rateLimit('sugestao:' + user.id, 8, 60 * 60_000))) return json(res, 429, { error: 'Muitas mensagens. Tente mais tarde.' });
+    let b; try { b = await readBody(req, 10_000); } catch { return badRequest(res); }
+    const mensagem = texto(b.mensagem, 2000);
+    if (!mensagem || mensagem.length < 5) return badRequest(res, 'Escreva sua sugestão (mínimo 5 letras).');
+    const tipo = ['ideia', 'problema', 'elogio'].includes(b.tipo) ? b.tipo : 'ideia';
+    await query('INSERT INTO sugestoes (user_id, tipo, mensagem) VALUES ($1,$2,$3)', [user.id, tipo, mensagem]);
+    const quem = await dadosCliente(user.id);
+    avisarAdmin(`Nova ${tipo === 'problema' ? 'reclamação' : tipo === 'elogio' ? 'mensagem' : 'sugestão'} no VUNBY`, [quem, E.escHtml(mensagem)]);
     return ok(res, { obrigado: true });
   }
 
@@ -286,6 +358,7 @@ async function rodarTarefas(sendEmail) {
     await query('UPDATE users SET pix_aviso_em = NOW() WHERE id = $1', [u.id]);
     const nome = escHtml(String(u.nome || '').split(' ')[0]);
     const dia = new Date(u.acesso_ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    PUSH.notificarSilencioso(u.id, { titulo: 'Seu acesso ao VUNBY vence em breve', texto: `Vence dia ${dia}. Pague o próximo mês pelo Pix em 1 minuto.`, url: '/planos.html', tag: 'vencimento' });
     await sendEmail({
       to: u.email,
       subject: 'Seu acesso ao VUNBY vence em breve',
@@ -310,6 +383,7 @@ async function rodarTarefas(sendEmail) {
   );
   for (const u of fb.rows) {
     await query('UPDATE users SET feedback_email_em = NOW() WHERE id = $1', [u.id]);
+    PUSH.notificarSilencioso(u.id, { titulo: 'Como está sendo o VUNBY?', texto: '2 minutos para nos contar. Sua opinião melhora o app.', url: '/opiniao.html', tag: 'opiniao' });
     const nome = escHtml(String(u.nome || '').split(' ')[0]);
     await sendEmail({
       to: u.email,

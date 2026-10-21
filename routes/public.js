@@ -1,4 +1,5 @@
 'use strict';
+const push = require('../lib/push');
 const { query } = require('../lib/db');
 const { ok, json, badRequest, notFound, forbidden, readBody } = require('../lib/http');
 const { STATUS, isFinal } = require('../lib/status');
@@ -51,8 +52,9 @@ async function handle(req, res) {
     // Registrar visualização (heurística anti-bot)
     if (!isLikelyBot(req) && quote.status === STATUS.ENVIADO && !(await isOwner(req, quote.user_id))) {
       // Marca como "Visualizado" na primeira view real
-      await query("UPDATE quotes SET status = $1, viewed_at = NOW() WHERE id = $2 AND status = $3",
+      const v = await query("UPDATE quotes SET status = $1, viewed_at = NOW() WHERE id = $2 AND status = $3 RETURNING id",
         [STATUS.VISUALIZADO, quote.id, STATUS.ENVIADO]);
+      if (v.rows[0]) push.avisarOrcamentoSilencioso(quote.id, 'visualizado');
     }
 
     return ok(res, {
@@ -149,6 +151,7 @@ async function handle(req, res) {
        WHERE id = $3 AND status <> ALL($4) RETURNING id`,
       [newStatus, observacao || null, quote.id, [STATUS.APROVADO, STATUS.RECUSADO], aprovacao ? JSON.stringify(aprovacao) : null, novoValor]);
     if (!upd.rows[0]) return badRequest(res, 'Este orçamento já foi finalizado.');
+    push.avisarOrcamentoSilencioso(quote.id, newStatus === STATUS.APROVADO ? 'aprovado' : 'recusado');
 
     return ok(res, { message: newStatus === STATUS.APROVADO ? 'Orçamento aprovado!' : 'Resposta registrada.' });
   }
@@ -182,8 +185,9 @@ async function handle(req, res) {
     if (!qRes.rows[0]) return notFound(res);
     const quote = qRes.rows[0];
     if (quote.status === STATUS.ENVIADO && !(await isOwner(req, quote.user_id))) {
-      await query("UPDATE quotes SET status = $1, viewed_at = NOW() WHERE id = $2 AND status = $3",
+      const v = await query("UPDATE quotes SET status = $1, viewed_at = NOW() WHERE id = $2 AND status = $3 RETURNING id",
         [STATUS.VISUALIZADO, quote.id, STATUS.ENVIADO]);
+      if (v.rows[0]) push.avisarOrcamentoSilencioso(quote.id, 'visualizado');
     }
     return ok(res, { ok: true });
   }

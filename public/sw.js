@@ -1,8 +1,8 @@
 /* VUNBY Service Worker — versão atualizada a cada deploy */
-const CACHE = 'vunby-v30';
+const CACHE = 'vunby-v31';
 const STATIC = [
   '/', '/entrar', '/cadastro',
-  '/style.css', '/ui.js', '/app.js', '/instalar.js',
+  '/style.css', '/ui.js', '/app.js', '/instalar.js', '/push.js',
   '/dashboard.html', '/radar.html', '/historico.html',
   '/pacotes.html', '/novo-orcamento.html',
   '/conta.html', '/configurar-empresa.html', '/marca.js', '/pdf.js', '/calc.js', '/itens-editor.js', '/montar-tabela.js', '/kits.js', '/tabela.html', '/manifest.json', '/icons/icon-192.png',
@@ -41,4 +41,28 @@ self.addEventListener('fetch', e => {
       return cached || rede;
     }))
   );
+});
+
+
+// ── Notificações push ──────────────────────────────────────────
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { titulo: 'VUNBY', texto: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.titulo || 'VUNBY', {
+    body: d.texto || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/favicon-32.png',
+    tag: d.tag || undefined,
+    renotify: !!d.tag,
+    data: { url: d.url || '/dashboard.html' },
+  }));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const alvo = new URL((e.notification.data && e.notification.data.url) || '/dashboard.html', self.location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(lista => {
+    for (const c of lista) { if ('focus' in c) { c.navigate(alvo).catch(() => {}); return c.focus(); } }
+    return self.clients.openWindow(alvo);
+  }));
 });

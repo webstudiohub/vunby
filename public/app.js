@@ -58,6 +58,12 @@ function avisoPlano(st) {
       <span class="aviso-plano-link">Responder ›</span>
     </a>`;
   }
+  if (st.pulsoPendente && !st.feedbackPendente) {
+    html += `<a href="opiniao-rapida.html" class="card aviso-plano aviso-plano-trial">
+      <span>${ic('conversa')} <strong>30 segundos?</strong> Uma nota rápida sobre o VUNBY.</span>
+      <span class="aviso-plano-link">Responder ›</span>
+    </a>`;
+  }
   return html;
 }
 

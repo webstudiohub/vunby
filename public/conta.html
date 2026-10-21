@@ -69,6 +69,26 @@
     <div id="msg-senha" class="error"></div>
   </div>
 
+  <!-- Notificações -->
+  <div class="card anim anim-2">
+    <h3><i data-ic="sino"></i> Notificações</h3>
+    <div id="push-conta"><p class="muted">Carregando…</p></div>
+  </div>
+
+  <!-- Sugestão -->
+  <div class="card anim anim-2">
+    <h3><i data-ic="lampada"></i> Enviar sugestão</h3>
+    <p class="muted" style="margin-bottom:var(--sp-3)">Teve uma ideia, achou um problema ou quer elogiar? Escreva aqui. Eu leio tudo.</p>
+    <div class="pagaria" id="sug-tipo">
+      <button type="button" data-v="ideia" class="sel">Ideia</button>
+      <button type="button" data-v="problema">Problema</button>
+      <button type="button" data-v="elogio">Elogio</button>
+    </div>
+    <textarea id="sug-msg" rows="3" maxlength="2000" placeholder="Escreva aqui…" style="margin-top:var(--sp-3)"></textarea>
+    <div style="margin-top:var(--sp-3)"><button class="btn-primary" id="btn-sug" onclick="enviarSugestao()">Enviar</button></div>
+    <div id="msg-sug" class="error"></div>
+  </div>
+
   <!-- Excluir conta -->
   <div class="card anim anim-2">
     <h3><i data-ic="celular"></i> Instalar o app</h3>
@@ -84,8 +104,10 @@
 <div id="nav"></div>
 <script src="ui.js"></script>
 <script src="instalar.js"></script>
+<script src="push.js"></script>
 <script src="app.js"></script>
-<script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));</script>
+<script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));
+if(window.VunbyPush) VunbyPush.itemConta(document.getElementById('push-conta'));</script>
 <script>
 // ─── Marca (logo + nome da empresa) ───
 let logoNova; // undefined = sem mudança; null = remover; string = nova imagem
@@ -206,5 +228,25 @@ async function cancelarAssinatura(){
 .perfil-row:last-child{border-bottom:none}
 .perfil-label{font-size:var(--fs-sm);color:var(--muted);font-weight:600;text-transform:none;min-width:72px}
 .perfil-val{font-size:var(--fs-md);color:var(--dark);font-weight:500;text-align:right;flex:1;display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2);flex-wrap:wrap}
+</style>
+<script>
+let sugTipo='ideia';
+document.querySelectorAll('#sug-tipo button').forEach(b=>b.onclick=()=>{sugTipo=b.dataset.v;document.querySelectorAll('#sug-tipo button').forEach(x=>x.classList.toggle('sel',x===b));});
+async function enviarSugestao(){
+  const m=document.getElementById('sug-msg'), btn=document.getElementById('btn-sug'), err=document.getElementById('msg-sug');
+  err.textContent='';
+  if(m.value.trim().length<5){err.textContent='Escreva sua sugestão (mínimo 5 letras).';return;}
+  btn.disabled=true; btn.textContent='Enviando…';
+  try{
+    await api('/api/feedback/sugestao',{method:'POST',body:{tipo:sugTipo,mensagem:m.value}});
+    m.value=''; VUI.toast('Recebi! Obrigado pela sugestão.','ok');
+  }catch(e){err.textContent=e.message;}
+  btn.disabled=false; btn.textContent='Enviar';
+}
+</script>
+<style>
+.pagaria{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pagaria button{min-height:40px;border:1.5px solid var(--gray2);background:#fff;border-radius:8px;font-weight:700;color:var(--dark);cursor:pointer;padding:0}
+.pagaria button.sel{background:var(--navy);border-color:var(--navy);color:#fff}
 </style>
 </body></html>
