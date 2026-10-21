@@ -63,7 +63,7 @@ function serveStatic(req, res) {
     const mime = MIME[ext] || 'application/octet-stream';
     res.writeHead(200, {
       'Content-Type': mime,
-      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600',
+      'Cache-Control': (ext === '.html' || ext === '.js' || ext === '.css') ? 'no-cache' : 'public, max-age=3600',
     });
     res.end(data);
   });

@@ -4,7 +4,7 @@
 <title>Orçamento</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png"/><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
 <meta name="robots" content="noindex,nofollow"/>
-<link rel="stylesheet" href="style.css"/>
+<link rel="stylesheet" href="style.css?v=33"/>
 <style>
 .alt-texto{width:100%;padding:12px;border:1.5px solid #CBD2DA;border-radius:10px;font-size:var(--fs-md);margin-bottom:12px;resize:vertical;font-family:inherit}
 .alt-sec{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
@@ -48,9 +48,9 @@ body:has(.it-barra){padding-bottom:96px}
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
 </div>
-<script src="ui.js"></script>
-<script src="marca.js"></script>
-<script src="calc.js"></script>
+<script src="ui.js?v=33"></script>
+<script src="marca.js?v=33"></script>
+<script src="calc.js?v=33"></script>
 <script>
 // NÃO referencia app.js, manifest, SW — página pública do cliente
 const token=new URLSearchParams(location.search).get('token');
