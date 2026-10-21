@@ -65,7 +65,7 @@ async function handle(req, res) {
     const u = await B.getBillingUser(user.id);
     const s = B.situacao(u);
     const vagas = await B.vagasFundadorRestantes();
-    const precoOferta = (u.fundador || vagas > 0) ? B.PRECO_FUNDADOR : B.PRECO_PADRAO;
+    const precoOferta = B.valorPara(u, u.fundador || vagas > 0);
     return ok(res, {
       ...s,
       fundador: !!u.fundador,
@@ -88,7 +88,7 @@ async function handle(req, res) {
     if (u.assinatura_status === 'ativa' || u.assinatura_status === 'cortesia') return conflict(res, 'Sua assinatura já está ativa.');
     const vagas = await B.vagasFundadorRestantes();
     const fundador = u.fundador || vagas > 0;
-    const valor = fundador ? B.PRECO_FUNDADOR : B.PRECO_PADRAO;
+    const valor = B.valorPara(u, fundador);
     const r = await B.mpRequest('POST', '/preapproval', {
       reason: fundador ? 'VUNBY — Plano Fundador' : 'VUNBY — Assinatura mensal',
       external_reference: String(user.id),
@@ -122,7 +122,7 @@ async function handle(req, res) {
     if (u.assinatura_status === 'ativa' || u.assinatura_status === 'cortesia') return conflict(res, 'Sua assinatura já está ativa.');
     const vagas = await B.vagasFundadorRestantes();
     const fundador = u.fundador || vagas > 0;
-    const valor = fundador ? B.PRECO_FUNDADOR : B.PRECO_PADRAO;
+    const valor = B.valorPara(u, fundador);
     const r = await B.mpRequest('POST', '/preapproval', {
       reason: fundador ? 'VUNBY — Plano Fundador' : 'VUNBY — Assinatura mensal',
       external_reference: String(user.id),
@@ -156,7 +156,7 @@ async function handle(req, res) {
     if (u.assinatura_status === 'ativa' || u.assinatura_status === 'cortesia') return conflict(res, 'Sua assinatura já está ativa no cartão.');
     const vagas = await B.vagasFundadorRestantes();
     const fundador = u.fundador || vagas > 0;
-    const valor = fundador ? B.PRECO_FUNDADOR : B.PRECO_PADRAO;
+    const valor = B.valorPara(u, fundador);
     // Vence em 30 minutos (horário de Brasília)
     const exp = new Date(Date.now() + 30 * 60_000 - 3 * 3600_000).toISOString().replace('Z', '-03:00');
     const nome = String(u.nome || '').trim().split(/\s+/);
