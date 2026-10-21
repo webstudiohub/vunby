@@ -17,4 +17,23 @@
       .catch(function () {});
   }
   window.VunbyRef = { codigo: function () { var v = ler(); return v ? v.c : null; } };
+
+  // Contador de visitas (sem cookie): de onde a pessoa veio
+  window.VunbyVisita = function (pagina) {
+    var o = 'direto', q;
+    try { q = new URLSearchParams(location.search); } catch (e) { q = null; }
+    var r = '';
+    try { r = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
+    if (q && q.get('ref')) o = 'ref:' + q.get('ref');
+    else if (q && (q.get('gclid') || /google/i.test(q.get('utm_source') || ''))) o = 'google-ads';
+    else if (q && q.get('utm_source')) o = q.get('utm_source');
+    else if (/google\./.test(r)) o = 'google';
+    else if (/instagram|facebook|fb\./.test(r)) o = 'instagram-facebook';
+    else if (/whatsapp|wa\.me/.test(r)) o = 'whatsapp';
+    else if (r && r !== location.hostname) o = r.replace(/^www\./, '');
+    else if (r === location.hostname) o = 'site';
+    try {
+      fetch('/api/v', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ p: pagina, o: o }) }).catch(function () {});
+    } catch (e) {}
+  };
 })();

@@ -424,7 +424,8 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
 </footer>
 
 <div class="barra" id="barra"><a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a></div>
-<script src="/ref.js?v=1"></script>
+<script src="/ref.js?v=2"></script>
+<script>if(window.VunbyVisita) VunbyVisita('landing');</script>
 <script>
 // Vagas de fundador de verdade (número do sistema)
 fetch('/api/vagas').then(function (r) { return r.json(); }).then(function (d) {

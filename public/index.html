@@ -67,9 +67,10 @@ body { background: var(--navy); padding-bottom: 0; }
   </div>
 </div>
 
-<script src="/ref.js?v=1"></script>
+<script src="/ref.js?v=2"></script>
 <script>
 function showTab(t){
+  if(t==='register' && !window.__vc && window.VunbyVisita){ window.__vc=1; VunbyVisita('cadastro'); }
   document.getElementById('tab-login').style.display = t==='login'?'':'none';
   document.getElementById('tab-register').style.display = t==='register'?'':'none';
   document.getElementById('btn-tab-login').className = t==='login'?'active':'';

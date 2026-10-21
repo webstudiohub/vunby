@@ -21,7 +21,7 @@ async function handle(req, res) {
 
   // GET /api/admin/resumo — números, usuários, opiniões, sugestões e pagamentos
   if (req.method === 'GET' && path === '/api/admin/resumo') {
-    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes] = await Promise.all([
+    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes, siteDias, siteOrig] = await Promise.all([
       query(`SELECT
           COUNT(*)::int AS total,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days')::int AS novos_7d,
@@ -62,11 +62,22 @@ async function handle(req, res) {
                        AND (x.assinatura_status = 'ativa' OR (x.assinatura_status = 'pix' AND x.acesso_ate > NOW()) OR x.indicacao_premiada)) AS pagantes
                FROM cods c ORDER BY cadastros DESC, visitas DESC LIMIT 100`),
       query(`SELECT id, nome, email, meses_gratis_pendentes AS meses FROM users WHERE meses_gratis_pendentes > 0 ORDER BY nome`),
+      // Site: últimos 30 dias (visitantes únicos da página inicial, de quem abriu o cadastro e contas criadas)
+      query(`WITH d AS (SELECT generate_series((NOW() AT TIME ZONE 'America/Sao_Paulo')::date - 29, (NOW() AT TIME ZONE 'America/Sao_Paulo')::date, '1 day')::date AS dia)
+             SELECT d.dia,
+               COALESCE((SELECT SUM(unicos) FROM site_visitas v WHERE v.dia = d.dia AND v.pagina = 'landing'),0)::int AS visitantes,
+               COALESCE((SELECT SUM(unicos) FROM site_visitas v WHERE v.dia = d.dia AND v.pagina = 'cadastro'),0)::int AS abriu_cadastro,
+               (SELECT COUNT(*)::int FROM users u WHERE (u.created_at AT TIME ZONE 'America/Sao_Paulo')::date = d.dia AND lower(u.email) <> $1) AS contas
+             FROM d ORDER BY d.dia`, [ADMIN_EMAIL]),
+      query(`SELECT origem, SUM(unicos)::int AS visitantes FROM site_visitas
+              WHERE pagina = 'landing' AND dia > (NOW() AT TIME ZONE 'America/Sao_Paulo')::date - 30
+              GROUP BY origem ORDER BY visitantes DESC LIMIT 10`),
     ]);
     return ok(res, {
       numeros: num.rows[0], usuarios: usuarios.rows, feedbacks: feedbacks.rows,
       pulsos: pulsos.rows, sugestoes: sugestoes.rows, pix: pix.rows,
       indicacoes: indic.rows, mesesPendentes: pendentes.rows,
+      site: { dias: siteDias.rows, origens: siteOrig.rows },
     });
   }
 
