@@ -11,6 +11,8 @@ function ipDe(req) {
   return String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
 }
 
+let cacheVagas = null;
+
 async function handle(req, res) {
   const path = new URL(req.url, 'http://x').pathname;
 
@@ -23,6 +25,14 @@ async function handle(req, res) {
       await query('INSERT INTO ref_visitas (codigo) VALUES ($1)', [r.codigo]);
     }
     return ok(res, { valido: true, bonusDias: IND.BONUS_INDICADO_DIAS });
+  }
+
+  // GET /api/vagas — vagas de fundador que ainda restam (público, para o site)
+  if (req.method === 'GET' && path === '/api/vagas') {
+    const B = require('../lib/billing');
+    const agora = Date.now();
+    if (!cacheVagas || agora - cacheVagas.em > 60_000) cacheVagas = { em: agora, restam: await B.vagasFundadorRestantes() };
+    return ok(res, { restam: cacheVagas.restam, total: B.VAGAS_FUNDADOR });
   }
 
   if (!path.startsWith('/api/indicacao')) return null;

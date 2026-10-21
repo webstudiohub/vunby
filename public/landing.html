@@ -218,7 +218,7 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
 <section class="hero">
   <div class="wrap">
     <div class="hero-tx">
-      <div class="selo"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg> Oferta de fundador: só para os 100 primeiros</div>
+      <div class="selo"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg> <span id="selo-vagas">Oferta de fundador: só para os 100 primeiros</span></div>
       <h1>Seu orçamento bonito no WhatsApp. <em>E você sabe quando o cliente abriu.</em></h1>
       <p class="lead">Monte orçamentos profissionais em minutos, envie pelo WhatsApp e acompanhe cada cliente até fechar. Feito para quem presta serviço.</p>
       <div class="ctas">
@@ -425,6 +425,13 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
 
 <div class="barra" id="barra"><a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a></div>
 <script src="/ref.js?v=1"></script>
+<script>
+// Vagas de fundador de verdade (número do sistema)
+fetch('/api/vagas').then(function (r) { return r.json(); }).then(function (d) {
+  var el = document.getElementById('selo-vagas'); if (!el || typeof d.restam !== 'number') return;
+  el.textContent = d.restam > 0 ? 'Oferta de fundador: restam ' + d.restam + ' de ' + d.total + ' vagas' : 'Vagas de fundador esgotadas';
+}).catch(function () {});
+</script>
 <script>
 // Veio por convite: mostra os 21 dias grátis nos botões
 if (window.VunbyRef && VunbyRef.codigo()) {
