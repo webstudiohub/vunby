@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin.html
+Disallow: /orcamento.html
+Disallow: /dashboard.html
+Disallow: /conta.html
+
+Sitemap: https://vunby.com.br/sitemap.xml

@@ -29,6 +29,11 @@ const MIME = {
   '.webmanifest': 'application/manifest+json',
   '.svg':  'image/svg+xml',
   '.woff2': 'font/woff2',
+  '.txt':   'text/plain; charset=utf-8',
+  '.xml':   'application/xml; charset=utf-8',
+  '.mp4':   'video/mp4',
+  '.jpg':   'image/jpeg',
+  '.webp':  'image/webp',
 };
 
 const PUBLIC_DIR = path.join(__dirname, 'public');
