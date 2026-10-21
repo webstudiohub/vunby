@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="robots" content="noindex"/>
+<title>VUNBY — Administrador</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png"/>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#0F3A8C"/>
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png"/>
+<link rel="stylesheet" href="style.css"/>
+</head><body>
+<div id="top"></div>
+<div class="container" style="margin-bottom:calc(var(--nav-h) + var(--sp-5))">
+  <div class="page-header anim"><h1>Administrador</h1><p>Visão geral do VUNBY</p></div>
+  <div id="conteudo"><p class="muted">Carregando…</p></div>
+</div>
+<div id="nav"></div>
+<script src="ui.js"></script>
+<script src="app.js"></script>
+<script>
+let D = null, aba = 'usuarios';
+const dinheiro = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const dt = x => x ? new Date(x).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—';
+const dth = x => x ? new Date(x).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+
+function situacao(u) {
+  const agora = Date.now();
+  const acesso = u.acesso_ate ? new Date(u.acesso_ate).getTime() : 0;
+  const trial = u.trial_ate ? new Date(u.trial_ate).getTime() : 0;
+  if (u.assinatura_status === 'cortesia') return ['Cortesia', 'ok', 'sem prazo'];
+  if (u.assinatura_status === 'ativa') return ['Cartão', 'ok', 'renova ' + dt(u.acesso_ate)];
+  if (u.assinatura_status === 'pix') return acesso > agora ? ['Pix', 'ok', 'até ' + dt(u.acesso_ate)] : ['Pix vencido', 'ruim', dt(u.acesso_ate)];
+  if (acesso > agora) return ['Liberado', 'ok', 'até ' + dt(u.acesso_ate)];
+  if (trial > agora) return ['Teste', 'alerta', 'até ' + dt(u.trial_ate)];
+  return ['Sem acesso', 'ruim', 'venceu ' + dt(acesso || trial)];
+}
+function notaTag(n) { return `<span class="adm-tag ${n >= 9 ? 'adm-tag-ok' : n >= 7 ? 'adm-tag-alerta' : 'adm-tag-ruim'}">${n}/10</span>`; }
+
+function numeros() {
+  const n = D.numeros;
+  const c = (rot, val, sub) => `<div class="stat-card"><div class="stat-label">${rot}</div><div class="stat-value">${val}</div>${sub ? `<small class="muted">${sub}</small>` : ''}</div>`;
+  return `<div class="adm-num">
+    ${c('Usuários', n.total, '+' + n.novos_7d + ' em 7 dias')}
+    ${c('Pagantes', n.cartao + n.pix, n.cartao + ' cartão · ' + n.pix + ' Pix')}
+    ${c('Em teste', n.em_teste, n.vencidos + ' sem acesso')}
+    ${c('Receita/mês', dinheiro(n.receita_mensal), n.vencendo ? n.vencendo + ' Pix vencendo' : '')}
+    ${c('Orçamentos', n.orcamentos, '+' + n.orcamentos_7d + ' em 7 dias')}
+    ${c('Notificações', n.aparelhos_push, 'aparelhos')}
+    ${c('Cortesias', n.cortesia, '')}
+  </div>`;
+}
+
+function listaUsuarios() {
+  return `<div class="adm-lista">` + D.usuarios.map(u => {
+    const [rot, cor, det] = situacao(u);
+    return `<div class="adm-item">
+      <div class="adm-item-topo"><div><strong>${esc(u.nome)}</strong>${u.fundador ? ' ⭐' : ''}<small>${esc(u.email)}</small>${u.nome_empresa ? `<small>${esc(u.nome_empresa)}</small>` : ''}</div>
+      <span class="adm-tag adm-tag-${cor}">${rot}</span></div>
+      <small style="margin-top:6px">${det} · ${u.orcamentos} orçamento(s) · cadastro ${dt(u.created_at)}${u.preco ? ' · ' + dinheiro(u.preco) : ''}</small>
+      <div class="adm-acoes">
+        <button class="btn-outline btn-sm" onclick="darDias(${u.id},7)">+7 dias</button>
+        <button class="btn-outline btn-sm" onclick="darDias(${u.id},30)">+30 dias</button>
+        ${u.assinatura_status === 'cortesia'
+          ? `<button class="btn-outline btn-sm" onclick="cortesia(${u.id},false)">Tirar cortesia</button>`
+          : u.assinatura_status !== 'ativa' ? `<button class="btn-outline btn-sm" onclick="cortesia(${u.id},true)">Dar cortesia</button>` : ''}
+      </div></div>`;
+  }).join('') + `</div>`;
+}
+
+function listaOpinioes() {
+  const f = D.feedbacks.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.created_at)}</small></div>${notaTag(x.nota)}</div>
+    ${[['Experiência', x.experiencia], ['Está gostando', x.gostando], ['Melhorar', x.melhorar], ['Não gostou', x.nao_gostou], ['Falta', x.falta], ['Preço', x.comentario_preco]].filter(p => p[1]).map(p => `<p style="margin-top:6px"><small>${p[0]}</small>${esc(p[1])}</p>`).join('')}
+    <p style="margin-top:6px"><small>Pagaria R$ 49,90?</small><strong>${esc(x.pagaria_4990)}</strong></p></div>`).join('');
+  const p = D.pulsos.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.created_at)}</small></div>${notaTag(x.nota)}</div>${x.comentario ? `<p style="margin-top:6px">${esc(x.comentario)}</p>` : ''}</div>`).join('');
+  return `<h3 style="margin-bottom:8px">Pesquisa completa (dia 20)</h3><div class="adm-lista">${f || '<p class="muted">Nenhuma ainda.</p>'}</div>
+    <h3 style="margin:18px 0 8px">Nota rápida (a cada 90 dias)</h3><div class="adm-lista">${p || '<p class="muted">Nenhuma ainda.</p>'}</div>`;
+}
+
+function listaSugestoes() {
+  return `<div class="adm-lista">` + (D.sugestoes.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.created_at)}</small></div><span class="adm-tag">${esc(x.tipo)}</span></div><p style="margin-top:6px;white-space:pre-wrap">${esc(x.mensagem)}</p></div>`).join('') || '<p class="muted">Nenhuma ainda.</p>') + `</div>`;
+}
+
+function listaPix() {
+  return `<div class="adm-lista">` + (D.pix.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.criado_em)}</small></div><span class="adm-tag ${x.status === 'approved' ? 'adm-tag-ok' : ''}">${dinheiro(x.valor)} · ${x.status === 'approved' ? 'pago' : esc(x.status)}</span></div></div>`).join('') || '<p class="muted">Nenhum Pix ainda.</p>') + `</div>`;
+}
+
+function desenhar() {
+  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['pix', 'Pix']];
+  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, pix: listaPix }[aba]();
+  document.getElementById('conteudo').innerHTML = numeros() +
+    `<div class="adm-abas">${abas.map(([k, r]) => `<button class="${k === aba ? 'on' : ''}" onclick="aba='${k}';desenhar()">${r}</button>`).join('')}</div>` + corpo;
+}
+
+async function carregar() {
+  try { D = await api('/api/admin/resumo'); desenhar(); }
+  catch (e) { document.getElementById('conteudo').innerHTML = `<div class="card"><p>${esc(e.message || 'Acesso negado.')}</p></div>`; }
+}
+async function darDias(id, dias) {
+  if (!(await VUI.confirmar('Liberar +' + dias + ' dias de acesso para este usuário?', { titulo: 'Liberar acesso', sim: 'Liberar', nao: 'Cancelar' }))) return;
+  try { await api('/api/admin/acesso', { method: 'POST', body: { userId: id, dias } }); VUI.toast('Acesso liberado', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+async function cortesia(id, ativo) {
+  if (!(await VUI.confirmar(ativo ? 'Acesso grátis e sem prazo.' : 'O usuário volta ao estado sem assinatura.', { titulo: ativo ? 'Dar cortesia?' : 'Tirar cortesia?', sim: 'Confirmar', nao: 'Cancelar' }))) return;
+  try { await api('/api/admin/cortesia', { method: 'POST', body: { userId: id, ativo } }); VUI.toast('Feito', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+(async () => {
+  const s = await requireSession(); if (!s) return;
+  document.getElementById('top').innerHTML = topbar('');
+  document.getElementById('nav').innerHTML = bottomNav('');
+  wireLogout();
+  carregar();
+})();
+</script>
+</body></html>

@@ -80,9 +80,21 @@ function wireLogout() {
 const ICON_CONTA = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`;
 const ICON_PLANO = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>`;
 
+const ABAS_PRINCIPAIS = ['dashboard.html', 'radar.html', 'historico.html', 'tabela.html'];
+const ICON_VOLTAR = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>`;
+// Seta de voltar: volta à tela anterior do app; se a pessoa abriu direto nesta tela, vai para o Início
+function voltarTela() {
+  let veioDoApp = false;
+  try { veioDoApp = !!document.referrer && new URL(document.referrer).origin === location.origin && history.length > 1; } catch {}
+  if (veioDoApp) history.back(); else location.href = 'dashboard.html';
+}
 function topbar(active) {
+  const pagina = (location.pathname.split('/').pop() || '').replace(/^$/, 'dashboard.html');
+  const nome = pagina.indexOf('.') < 0 ? pagina + '.html' : pagina;
+  const interna = !ABAS_PRINCIPAIS.includes(nome);
+  const voltar = interna ? `<button type="button" class="topbar-voltar" aria-label="Voltar" onclick="voltarTela()">${ICON_VOLTAR}</button>` : '';
   return `<nav class="topbar">
-    <a class="topbar-logo" href="dashboard.html"><img src="/icons/logo-app.png" alt="VUNBY"/></a>
+    <span class="topbar-esq">${voltar}<a class="topbar-logo" href="dashboard.html"><img src="/icons/logo-app.png" alt="VUNBY"/></a></span>
     <span class="topbar-acoes">
     <a href="planos.html" class="topbar-icon${active==='planos.html'?' topbar-icon-active':''}" aria-label="Meu plano e pagamento">${ICON_PLANO}<span class="topbar-icon-txt">Plano</span></a>
     <a href="conta.html" class="topbar-icon${active==='conta.html'?' topbar-icon-active':''}" aria-label="Minha conta">${ICON_CONTA}<span class="topbar-icon-txt">Conta</span></a>

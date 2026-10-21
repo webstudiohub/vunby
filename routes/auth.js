@@ -204,7 +204,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/auth/me') {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
-    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, profissao: user.profissao || '', cidade: user.cidade || '', whatsapp: user.whatsapp || '', documento: user.documento || '', instagram: user.instagram || '', perfilCompleto: perfilCompleto(user), emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido });
+    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, profissao: user.profissao || '', cidade: user.cidade || '', whatsapp: user.whatsapp || '', documento: user.documento || '', instagram: user.instagram || '', perfilCompleto: perfilCompleto(user), emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido, admin: require('./admin').ehAdmin(user) });
   }
 
   // GET /api/auth/logo — logo do próprio usuário (para a tela de Conta)

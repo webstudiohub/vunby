@@ -69,6 +69,8 @@
     <div id="msg-senha" class="error"></div>
   </div>
 
+  <div id="admin-card"></div>
+
   <!-- Notificações -->
   <div class="card anim anim-2">
     <h3><i data-ic="sino"></i> Notificações</h3>
@@ -136,6 +138,7 @@ async function salvarMarca(){
 (async()=>{
   try{
     const u=await api('/api/auth/me');
+    if(u.admin) document.getElementById('admin-card').innerHTML='<a href="admin.html" class="card" style="display:flex;justify-content:space-between;align-items:center;text-decoration:none"><strong>Painel do administrador</strong><span>›</span></a>';
     document.getElementById('m-empresa').value=u.nomeEmpresa||'';
     document.getElementById('m-review').value=u.googleReviewLink||'';
     if(u.temLogo){ const l=await api('/api/auth/logo'); mostrarLogo(l.logo); }
