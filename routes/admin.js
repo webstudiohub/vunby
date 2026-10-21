@@ -21,7 +21,7 @@ async function handle(req, res) {
 
   // GET /api/admin/resumo — números, usuários, opiniões, sugestões e pagamentos
   if (req.method === 'GET' && path === '/api/admin/resumo') {
-    const [num, usuarios, feedbacks, pulsos, sugestoes, pix] = await Promise.all([
+    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes] = await Promise.all([
       query(`SELECT
           COUNT(*)::int AS total,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days')::int AS novos_7d,
@@ -48,10 +48,25 @@ async function handle(req, res) {
                FROM sugestoes s JOIN users u ON u.id = s.user_id ORDER BY s.created_at DESC LIMIT 50`),
       query(`SELECT x.id, x.valor::float AS valor, x.status, x.criado_em, x.aprovado_em, u.nome, u.email
                FROM pix_pagamentos x JOIN users u ON u.id = x.user_id ORDER BY x.criado_em DESC LIMIT 30`),
+      // Indicações por código: parceiros (ex.: mellos) e usuários que trouxeram alguém
+      query(`WITH cods AS (
+               SELECT codigo, nome AS dono, 'parceiro' AS tipo FROM parceiros
+               UNION ALL
+               SELECT ref_codigo, nome, 'usuario' FROM users
+                WHERE ref_codigo IS NOT NULL AND EXISTS (SELECT 1 FROM users x WHERE x.indicacao_codigo = users.ref_codigo)
+             )
+             SELECT c.codigo, c.dono, c.tipo,
+                    (SELECT COUNT(*)::int FROM ref_visitas v WHERE v.codigo = c.codigo) AS visitas,
+                    (SELECT COUNT(*)::int FROM users x WHERE x.indicacao_codigo = c.codigo) AS cadastros,
+                    (SELECT COUNT(*)::int FROM users x WHERE x.indicacao_codigo = c.codigo
+                       AND (x.assinatura_status = 'ativa' OR (x.assinatura_status = 'pix' AND x.acesso_ate > NOW()) OR x.indicacao_premiada)) AS pagantes
+               FROM cods c ORDER BY cadastros DESC, visitas DESC LIMIT 100`),
+      query(`SELECT id, nome, email, meses_gratis_pendentes AS meses FROM users WHERE meses_gratis_pendentes > 0 ORDER BY nome`),
     ]);
     return ok(res, {
       numeros: num.rows[0], usuarios: usuarios.rows, feedbacks: feedbacks.rows,
       pulsos: pulsos.rows, sugestoes: sugestoes.rows, pix: pix.rows,
+      indicacoes: indic.rows, mesesPendentes: pendentes.rows,
     });
   }
 
@@ -78,6 +93,27 @@ async function handle(req, res) {
       ? await query(`UPDATE users SET assinatura_status = 'cortesia', updated_at = NOW() WHERE id = $1 AND assinatura_status NOT IN ('ativa') RETURNING id`, [id])
       : await query(`UPDATE users SET assinatura_status = 'nenhuma', updated_at = NOW() WHERE id = $1 AND assinatura_status = 'cortesia' RETURNING id`, [id]);
     if (!r.rows[0]) return badRequest(res, 'Não foi possível alterar (cartão ativo ou usuário inexistente).');
+    return ok(res, { ok: true });
+  }
+
+  // POST /api/admin/parceiro { codigo, nome } — cria um link de parceiro (ex.: vunby.com.br/?ref=mellos)
+  if (req.method === 'POST' && path === '/api/admin/parceiro') {
+    let b; try { b = await readBody(req, 2_000); } catch { return badRequest(res); }
+    const codigo = String(b.codigo || '').trim().toLowerCase();
+    const nome = String(b.nome || '').trim().slice(0, 80);
+    if (!/^[a-z0-9-]{3,24}$/.test(codigo) || nome.length < 2) return badRequest(res, 'Use só letras minúsculas, números ou hífen (3 a 24) e um nome.');
+    const usado = await query('SELECT 1 FROM users WHERE ref_codigo = $1', [codigo]);
+    if (usado.rows.length) return badRequest(res, 'Esse código já é de um usuário.');
+    await query('INSERT INTO parceiros (codigo, nome) VALUES ($1,$2) ON CONFLICT (codigo) DO UPDATE SET nome = EXCLUDED.nome', [codigo, nome]);
+    return ok(res, { ok: true });
+  }
+
+  // POST /api/admin/mes-abatido { userId } — marca 1 mês grátis (cartão) como já descontado
+  if (req.method === 'POST' && path === '/api/admin/mes-abatido') {
+    let b; try { b = await readBody(req, 2_000); } catch { return badRequest(res); }
+    const id = Number(b.userId);
+    if (!Number.isInteger(id) || id <= 0) return badRequest(res, 'Dados inválidos.');
+    await query('UPDATE users SET meses_gratis_pendentes = GREATEST(meses_gratis_pendentes - 1, 0) WHERE id = $1', [id]);
     return ok(res, { ok: true });
   }
 

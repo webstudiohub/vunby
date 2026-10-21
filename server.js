@@ -16,6 +16,7 @@ const billingRoute = require('./routes/billing');
 const catalogRoute = require('./routes/catalog');
 const pushRoute = require('./routes/push');
 const adminRoute = require('./routes/admin');
+const indicacaoRoute = require('./routes/indicacao');
 const { sendEmail } = require('./lib/email');
 
 const MIME = {
@@ -114,6 +115,7 @@ const server = http.createServer(async (req, res) => {
         await billingRoute.handle(req, res) ??
         await pushRoute.handle(req, res) ??
         await adminRoute.handle(req, res) ??
+        await indicacaoRoute.handle(req, res) ??
         await catalogRoute.handle(req, res) ??
         await pdfRoute.handle(req, res);
 

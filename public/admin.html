@@ -17,7 +17,7 @@
 </div>
 <div id="nav"></div>
 <script src="ui.js?v=33"></script>
-<script src="app.js?v=33"></script>
+<script src="app.js?v=35"></script>
 <script>
 let D = null, aba = 'usuarios';
 const dinheiro = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -85,9 +85,33 @@ function listaPix() {
   return `<div class="adm-lista">` + (D.pix.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.criado_em)}</small></div><span class="adm-tag ${x.status === 'approved' ? 'adm-tag-ok' : ''}">${dinheiro(x.valor)} · ${x.status === 'approved' ? 'pago' : esc(x.status)}</span></div></div>`).join('') || '<p class="muted">Nenhum Pix ainda.</p>') + `</div>`;
 }
 
+function listaIndicacoes() {
+  const pend = (D.mesesPendentes || []).map(u => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(u.nome)}</strong><small>${esc(u.email)} · paga no cartão</small></div><span class="adm-tag adm-tag-alerta">${u.meses} mês(es) a abater</span></div>
+    <div class="adm-acoes"><button class="btn-outline btn-sm" onclick="mesAbatido(${u.id})">Já abati 1 mês</button></div></div>`).join('');
+  const linhas = (D.indicacoes || []).map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.dono)}</strong><small>vunby.com.br/?ref=${esc(x.codigo)} · ${x.tipo === 'parceiro' ? 'parceiro' : 'usuário'}</small></div>
+    <span class="adm-tag ${x.pagantes ? 'adm-tag-ok' : ''}">${x.pagantes} pagante(s)</span></div>
+    <small style="margin-top:6px">${x.visitas} visita(s) · ${x.cadastros} cadastro(s) · ${x.pagantes} assinaram</small></div>`).join('');
+  return (pend ? `<h3 style="margin-bottom:8px">Meses grátis para abater (cartão)</h3><div class="adm-lista" style="margin-bottom:18px">${pend}</div>` : '') +
+    `<h3 style="margin-bottom:8px">Links de indicação</h3><div class="adm-lista">${linhas || '<p class="muted">Nenhuma indicação ainda.</p>'}</div>
+    <div class="adm-item" style="margin-top:14px"><strong>Novo link de parceiro</strong>
+      <div style="display:grid;gap:8px;margin-top:8px">
+        <input id="p-nome" maxlength="80" placeholder="Nome (ex.: Mello's Transportes)"/>
+        <input id="p-cod" maxlength="24" placeholder="Código (ex.: mellos)" autocapitalize="off"/>
+        <button class="btn-primary btn-gold" onclick="criarParceiro()">Criar link</button>
+      </div></div>`;
+}
+async function criarParceiro() {
+  const nome = document.getElementById('p-nome').value, codigo = document.getElementById('p-cod').value;
+  try { await api('/api/admin/parceiro', { method: 'POST', body: { nome, codigo } }); VUI.toast('Link criado: vunby.com.br/?ref=' + codigo.trim().toLowerCase(), 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+async function mesAbatido(id) {
+  if (!(await VUI.confirmar('Confirma que já descontou 1 mês da assinatura deste usuário no Mercado Pago?', { titulo: 'Mês abatido', sim: 'Confirmar', nao: 'Cancelar' }))) return;
+  try { await api('/api/admin/mes-abatido', { method: 'POST', body: { userId: id } }); VUI.toast('Feito', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+
 function desenhar() {
-  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['pix', 'Pix']];
-  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, pix: listaPix }[aba]();
+  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['pix', 'Pix'], ['indicacoes', 'Indicações']];
+  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, pix: listaPix, indicacoes: listaIndicacoes }[aba]();
   document.getElementById('conteudo').innerHTML = numeros() +
     `<div class="adm-abas">${abas.map(([k, r]) => `<button class="${k === aba ? 'on' : ''}" onclick="aba='${k}';desenhar()">${r}</button>`).join('')}</div>` + corpo;
 }

@@ -423,6 +423,13 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
 </footer>
 
 <div class="barra" id="barra"><a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a></div>
+<script src="/ref.js?v=1"></script>
+<script>
+// Veio por convite: mostra os 21 dias grátis nos botões
+if (window.VunbyRef && VunbyRef.codigo()) {
+  document.querySelectorAll('a[href="/cadastro"]').forEach(function (a) { a.textContent = a.textContent.replace('14 dias', '21 dias'); });
+}
+</script>
 <script>
 (function(){
   var b=document.getElementById('barra'), h=document.querySelector('.hero');

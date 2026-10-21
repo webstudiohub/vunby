@@ -81,7 +81,7 @@ async function handle(req, res) {
     if (!(await rateLimit(`register:${ip}`, 5, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');
     let body;
     try { body = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
-    const { nome, email, senha, telefone } = body;
+    const { nome, email, senha, telefone, ref } = body;
 
     // Validação de nome: mínimo 2 palavras, só letras e espaços, sem números/símbolos
     const nomeClean = (nome || '').trim();
@@ -103,10 +103,17 @@ async function handle(req, res) {
     const trialUsed = await query('SELECT 1 FROM verified_trial_phones WHERE phone_hash = $1', [telHash]);
     const trialConcedido = trialUsed.rows.length === 0;
 
+    // Indicação (link com ?ref=): guarda quem indicou e dá dias a mais de teste
+    const IND = require('../lib/indicacao');
+    const indic = ref ? await IND.resolver(ref).catch(() => null) : null;
+    const diasTeste = 14 + (indic && trialConcedido ? IND.BONUS_INDICADO_DIAS : 0);
+
     const senhaHash = await hashPassword(senha);
     const result = await query(
-      'INSERT INTO users (nome, email, senha_hash, telefone, trial_concedido, telefone_verificado, trial_ate) VALUES ($1,$2,$3,$4,$5,$6, CASE WHEN $5 THEN NOW() + INTERVAL \'14 days\' ELSE NOW() END) RETURNING id',
-      [nomeClean, email.trim().toLowerCase(), senhaHash, telNorm, trialConcedido, false]
+      `INSERT INTO users (nome, email, senha_hash, telefone, trial_concedido, telefone_verificado, trial_ate, indicado_por, indicacao_codigo)
+       VALUES ($1,$2,$3,$4,$5,$6, CASE WHEN $5 THEN NOW() + make_interval(days => $7::int) ELSE NOW() END, $8, $9) RETURNING id`,
+      [nomeClean, email.trim().toLowerCase(), senhaHash, telNorm, trialConcedido, false, diasTeste,
+       indic && indic.userId ? indic.userId : null, indic ? indic.codigo : null]
     );
     const userId = result.rows[0].id;
     await sendNewEmailCode({ id: userId, email: email.trim().toLowerCase() });
