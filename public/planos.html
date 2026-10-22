@@ -89,6 +89,7 @@ function escolher(qual){
   }else{
     if(!ST.mpPublicKey){ area.innerHTML='<div class="pg-box"><p class="muted">O pagamento no cartão está sendo configurado. Por enquanto, use o Pix.</p></div>'; return; }
     area.innerHTML=`<div class="pg-box">
+      <p class="pg-aviso-credito" style="background:#EEF4FA;border-radius:10px;padding:10px 12px;font-size:var(--fs-sm);margin-bottom:10px"><strong>Só cartão de crédito.</strong> Cartão múltiplo (crédito e débito, como o Nubank) funciona normal: a cobrança vai no crédito. Só tem débito? Pague com <a href="#" onclick="escolher('pix');return false" style="color:var(--navy);font-weight:700">Pix</a>.</p>
       <p>${precoBR(ST.precoOferta)} cobrados todo mês no cartão.${ST.tipo==='trial'&&ST.diasTrial>1?' A primeira cobrança só acontece quando seu teste grátis acabar.':''} Cancele quando quiser, em 1 clique.</p>
       <div id="cartao-brick" style="margin-top:var(--sp-3)"><p class="muted">Carregando o formulário seguro…</p></div>
     </div>`;
@@ -163,7 +164,7 @@ async function abrirCartao(){
       customization:{
         paymentMethods:{ maxInstallments:1, types:{ excluded:['debit_card','prepaid_card'] } },
         visual:{ style:{ theme:'default', customVariables:{ baseColor:'#0F3A8C', borderRadiusMedium:'12px' } },
-                 texts:{ formSubmit:'Assinar '+precoBR(ST.precoOferta)+'/mês' } },
+                 texts:{ formTitle:'Cartão de crédito', formSubmit:'Assinar '+precoBR(ST.precoOferta)+'/mês' } },
       },
       callbacks:{
         onReady:()=>{},
