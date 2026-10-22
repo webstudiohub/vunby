@@ -123,9 +123,9 @@ async function gerarImagemOrcamento(d) {
 
     // ── Chamada para aprovar
     y += 16;
-    caixa(M, y, LW, 110, 24, '#E9F9EF');
-    f(30, 800); texto('Para aprovar, toque no link da mensagem', W / 2, y + 50, '#128C4B', 'center');
-    f(24, 500); texto('Você também pode escolher opções e pedir ajustes por lá', W / 2, y + 86, '#3F7D5A', 'center');
+    caixa(M, y, LW, 110, 24, '#EAF4EE');
+    f(30, 800); texto('Para aprovar, toque no link da mensagem', W / 2, y + 50, '#157A4A', 'center');
+    f(24, 500); texto('Você também pode escolher opções e pedir ajustes por lá', W / 2, y + 86, '#3D6B52', 'center');
     y += 140;
 
     // ── Rodapé
