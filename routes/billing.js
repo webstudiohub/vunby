@@ -168,6 +168,7 @@ async function handle(req, res) {
     }).catch(e => ({ status: 0, data: { message: e.message } }));
     if ((r.status !== 200 && r.status !== 201) || !r.data.id) {
       console.error('MP POST preapproval cartão', r.status, JSON.stringify(r.data).slice(0, 500));
+      dadosCliente(user.id).then(quem => avisarAdmin('Cartão recusado no VUNBY', [quem, 'Valor: R$ ' + valor, 'Resposta do Mercado Pago: ' + E.escHtml(String((r.data && r.data.message) || r.status)), 'Chame o cliente no WhatsApp e ofereça o Pix. Mande este e-mail para o JARVIS analisar.'])).catch(() => {});
       const m = String((r.data && r.data.message) || '');
       const erro = /same user/i.test(m) ? 'Este e-mail é o mesmo da conta que recebe os pagamentos. Use outra conta para assinar.'
         : /card|token|rejected|invalid/i.test(m) ? 'O cartão não foi aceito pelo banco. Confira os dados, tente outro cartão ou pague com Pix.'
