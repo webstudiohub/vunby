@@ -221,27 +221,50 @@ async function carregarIndique(){
   carregarIndique();
   try{
     const u=await api('/api/auth/me');
-    document.getElementById('perfil').innerHTML=`
-      <div style="display:grid;gap:var(--sp-3)">
-        <div class="perfil-row">
-          <span class="perfil-label">Nome</span>
-          <span class="perfil-val">${esc(u.nome)}</span>
-        </div>
-        <div class="perfil-row">
-          <span class="perfil-label">E-mail</span>
-          <span class="perfil-val">${esc(u.email)}</span>
-        </div>
-        <div class="perfil-row">
-          <span class="perfil-label">Telefone</span>
-          <span class="perfil-val">${esc(u.telefone||'—')}</span>
-        </div>
-      </div>`;
+    PERFIL=u; desenharPerfil();
   }catch(e){
     document.getElementById('perfil').innerHTML='<p class="muted">Erro ao carregar dados.</p>';
   }
   carregarAssinatura();
 })();
 
+
+let PERFIL=null;
+const telBR=t=>{const d=String(t||'').replace(/\D/g,'').replace(/^55/,'');return d.length>=10?`(${d.slice(0,2)}) ${d.slice(2,d.length-4)}-${d.slice(-4)}`:(t||'—');};
+function desenharPerfil(){
+  const u=PERFIL;
+  document.getElementById('perfil').innerHTML=`
+    <div style="display:grid;gap:var(--sp-3)">
+      <div class="perfil-row"><span class="perfil-label">Nome</span><span class="perfil-val">${esc(u.nome)}</span></div>
+      <div class="perfil-row"><span class="perfil-label">E-mail</span><span class="perfil-val">${esc(u.email)}</span></div>
+      <div class="perfil-row"><span class="perfil-label">Telefone</span><span class="perfil-val">${esc(telBR(u.telefone))}</span></div>
+    </div>
+    <button class="btn-outline btn-sm" style="margin-top:var(--sp-3);width:100%" onclick="editarPerfil()">Editar nome e telefone</button>`;
+}
+function editarPerfil(){
+  const u=PERFIL;
+  document.getElementById('perfil').innerHTML=`
+    <label style="margin-top:0">Seu nome</label>
+    <input id="p-nome" maxlength="80" value="${esc(u.nome)}"/>
+    <label>Telefone (WhatsApp)</label>
+    <input id="p-tel" inputmode="tel" maxlength="20" value="${esc(telBR(u.telefone))}" placeholder="(21) 99999-9999"/>
+    <label>E-mail</label>
+    <input value="${esc(u.email)}" disabled style="opacity:.6"/>
+    <p class="muted" style="font-size:var(--fs-sm);margin-top:4px">O e-mail é o seu login e não pode ser trocado aqui. Precisa trocar? Fale com o suporte.</p>
+    <div id="p-msg" class="error"></div>
+    <div style="display:flex;gap:10px;margin-top:var(--sp-4)">
+      <button class="btn-primary" id="p-salvar" onclick="salvarPerfil()">Salvar</button>
+      <button class="btn-outline" onclick="desenharPerfil()">Cancelar</button>
+    </div>`;
+}
+async function salvarPerfil(){
+  const msg=document.getElementById('p-msg'), btn=document.getElementById('p-salvar');
+  msg.textContent=''; btn.disabled=true;
+  try{
+    await api('/api/auth/profile',{method:'PUT',body:{nome:document.getElementById('p-nome').value,telefone:document.getElementById('p-tel').value}});
+    PERFIL=await api('/api/auth/me'); desenharPerfil(); VUI.toast('Dados salvos','ok');
+  }catch(e){ msg.textContent=e.message; btn.disabled=false; }
+}
 const precoBR=v=>'R$'+Number(v).toFixed(2).replace('.',',');
 async function carregarAssinatura(){
   const el=document.getElementById('assinatura');

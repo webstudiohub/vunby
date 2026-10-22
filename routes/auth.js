@@ -332,6 +332,21 @@ async function handle(req, res) {
       if (v && !/^[A-Za-z0-9._]{1,30}$/.test(v)) return badRequest(res, 'Instagram inválido. Use só o nome do perfil, ex.: @silvareformas.');
       updates.instagram = v || null;
     }
+    if (body.nome !== undefined) {
+      const n = String(body.nome || '').trim().replace(/\s+/g, ' ');
+      if (n.length < 2) return badRequest(res, 'Escreva seu nome.');
+      if (n.length > 80) return badRequest(res, 'Nome muito longo (máximo 80 caracteres).');
+      updates.nome = n;
+    }
+    if (body.telefone !== undefined) {
+      const n = normalizePhone(String(body.telefone || ''));
+      if (!n || !/^\+55\d{10,11}$/.test(n)) return badRequest(res, 'Telefone inválido. Use DDD + número, ex.: (21) 99999-9999.');
+      if (n !== user.telefone) {
+        const dup = await query('SELECT 1 FROM users WHERE telefone = $1 AND id <> $2', [n, user.id]);
+        if (dup.rows.length) return badRequest(res, 'Este telefone já está em outra conta.');
+        updates.telefone = n;
+      }
+    }
     if (Object.keys(updates).length === 0) return badRequest(res, 'Nada para atualizar.');
     const cols = Object.keys(updates).map((k, i) => `${k} = $${i + 2}`).join(', ');
     await query(`UPDATE users SET ${cols} WHERE id = $1`, [user.id, ...Object.values(updates)]);
