@@ -49,12 +49,24 @@ function avisoPlano(st) {
     const d = st.diasTrial;
     const vagas = Number(st.vagasFundador) || 0;
     if (vagas > 0 && st.precoFundador) {
-      const preco = Number(st.precoFundador).toFixed(2).replace('.', ',');
+      const f = v => Number(v).toFixed(2).replace('.', ',');
+      const padrao = Number(st.precoPadrao) || 49.9;
+      const economia = Math.round((padrao - Number(st.precoFundador)) * 12);
+      const fim = d <= 3;
+      const ocupadas = 100 - vagas;
       html += `<a href="planos.html" class="card aviso-plano aviso-plano-fundador">
-        <span class="aviso-fundador-tag">${ic('presente')} Teste grátis: ${d === 1 ? 'último dia' : 'faltam ' + d + ' dias'}</span>
-        <strong>Preço de fundador: R$ ${preco}/mês para sempre</strong>
-        <p>Restam <b>${vagas}</b> de 100 vagas. Assine agora e garanta esse preço — seus dias de teste grátis não se perdem.</p>
-        <span class="aviso-plano-link">Garantir minha vaga ›</span>
+        <span class="aviso-fundador-tag">${fim ? `⏳ Seu teste grátis acaba ${d === 1 ? 'hoje' : 'em ' + d + ' dias'}` : '★ Oferta de fundador'}</span>
+        <strong>${fim ? 'Não perca seu preço de fundador' : 'Trave seu preço para sempre'}</strong>
+        <div class="af-preco"><s>R$ ${f(padrao)}</s> <b>R$ ${f(st.precoFundador)}</b><small>/mês</small></div>
+        <ul class="af-lista">
+          <li>Preço travado para sempre</li>
+          <li>Economia de R$ ${economia} por ano</li>
+          <li>Seus dias grátis não se perdem</li>
+          <li>Cancele quando quiser</li>
+        </ul>
+        ${ocupadas >= 10 ? `<div class="af-barra"><i style="width:${ocupadas}%"></i></div>` : ''}
+        <span class="af-vagas">Só para os 100 primeiros — restam <b>${vagas}</b> vagas</span>
+        <span class="af-botao">Garantir meu preço de fundador</span>
       </a>`;
     } else {
       html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">

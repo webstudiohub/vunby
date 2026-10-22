@@ -854,3 +854,13 @@ html body .auth-body{flex:none;width:100%;max-width:440px;background:var(--gray)
 .aviso-plano-fundador b{color:#F5C451}
 .aviso-fundador-tag{font-size:var(--fs-sm,.85rem);opacity:.85;display:flex;align-items:center;gap:6px}
 .aviso-plano-fundador .aviso-plano-link{color:#F5C451;margin-top:2px}
+.af-preco{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.af-preco s{color:#AFC3E8;font-size:var(--fs-md)}
+.af-preco b{color:#fff!important;font-size:2rem;font-weight:800;line-height:1}
+.af-preco small{color:#DCE7FA;font-size:var(--fs-md)}
+.af-lista{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;color:#EAF0FB;font-size:var(--fs-md)}
+.af-lista li::before{content:"✓";color:#F5C451;font-weight:800;margin-right:8px}
+.af-barra{height:8px;background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;margin-top:6px}
+.af-barra i{display:block;height:100%;background:#F5C451;border-radius:99px}
+.af-vagas{font-size:var(--fs-sm,.85rem);color:#DCE7FA;margin-top:4px}
+.af-botao{display:block;text-align:center;background:#F5C451;color:#0B2A66;font-weight:800;border-radius:12px;padding:14px;margin-top:8px;font-size:var(--fs-md)}
