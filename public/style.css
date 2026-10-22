@@ -848,3 +848,9 @@ html body .auth-body{flex:none;width:100%;max-width:440px;background:var(--gray)
 .adm-abas{display:flex;gap:6px;overflow-x:auto;margin-bottom:var(--sp-4)}
 .adm-abas button{flex:0 0 auto;border:1px solid var(--gray2);background:var(--white);border-radius:999px;padding:8px 14px;font-weight:600;color:var(--dark)}
 .adm-abas button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.aviso-plano-fundador{background:linear-gradient(135deg,#0F3A8C,#1B57C4);color:#fff;border:none;gap:6px}
+.aviso-plano-fundador strong{font-size:var(--fs-lg,1.1rem);color:#fff}
+.aviso-plano-fundador p{color:#DCE7FA}
+.aviso-plano-fundador b{color:#F5C451}
+.aviso-fundador-tag{font-size:var(--fs-sm,.85rem);opacity:.85;display:flex;align-items:center;gap:6px}
+.aviso-plano-fundador .aviso-plano-link{color:#F5C451;margin-top:2px}
