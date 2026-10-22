@@ -1,11 +1,11 @@
 /* VUNBY Service Worker — versão atualizada a cada deploy */
-const CACHE = 'vunby-v41';
+const CACHE = 'vunby-v42';
 const STATIC = [
   '/', '/entrar', '/cadastro',
   '/style.css', '/ui.js', '/app.js', '/instalar.js', '/push.js',
   '/dashboard.html', '/radar.html', '/historico.html',
   '/pacotes.html', '/novo-orcamento.html',
-  '/conta.html', '/configurar-empresa.html', '/marca.js', '/pdf.js', '/calc.js', '/itens-editor.js', '/montar-tabela.js', '/kits.js', '/tabela.html', '/manifest.json', '/icons/icon-192.png',
+  '/conta.html', '/configurar-empresa.html', '/marca.js', '/pdf.js', '/imagem.js', '/calc.js', '/itens-editor.js', '/montar-tabela.js', '/kits.js', '/tabela.html', '/manifest.json', '/icons/icon-192.png',
 ];
 
 self.addEventListener('install', e => {

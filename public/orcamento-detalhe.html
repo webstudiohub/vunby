@@ -18,9 +18,10 @@ body.editando{padding-bottom:120px}
 <div id="top"></div>
 <div class="container" id="content"><div class="card" style="margin-top:16px"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div></div>
 <script src="ui.js?v=33"></script>
-<script src="app.js?v=41"></script>
+<script src="app.js?v=42"></script>
 <script src="marca.js?v=33"></script>
 <script src="pdf.js?v=33"></script>
+<script src="imagem.js?v=42"></script>
 <script src="calc.js?v=33"></script>
 <script src="itens-editor.js?v=33"></script>
 <script src="montar-tabela.js?v=33"></script>
@@ -98,7 +99,7 @@ async function toggleFollowUp(atual){
 }
 
 // PDF feito no próprio aparelho, com logo e dados da empresa (sem servidor)
-let qAtual=null, empresaCache=null;
+let qAtual=null, empresaCache=null, msgWaAtual='';
 // Itens para o PDF: aprovado → só o que o cliente escolheu (registro congelado); antes → todos, com opcionais marcados
 function dadosItensPdf(q){
   if(q.status==='Aprovado'&&q.aprovacao){
@@ -111,15 +112,37 @@ function dadosItensPdf(q){
   return {itens:q.itens,resumo,valor:resumo.total/100,taxaNome:q.taxa_nome,condicoes:q.condicoes,rotuloValor:'TOTAL'};
 }
 
+async function carregarEmpresa(){
+  if(empresaCache) return empresaCache;
+  const u=await api('/api/auth/me');
+  const logo=u.temLogo?(await api('/api/auth/logo').catch(()=>({}))).logo:null;
+  empresaCache={nome:u.nomeEmpresa||u.nome,profissao:u.profissao,cidade:u.cidade,whatsapp:u.whatsapp,documento:u.documento,instagram:u.instagram,logo};
+  return empresaCache;
+}
+
+// Imagem do orçamento com a logo da empresa → compartilhar no WhatsApp junto com o link
+async function enviarImagem(){
+  const btn=document.getElementById('btn-img'), msg=document.getElementById('img-msg');
+  msg.textContent=''; btn.disabled=true; const antes=btn.innerHTML; btn.textContent='Preparando a imagem…';
+  try{
+    await carregarEmpresa();
+    const q=qAtual;
+    const blob=await gerarImagemOrcamento({
+      empresa:empresaCache, servico:q.servico, clienteNome:q.cliente.nome, data:q.created_at, validade:q.validade,
+      valor:q.valor, pacotes:q.pacotes, ...(q.usa_itens?dadosItensPdf(q):{}),
+    });
+    const limpo=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 ]+/g,' ').trim().replace(/\s+/g,'-').slice(0,40);
+    const r=await compartilharImagem(blob,`Orcamento-${limpo(q.cliente.nome)||q.id}.png`,msgWaAtual);
+    if(r==='baixado') msg.textContent='A imagem foi salva no aparelho. Anexe ela na conversa do cliente no WhatsApp e mande o link junto.';
+  }catch(e){ msg.textContent='Não foi possível criar a imagem. '+(e.message||''); }
+  btn.disabled=false; btn.innerHTML=antes;
+}
+
 async function gerarPdf(){
   const btn=document.getElementById('btn-pdf'), msg=document.getElementById('pdf-msg');
   msg.textContent=''; btn.disabled=true; btn.textContent='Gerando PDF…';
   try{
-    if(!empresaCache){
-      const u=await api('/api/auth/me');
-      const logo=u.temLogo?(await api('/api/auth/logo').catch(()=>({}))).logo:null;
-      empresaCache={nome:u.nomeEmpresa||u.nome,profissao:u.profissao,cidade:u.cidade,whatsapp:u.whatsapp,documento:u.documento,instagram:u.instagram,logo};
-    }
+    await carregarEmpresa();
     const q=qAtual;
     const blob=await gerarPdfOrcamento({
       empresa:empresaCache, servico:q.servico, clienteNome:q.cliente.nome, clienteDocumento:q.cliente.documento, clienteEndereco:q.cliente.endereco, valor:q.valor, validade:q.validade,
@@ -184,10 +207,16 @@ async function renderPage(){
       <button class="btn-primary" onclick="abrirEdicao();document.getElementById('form-edicao').scrollIntoView({behavior:'smooth'})">Ajustar o orçamento</button>
       <p class="muted" style="font-size:var(--fs-sm);margin-top:8px">Ao salvar, o link do cliente mostra a versão nova e este aviso some.</p></div>`:'';
   const msgWa=`Olá! Segue seu orçamento para ${q.servico}:\n${q.publicUrl||(location.origin+'/orcamento.html?token='+encodeURIComponent(q.public_token))}`;
+  msgWaAtual=`Olá! Segue seu orçamento para ${q.servico}. Para ver os detalhes e aprovar, é só tocar no link:\n${q.publicUrl||(location.origin+'/orcamento.html?token='+encodeURIComponent(q.public_token))}`;
   const enviarCard=final?'':`<div class="card" id="card-enviar" style="border:2px solid #25D366">
       <h3 style="margin-bottom:6px">Enviar para ${esc(q.cliente.nome)}</h3>
-      <p class="muted" style="font-size:var(--fs-sm);margin-bottom:12px">O cliente recebe o link do orçamento e aprova por lá.</p>
-      ${botoesWhatsApp(q.cliente.telefone, msgWa)}
+      <p class="muted" style="font-size:var(--fs-sm);margin-bottom:12px">O cliente recebe a imagem do orçamento com a sua logo e o link para aprovar.</p>
+      <button type="button" id="btn-img" onclick="enviarImagem()" style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:60px;border:none;border-radius:14px;font-weight:800;font-size:17px;background:#25D366;color:#fff;cursor:pointer;font-family:inherit">${ic('whatsapp',24)} Enviar no WhatsApp</button>
+      <p class="muted" style="font-size:var(--fs-sm);margin:8px 2px 0">Toque, escolha o WhatsApp e depois a conversa de ${esc(q.cliente.nome)}.</p>
+      <p id="img-msg" style="font-size:var(--fs-sm);color:#B45309;margin:6px 2px 0"></p>
+      <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;color:var(--navy);padding:6px 0">Enviar só o link (direto na conversa)</summary>
+        <div style="margin-top:10px">${botoesWhatsApp(q.cliente.telefone, msgWa)}</div>
+      </details>
     </div>`;
   el.innerHTML=`${altCard}${enviarCard}
     <div class="card">
