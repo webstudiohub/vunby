@@ -170,7 +170,7 @@ async function handle(req, res) {
       console.error('MP POST preapproval cartão', r.status, JSON.stringify(r.data).slice(0, 500));
       const m = String((r.data && r.data.message) || '');
       const erro = /same user/i.test(m) ? 'Este e-mail é o mesmo da conta que recebe os pagamentos. Use outra conta para assinar.'
-        : /card|token|rejected|invalid/i.test(m) ? 'O cartão não foi aceito. Confira os dados ou use outro cartão.'
+        : /card|token|rejected|invalid/i.test(m) ? 'O cartão não foi aceito pelo banco. Confira os dados, tente outro cartão ou pague com Pix.'
         : 'Não foi possível concluir o pagamento agora. Tente novamente em instantes.';
       return json(res, 400, { error: erro });
     }
