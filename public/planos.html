@@ -34,7 +34,7 @@
 </div>
 <div id="nav"></div>
 <script src="ui.js?v=33"></script>
-<script src="app.js?v=39"></script>
+<script src="app.js?v=40"></script>
 <script>
 const precoBR=v=>'R$'+Number(v).toFixed(2).replace('.',',');
 
@@ -89,7 +89,7 @@ function escolher(qual){
   }else{
     if(!ST.mpPublicKey){ area.innerHTML='<div class="pg-box"><p class="muted">O pagamento no cartão está sendo configurado. Por enquanto, use o Pix.</p></div>'; return; }
     area.innerHTML=`<div class="pg-box">
-      <p>${precoBR(ST.precoOferta)} cobrados todo mês no cartão. Cancele quando quiser, em 1 clique.</p>
+      <p>${precoBR(ST.precoOferta)} cobrados todo mês no cartão.${ST.tipo==='trial'&&ST.diasTrial>1?' A primeira cobrança só acontece quando seu teste grátis acabar.':''} Cancele quando quiser, em 1 clique.</p>
       <div id="cartao-brick" style="margin-top:var(--sp-3)"><p class="muted">Carregando o formulário seguro…</p></div>
     </div>`;
     abrirCartao();

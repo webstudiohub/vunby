@@ -53,7 +53,7 @@ function avisoPlano(st) {
       html += `<a href="planos.html" class="card aviso-plano aviso-plano-fundador">
         <span class="aviso-fundador-tag">${ic('presente')} Teste grátis: ${d === 1 ? 'último dia' : 'faltam ' + d + ' dias'}</span>
         <strong>Preço de fundador: R$ ${preco}/mês para sempre</strong>
-        <p>Restam <b>${vagas}</b> de 100 vagas. Depois que as vagas acabarem, o preço volta ao normal.</p>
+        <p>Restam <b>${vagas}</b> de 100 vagas. Assine agora e garanta esse preço — seus dias de teste grátis não se perdem.</p>
         <span class="aviso-plano-link">Garantir minha vaga ›</span>
       </a>`;
     } else {

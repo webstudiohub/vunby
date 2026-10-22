@@ -129,7 +129,7 @@ async function handle(req, res) {
       payer_email: u.email,
       back_url: BASE_URL.replace(/\/$/, '') + '/planos.html?retorno=1',
       status: 'pending',
-      auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: valor, currency_id: 'BRL' },
+      auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: valor, currency_id: 'BRL', ...inicioCobranca(u) },
     }).catch(e => ({ status: 0, data: { message: e.message } }));
     if ((r.status !== 200 && r.status !== 201) || !r.data.init_point) {
       console.error('MP POST preapproval', r.status, JSON.stringify(r.data).slice(0, 500));
@@ -164,7 +164,7 @@ async function handle(req, res) {
       card_token_id: token,
       back_url: BASE_URL.replace(/\/$/, '') + '/planos.html',
       status: 'authorized',
-      auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: valor, currency_id: 'BRL' },
+      auto_recurring: { frequency: 1, frequency_type: 'months', transaction_amount: valor, currency_id: 'BRL', ...inicioCobranca(u) },
     }).catch(e => ({ status: 0, data: { message: e.message } }));
     if ((r.status !== 200 && r.status !== 201) || !r.data.id) {
       console.error('MP POST preapproval cartão', r.status, JSON.stringify(r.data).slice(0, 500));
@@ -398,6 +398,16 @@ async function rodarTarefas(sendEmail) {
       }),
     });
   }
+}
+
+// Quem ainda está no teste grátis só começa a pagar no cartão quando o teste acaba
+// (a conta de teste do cartão, TESTE_EMAIL, é cobrada na hora para dar para conferir).
+function inicioCobranca(u) {
+  const teste = String(process.env.TESTE_EMAIL || '').trim().toLowerCase();
+  if (teste && String(u.email || '').toLowerCase() === teste) return {};
+  const fim = u.trial_ate ? new Date(u.trial_ate) : null;
+  if (!fim || fim.getTime() - Date.now() < 86400000) return {};
+  return { start_date: fim.toISOString() };
 }
 
 module.exports = { handle, rodarTarefas };
