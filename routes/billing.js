@@ -309,6 +309,22 @@ async function handle(req, res) {
     return ok(res, { obrigado: true });
   }
 
+  // POST /api/feedback/saida — por que a pessoa saiu (cancelou, não assinou depois do teste, não renovou o Pix)
+  if (req.method === 'POST' && path === '/api/feedback/saida') {
+    if (!(await rateLimit('saida:' + user.id, 5, 60 * 60_000))) return json(res, 429, { error: 'Muitas tentativas. Tente mais tarde.' });
+    let b; try { b = await readBody(req, 10_000); } catch { return badRequest(res); }
+    const MOTIVOS = { caro: 'Achei caro', pouco_uso: 'Usei pouco / não tive tempo', dificil: 'Achei difícil de usar', faltou: 'Faltou algo que eu precisava', outro_app: 'Vou usar outro app', parei: 'Parei de trabalhar / mudei de área', problema: 'Tive problema técnico', outro: 'Outro motivo' };
+    if (!MOTIVOS[b.motivo]) return badRequest(res, 'Escolha um motivo.');
+    const tipo = ['cancelou', 'nao_assinou', 'nao_renovou'].includes(b.tipo) ? b.tipo : 'cancelou';
+    const comentario = texto(b.comentario, 2000);
+    const avisar = b.avisar !== false;
+    await query('INSERT INTO saidas (user_id, tipo, motivo, comentario, avisar_melhoria) VALUES ($1,$2,$3,$4,$5)', [user.id, tipo, b.motivo, comentario || null, avisar]);
+    const quem = await dadosCliente(user.id);
+    const rot = { cancelou: 'cancelou a assinatura', nao_assinou: 'não assinou depois do teste', nao_renovou: 'não renovou o Pix' }[tipo];
+    avisarAdmin(`Saída: cliente ${rot}`, [quem, '<strong>Motivo:</strong> ' + E.escHtml(MOTIVOS[b.motivo]), comentario ? '<strong>Comentário:</strong> ' + E.escHtml(comentario) : '', avisar ? 'Quer ser avisado quando melhorar.' : 'Não quer ser avisado.'].filter(Boolean));
+    return ok(res, { obrigado: true });
+  }
+
   // POST /api/feedback/adiar — "responder depois" (volta a aparecer em 3 dias)
   if (req.method === 'POST' && path === '/api/feedback/adiar') {
     await query(`UPDATE users SET feedback_adiado_ate = NOW() + INTERVAL '3 days' WHERE id = $1`, [user.id]);
@@ -342,7 +358,8 @@ async function rodarTarefas(sendEmail) {
         corpo: p('Seus <strong>14 dias de teste</strong> acabaram. Fique tranquilo: <strong>seus orçamentos continuam salvos</strong> e você pode vê-los quando quiser.') +
           p('Para continuar criando orçamentos, assine o VUNBY. Os <strong>100 primeiros assinantes</strong> pagam <strong>R$29,90/mês para sempre</strong> (preço normal R$49,90).') +
           botao(base + '/planos.html', 'Ver planos') +
-          p('<span style="color:#6B7280;font-size:14px">Sem fidelidade: cancele quando quiser, em 1 clique.</span>'),
+          p('<span style="color:#6B7280;font-size:14px">Sem fidelidade: cancele quando quiser, em 1 clique.</span>') +
+          p('<span style="color:#6B7280;font-size:14px">Não vai assinar agora? <a href="' + base + '/saida.html?tipo=nao_assinou" style="color:#0F3A8C">Conta pra gente o motivo em 30 segundos</a> — é assim que o VUNBY melhora.</span>'),
       }),
     });
   }

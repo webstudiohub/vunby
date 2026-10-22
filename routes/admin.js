@@ -21,7 +21,7 @@ async function handle(req, res) {
 
   // GET /api/admin/resumo — números, usuários, opiniões, sugestões e pagamentos
   if (req.method === 'GET' && path === '/api/admin/resumo') {
-    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes, siteDias, siteOrig] = await Promise.all([
+    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes, siteDias, siteOrig, saidas] = await Promise.all([
       query(`SELECT
           COUNT(*)::int AS total,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days')::int AS novos_7d,
@@ -72,10 +72,12 @@ async function handle(req, res) {
       query(`SELECT origem, SUM(unicos)::int AS visitantes FROM site_visitas
               WHERE pagina = 'landing' AND dia > (NOW() AT TIME ZONE 'America/Sao_Paulo')::date - 30
               GROUP BY origem ORDER BY visitantes DESC LIMIT 10`),
+      query(`SELECT x.id, x.tipo, x.motivo, x.comentario, x.avisar_melhoria, x.created_at, u.id AS user_id, u.nome, u.email, u.telefone
+               FROM saidas x JOIN users u ON u.id = x.user_id WHERE lower(u.email) <> $1 ORDER BY x.created_at DESC LIMIT 100`, [ADMIN_EMAIL]),
     ]);
     return ok(res, {
       numeros: num.rows[0], usuarios: usuarios.rows, feedbacks: feedbacks.rows,
-      pulsos: pulsos.rows, sugestoes: sugestoes.rows, pix: pix.rows,
+      pulsos: pulsos.rows, sugestoes: sugestoes.rows, pix: pix.rows, saidas: saidas.rows,
       indicacoes: indic.rows, mesesPendentes: pendentes.rows,
       site: { dias: siteDias.rows, origens: siteOrig.rows },
     });
@@ -130,7 +132,7 @@ async function handle(req, res) {
 
   // POST /api/admin/limpar-teste — apaga os dados de teste da conta do administrador e zera o contador de visitas
   if (req.method === 'POST' && path === '/api/admin/limpar-teste') {
-    for (const t of ['quotes', 'clients', 'feedbacks', 'pulso', 'sugestoes', 'pix_pagamentos']) {
+    for (const t of ['quotes', 'clients', 'feedbacks', 'pulso', 'sugestoes', 'saidas', 'pix_pagamentos']) {
       await query(`DELETE FROM ${t} WHERE user_id = $1`, [user.id]);
     }
     await query(`UPDATE users SET nome_empresa = NULL, profissao = NULL, cidade = NULL, fundador = false,

@@ -39,6 +39,7 @@ function avisoPlano(st) {
       <strong>${st.status === 'pix' ? 'Seu mês pago terminou.' : 'Seu teste grátis terminou.'}</strong>
       <p>Seus orçamentos continuam salvos aqui. Para criar novos, assine o VUNBY.</p>
       <a href="planos.html"><button class="btn-primary btn-gold">Ver planos</button></a>
+      <a href="saida.html?tipo=${st.status === 'pix' ? 'nao_renovou' : 'nao_assinou'}" style="font-size:var(--fs-sm);color:var(--muted);text-align:center;margin-top:4px">Não vai continuar? Conta pra gente o motivo</a>
     </div>`;
   } else if (st.tipo === 'pix' && st.acessoAte && new Date(st.acessoAte) - Date.now() < 3 * 86400000) {
     html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">

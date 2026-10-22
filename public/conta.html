@@ -120,7 +120,7 @@
 <script src="ui.js?v=33"></script>
 <script src="instalar.js?v=36"></script>
 <script src="push.js?v=33"></script>
-<script src="app.js?v=43"></script>
+<script src="app.js?v=44"></script>
 <script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));
 if(window.VunbyPush) VunbyPush.itemConta(document.getElementById('push-conta'));</script>
 <script>
@@ -260,7 +260,7 @@ async function carregarAssinatura(){
 async function cancelarAssinatura(){
   if(!(await VUI.confirmar('Você continua com acesso até o fim do mês já pago. Seus orçamentos continuam salvos.',{titulo:'Cancelar a assinatura?',sim:'Cancelar assinatura',nao:'Continuar assinando',perigo:true})))return;
   const msg=document.getElementById('msg-assinatura'); msg.textContent='';
-  try{ await api('/api/billing/cancel',{method:'POST'}); carregarAssinatura(); }
+  try{ await api('/api/billing/cancel',{method:'POST'}); location.href='saida.html?tipo=cancelou'; }
   catch(e){ msg.textContent=e.message; }
 }
 </script>

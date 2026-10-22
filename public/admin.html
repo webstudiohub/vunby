@@ -17,7 +17,7 @@
 </div>
 <div id="nav"></div>
 <script src="ui.js?v=33"></script>
-<script src="app.js?v=43"></script>
+<script src="app.js?v=44"></script>
 <script>
 let D = null, aba = 'usuarios';
 const dinheiro = n => 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -84,6 +84,19 @@ function listaSugestoes() {
   return `<div class="adm-lista">` + (D.sugestoes.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.created_at)}</small></div><span class="adm-tag">${esc(x.tipo)}</span></div><p style="margin-top:6px;white-space:pre-wrap">${esc(x.mensagem)}</p></div>`).join('') || '<p class="muted">Nenhuma ainda.</p>') + `</div>`;
 }
 
+function listaSaidas() {
+  const MOT = { caro: 'Achei caro', pouco_uso: 'Usei pouco', dificil: 'Difícil de usar', faltou: 'Faltou algo', outro_app: 'Outro app', parei: 'Parou de trabalhar', problema: 'Problema técnico', outro: 'Outro' };
+  const TIPO = { cancelou: 'cancelou', nao_assinou: 'não assinou', nao_renovou: 'não renovou' };
+  const cont = {}; D.saidas.forEach(x => cont[x.motivo] = (cont[x.motivo] || 0) + 1);
+  const resumo = Object.entries(cont).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<span class="adm-tag" style="margin:0 6px 6px 0;display:inline-block">${esc(MOT[m] || m)}: ${n}</span>`).join('');
+  const itens = D.saidas.map(x => {
+    const tel = String(x.telefone || '').replace(/\D/g, '');
+    const wa = tel ? `<a href="https://wa.me/${tel.length <= 11 ? '55' + tel : tel}" target="_blank" rel="noopener" style="font-weight:700;color:var(--navy)">Chamar no WhatsApp</a>` : '';
+    return `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.created_at)} · ${TIPO[x.tipo] || esc(x.tipo)}</small></div><span class="adm-tag">${esc(MOT[x.motivo] || x.motivo)}</span></div>${x.comentario ? `<p style="margin-top:6px;white-space:pre-wrap">${esc(x.comentario)}</p>` : ''}<small style="margin-top:6px;display:block">${x.avisar_melhoria ? 'Quer ser avisado quando melhorar' : 'Não quer aviso'} ${wa ? '· ' + wa : ''}</small></div>`;
+  }).join('');
+  return `<div class="adm-lista">${resumo ? `<div class="adm-item"><strong>Motivos mais comuns</strong><div style="margin-top:8px">${resumo}</div></div>` : ''}${itens || '<p class="muted">Ninguém saiu ainda.</p>'}</div>`;
+}
+
 function listaPix() {
   return `<div class="adm-lista">` + (D.pix.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.criado_em)}</small></div><span class="adm-tag ${x.status === 'approved' ? 'adm-tag-ok' : ''}">${dinheiro(x.valor)} · ${x.status === 'approved' ? 'pago' : esc(x.status)}</span></div></div>`).join('') || '<p class="muted">Nenhum Pix ainda.</p>') + `</div>`;
 }
@@ -139,8 +152,8 @@ function listaSite() {
 }
 
 function desenhar() {
-  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['pix', 'Pix'], ['indicacoes', 'Indicações'], ['site', 'Site']];
-  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, pix: listaPix, indicacoes: listaIndicacoes, site: listaSite }[aba]();
+  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['saidas', 'Saídas'], ['pix', 'Pix'], ['indicacoes', 'Indicações'], ['site', 'Site']];
+  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, saidas: listaSaidas, pix: listaPix, indicacoes: listaIndicacoes, site: listaSite }[aba]();
   document.getElementById('conteudo').innerHTML = numeros() +
     `<div class="adm-abas">${abas.map(([k, r]) => `<button class="${k === aba ? 'on' : ''}" onclick="aba='${k}';desenhar()">${r}</button>`).join('')}</div>` + corpo;
 }
