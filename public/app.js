@@ -57,7 +57,7 @@ function avisoPlano(st) {
       const ocupadas = 100 - vagas;
       html += `<a href="planos.html" class="card aviso-plano aviso-plano-fundador">
         <span class="aviso-fundador-tag">${fim ? `⏳ Seu teste grátis acaba ${d === 1 ? 'hoje' : 'em ' + d + ' dias'}` : '★ Oferta de fundador'}</span>
-        <strong>${fim ? 'Não perca seu preço de fundador' : 'Trave seu preço para sempre'}</strong>
+        <strong>${vagas <= 10 ? (vagas === 1 ? 'Última vaga de fundador!' : 'Últimas ' + vagas + ' vagas de fundador!') : fim ? 'Não perca seu preço de fundador' : 'Trave seu preço para sempre'}</strong>
         <div class="af-preco"><s>R$ ${f(padrao)}</s> <b>R$ ${f(st.precoFundador)}</b><small>/mês</small></div>
         <ul class="af-lista">
           <li>Preço travado para sempre</li>

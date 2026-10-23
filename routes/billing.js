@@ -365,6 +365,35 @@ async function rodarTarefas(sendEmail) {
     });
   }
 
+  // 1a) Últimas vagas de fundador (10 ou menos, número real): avisa uma vez quem está no teste e ainda não assinou
+  const vagasF = await B.vagasFundadorRestantes();
+  if (vagasF > 0 && vagasF <= 10) {
+    const tr = await query(
+      `SELECT id, email, nome FROM users
+       WHERE email_verificado = true AND aviso_ultimas_vagas_em IS NULL
+         AND trial_ate > NOW() AND assinatura_status IN ('nenhuma','pendente')
+       LIMIT 100`
+    );
+    for (const u of tr.rows) {
+      await query('UPDATE users SET aviso_ultimas_vagas_em = NOW() WHERE id = $1', [u.id]);
+      const nome = escHtml(String(u.nome || '').split(' ')[0]);
+      const txtV = vagasF === 1 ? 'Resta só 1 vaga' : `Restam só ${vagasF} vagas`;
+      await sendEmail({
+        to: u.email,
+        subject: `${txtV} de fundador no VUNBY`,
+        html: layout({
+          preheader: 'Depois delas, o preço passa a ser R$49,90/mês.',
+          titulo: `${nome}, ${txtV.toLowerCase()} de fundador`,
+          corpo: p(`Você está testando o VUNBY e ainda pode garantir o <strong>preço de fundador: R$29,90/mês para sempre</strong>.`) +
+            p(`${txtV} das 100. Quando acabarem, o preço passa a ser <strong>R$49,90/mês</strong>, sem volta.`) +
+            p('Seus dias de teste grátis não se perdem: se assinar agora, eles continuam valendo.') +
+            botao(base + '/planos.html', 'Garantir meu preço de fundador'),
+        }),
+      });
+      PUSH.notificarSilencioso(u.id, { titulo: `${txtV} de fundador`, texto: 'Garanta R$29,90/mês para sempre antes que acabem.', url: '/planos.html', tag: 'ultimas-vagas' });
+    }
+  }
+
   // 1b) Pix vence em até 3 dias: lembrete para pagar o próximo mês (um por período)
   const pv = await query(
     `SELECT id, email, nome, acesso_ate FROM users
