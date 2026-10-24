@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=52"/>
+<link rel="stylesheet" href="style.css?v=53"/>
 <style>
 .tb-grupo{font-size:var(--fs-lg);font-weight:700;color:var(--dark);margin:var(--sp-6) 0 var(--sp-2)}
 .tb-item{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;background:var(--white);border:1.5px solid var(--gray2);border-radius:12px;padding:14px 16px;margin-bottom:8px;font:inherit;text-align:left;cursor:pointer;color:inherit;min-height:56px}
@@ -40,14 +40,33 @@
   <div id="conteudo"><div class="card"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div></div>
 </div>
 <div id="nav"></div>
-<script src="ui.js?v=52"></script>
-<script src="app.js?v=52"></script>
+<script src="ui.js?v=53"></script>
+<script src="app.js?v=53"></script>
 <script src="calc.js?v=33"></script>
 <script src="kits.js?v=36"></script>
 <script>
 const $=id=>document.getElementById(id);
 let itens=[], perfil=null, editando=null; // editando: id do item aberto, 'novo' ou null
 const reaisBR=c=>(Number(c||0)/100).toFixed(2).replace('.',',');
+
+
+let FOTO_V=Date.now();
+function reduzirImg(file,max){
+  return new Promise((ok,er)=>{ const img=new Image(); const u=URL.createObjectURL(file);
+    img.onload=()=>{ const lado=Math.min(img.width,img.height); const s=Math.min(1,max/lado); const c=document.createElement('canvas');
+      // recorte quadrado no centro: fica certinho na miniatura
+      c.width=c.height=Math.round(lado*s); c.getContext('2d').drawImage(img,(img.width-lado)/2,(img.height-lado)/2,lado,lado,0,0,c.width,c.height);
+      URL.revokeObjectURL(u); let q=.8, d=c.toDataURL('image/jpeg',q); while(d.length>280000&&q>.4){ q-=.1; d=c.toDataURL('image/jpeg',q); } ok(d); };
+    img.onerror=()=>er(new Error('Imagem inválida')); img.src=u; });
+}
+async function enviarFotoItem(id,inp){
+  const f=inp.files&&inp.files[0]; if(!f) return;
+  try{ const d=await reduzirImg(f,600); await api('/api/catalog/'+id+'/foto',{method:'PUT',body:{foto:d}}); FOTO_V=Date.now(); await carregar(); editando=id; render(); VUI.toast('Foto salva'); }
+  catch(e){ VUI.toast(e.message,'erro'); }
+}
+async function removerFotoItem(id){
+  try{ await api('/api/catalog/'+id+'/foto',{method:'PUT',body:{foto:null}}); FOTO_V=Date.now(); await carregar(); editando=id; render(); }catch(e){ VUI.toast(e.message,'erro'); }
+}
 
 function detalhe(i){
   if(i.capacidade_m3) return `Veículo · cabe ${VCalc.qtdBR(i.capacidade_m3)} m³`;
@@ -94,6 +113,15 @@ function formHtml(i){
         <div><label>Montar (R$)</label><input id="f-mont" inputmode="decimal" value="${i.preco_mont_cents?reaisBR(i.preco_mont_cents):''}" placeholder="0,00"/></div>
       </div>
     </div>
+    ${novo?'':`<label>Foto do item (opcional)</label>
+    <div class="tb-foto">
+      ${i.tem_foto?`<img src="/api/catalog/${i.id}/foto?v=${FOTO_V}" alt=""/>`:`<span class="tb-foto-vazia">${ic('foto',22)}</span>`}
+      <div class="tb-foto-acoes">
+        <label class="btn-outline btn-sm" style="margin:0;text-transform:none;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:40px">${i.tem_foto?'Trocar foto':'Adicionar foto'}<input type="file" accept="image/*" style="display:none" onchange="enviarFotoItem('${i.id}',this)"/></label>
+        ${i.tem_foto?`<button type="button" class="btn-outline btn-sm" onclick="removerFotoItem('${i.id}')">Remover</button>`:''}
+      </div>
+    </div>
+    <p class="muted" style="font-size:var(--fs-sm);margin-top:4px">Aparece pequena ao lado do item no orçamento do cliente. Item sem foto continua aparecendo normal.</p>`}
     <p class="error" id="f-msg" role="alert"></p>
     <div class="tb-acoes">
       ${novo?'':`<button type="button" class="tb-apagar" onclick="apagar('${i.id}')">Apagar</button>`}
@@ -128,7 +156,7 @@ function render(){
     <div id="area-novo"></div>
     ${Object.entries(grupos).map(([g,lista])=>`<h2 class="tb-grupo">${esc(g)}</h2>${lista.map(i=>editando===i.id?formHtml(i):`
       <button type="button" class="tb-item" onclick="abrir('${i.id}')">
-        <span><span class="tb-nome">${esc(i.nome)}</span>${detalhe(i)?`<span class="tb-det">${detalhe(i)}</span>`:''}</span>${precoHtml(i)}
+        ${i.tem_foto?`<img class="tb-thumb" src="/api/catalog/${i.id}/foto?v=${FOTO_V}" alt="" loading="lazy"/>`:''}<span style="flex:1;min-width:0"><span class="tb-nome">${esc(i.nome)}</span>${detalhe(i)?`<span class="tb-det">${detalhe(i)}</span>`:''}</span>${precoHtml(i)}
       </button>`).join('')}`).join('')}
     <details class="card" style="margin-top:var(--sp-6)"><summary style="font-weight:700;color:var(--navy);cursor:pointer;min-height:44px;display:flex;align-items:center">+ Juntar outro modelo de profissão</summary>
       <p class="muted" style="margin-top:8px">Para quem trabalha com mais de uma coisa. O que você já tem não é duplicado.</p>${kitsHtml(false)}</details>
@@ -182,4 +210,11 @@ async function carregar(){ itens=await api('/api/catalog'); render(); }
   await carregar();
 })();
 </script>
+<style>
+.tb-foto{display:flex;align-items:center;gap:12px;margin-top:6px}
+.tb-foto img,.tb-foto-vazia{width:72px;height:72px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid #E5E9F0}
+.tb-foto-vazia{display:grid;place-items:center;background:var(--gray);color:var(--muted)}
+.tb-foto-acoes{display:flex;flex-direction:column;gap:6px;flex:1}
+.tb-thumb{width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;border:1px solid #E5E9F0}
+</style>
 </body></html>

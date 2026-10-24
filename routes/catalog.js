@@ -14,6 +14,7 @@ function linha(r) {
     id: String(r.id), grupo: r.grupo, nome: r.nome, unidade: r.unidade, preco_cents: Number(r.preco_cents),
     m3: r.m3 == null ? null : Number(r.m3), capacidade_m3: r.capacidade_m3 == null ? null : Number(r.capacidade_m3),
     desmonta: !!r.desmonta, preco_desm_cents: Number(r.preco_desm_cents), preco_mont_cents: Number(r.preco_mont_cents),
+    tem_foto: !!(r.tem_foto || r.foto),
   };
 }
 
@@ -49,7 +50,7 @@ async function handle(req, res) {
   if (!user) return true;
 
   if (req.method === 'GET' && path === '/api/catalog') {
-    const r = await query('SELECT * FROM catalog_items WHERE user_id = $1 ORDER BY posicao, id', [user.id]);
+    const r = await query('SELECT id, grupo, nome, unidade, preco_cents, m3, capacidade_m3, desmonta, preco_desm_cents, preco_mont_cents, (foto IS NOT NULL) AS tem_foto FROM catalog_items WHERE user_id = $1 ORDER BY posicao, id', [user.id]);
     return ok(res, r.rows.map(linha));
   }
 
@@ -81,6 +82,24 @@ async function handle(req, res) {
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
       [user.id, d.grupo, d.nome, d.unidade, d.preco_cents, d.m3, d.capacidade_m3, d.desmonta, d.preco_desm_cents, d.preco_mont_cents, n]);
     return created(res, linha(r.rows[0]));
+  }
+
+  // GET/PUT /api/catalog/:id/foto — foto opcional do item (aparece em miniatura no orçamento do cliente)
+  const mf = path.match(/^\/api\/catalog\/(\d+)\/foto$/);
+  if (mf && (req.method === 'GET' || req.method === 'PUT')) {
+    const atual = (await query('SELECT id, foto FROM catalog_items WHERE id = $1 AND user_id = $2', [mf[1], user.id])).rows[0];
+    if (!atual) return notFound(res, 'Item não encontrado.');
+    if (req.method === 'GET') {
+      const mm = atual.foto && /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(atual.foto);
+      if (!mm) return notFound(res, 'Sem foto.');
+      const buf = Buffer.from(mm[2], 'base64');
+      res.writeHead(200, { 'Content-Type': mm[1], 'Content-Length': buf.length, 'Cache-Control': 'private, max-age=60' }); res.end(buf); return true;
+    }
+    let body; try { body = await readBody(req, 400_000); } catch { return badRequest(res, 'Foto muito grande.'); }
+    const f = body.foto;
+    if (f !== null && !(typeof f === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(f) && f.length <= 300_000)) return badRequest(res, 'Foto inválida. Use JPG ou PNG.');
+    await query('UPDATE catalog_items SET foto = $2 WHERE id = $1', [mf[1], f]);
+    return ok(res, { ok: true });
   }
 
   const m = path.match(/^\/api\/catalog\/(\d+)$/);

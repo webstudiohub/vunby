@@ -38,6 +38,22 @@ async function resumoAvaliacoes(userId) {
            depoimentos: d.rows.map(x => ({ nome: nomeCurto(x.nome_cliente), texto: x.comentario, nota: x.nota })) };
 }
 
+
+// Itens do orçamento + miniatura (só quando o item da tabela do prestador tem foto; 1 vez por item)
+const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/^(carregamento|desmontagem|montagem)\s*[—-]\s*/, '').replace(/\s+/g, ' ').trim();
+async function itensComFoto(quote, token) {
+  const itens = await I.lerItens(quote.id);
+  const cats = (await query('SELECT id, nome FROM catalog_items WHERE user_id = $1 AND foto IS NOT NULL', [quote.user_id])).rows;
+  const mapa = new Map(cats.map(c => [norm(c.nome), c.id]));
+  const usados = new Set();
+  return itens.map(({ id, descricao, qtd, unidade, preco_cents, tipo, escolhido }) => {
+    const cid = mapa.get(norm(descricao));
+    let foto = null;
+    if (cid && !usados.has(cid)) { usados.add(cid); foto = `/api/public/item-foto/${token}/${cid}`; }
+    return { id, descricao, qtd, unidade, preco_cents, tipo, escolhido, foto };
+  });
+}
+
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
@@ -54,6 +70,17 @@ async function handle(req, res) {
     const buf = Buffer.from(m[2], 'base64');
     res.writeHead(200, { 'Content-Type': m[1], 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=86400' });
     res.end(buf); return true;
+  }
+
+  // GET /api/public/item-foto/:token/:catId — foto do item da tabela do prestador dono do orçamento
+  const itfMatch = path.match(/^\/api\/public\/item-foto\/([A-Za-z0-9_-]+)\/(\d+)$/);
+  if (req.method === 'GET' && itfMatch) {
+    const r = await query('SELECT ci.foto FROM quotes q JOIN catalog_items ci ON ci.user_id = q.user_id WHERE q.public_token = $1 AND ci.id = $2', [itfMatch[1], itfMatch[2]]);
+    const f = r.rows[0] && r.rows[0].foto;
+    const mm = f && /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(f);
+    if (!mm) return notFound(res, 'Foto não encontrada.');
+    const buf = Buffer.from(mm[2], 'base64');
+    res.writeHead(200, { 'Content-Type': mm[1], 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=3600' }); res.end(buf); return true;
   }
 
   // GET /api/public/foto/:token/:i — foto de trabalho da empresa (vitrine)
@@ -144,7 +171,7 @@ async function handle(req, res) {
       },
       pacotes: pacs.rows,
       usaItens: !!quote.usa_itens,
-      itens: quote.usa_itens ? (await I.lerItens(quote.id)).map(({ id, descricao, qtd, unidade, preco_cents, tipo, escolhido }) => ({ id, descricao, qtd, unidade, preco_cents, tipo, escolhido })) : [],
+      itens: quote.usa_itens ? await itensComFoto(quote, token) : [],
       descontoCents: Number(quote.desconto_cents) || 0,
       taxaCents: Number(quote.taxa_cents) || 0,
       taxaNome: quote.taxa_nome || '',

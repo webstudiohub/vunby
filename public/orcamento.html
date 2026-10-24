@@ -4,7 +4,7 @@
 <title>Orçamento</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2"/>
 <meta name="robots" content="noindex,nofollow"/>
-<link rel="stylesheet" href="style.css?v=52"/>
+<link rel="stylesheet" href="style.css?v=53"/>
 <style>
 .alt-texto{width:100%;padding:12px;border:1.5px solid #CBD2DA;border-radius:10px;font-size:var(--fs-md);margin-bottom:12px;resize:vertical;font-family:inherit}
 .alt-sec{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
@@ -48,7 +48,7 @@ body:has(.it-barra){padding-bottom:96px}
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
 </div>
-<script src="ui.js?v=52"></script>
+<script src="ui.js?v=53"></script>
 <script src="marca.js?v=33"></script>
 <script src="calc.js?v=33"></script>
 <script>
@@ -109,8 +109,10 @@ function itensHtml(q,podeEscolher){
       ?`<input type="checkbox" class="it-check" ${on?'checked':''} onchange="marcarItem('${i.id}',this.checked)" aria-label="Incluir ${esc(i.descricao)}"/>`
       :`<span class="it-ok" aria-hidden="true">✓</span>`;
     const tag=opc?`<span class="it-tag ${i.tipo==='recomendado'?'it-tag-rec':''}">${i.tipo==='recomendado'?'Recomendado · pode tirar':'Opcional · '+(on?'incluído':'toque para adicionar')}</span>`:'';
+    const foto=i.foto||((q.itens||[]).find(x=>x.descricao===i.descricao&&x.foto)||{}).foto;
+    const mini=foto?`<button type="button" class="it-mini" onclick="event.preventDefault();event.stopPropagation();verFoto('${foto}')" aria-label="Ver foto de ${esc(i.descricao)}"><img src="${foto}" alt="" loading="lazy"/></button>`:'';
     return `<label class="it-linha${on?'':' it-off'}${opc&&podeEscolher?' it-opc':''}" data-id="${i.id||''}">
-      ${controle}
+      ${controle}${mini}
       <span class="it-txt"><span class="it-desc">${esc(i.descricao)}</span><span class="it-det">${det}</span>${tag}</span>
       <span class="it-val">${opc&&!on?'+ ':''}${R(VCalc.linhaCents(i))}</span>
     </label>`;
@@ -311,6 +313,8 @@ function verFoto(src){
 .vit-est{color:#E4A72A;font-size:15px;letter-spacing:1px;margin-bottom:4px}
 .vit-verif{color:#1F8A55;font-weight:700;font-size:12px;margin-left:6px}
 .vit-avaliar{display:block;text-align:center;padding:14px;border-radius:14px;background:#FFF6E0;color:#8A5A00;font-weight:800;text-decoration:none}
+.it-mini{flex-shrink:0;width:48px;height:48px;border-radius:10px;overflow:hidden;border:1px solid #E5E9F0;padding:0;background:#F4F6F9;cursor:zoom-in;align-self:flex-start}
+.it-mini img{width:100%;height:100%;object-fit:cover;display:block}
 .vit-zoom{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.9);display:grid;place-items:center;padding:16px}
 .vit-zoom img{max-width:100%;max-height:90vh;border-radius:12px}
 .vit-zoom button{position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;border:none;background:#fff;font-size:20px;cursor:pointer}
