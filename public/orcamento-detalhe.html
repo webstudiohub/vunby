@@ -17,7 +17,7 @@ body.editando{padding-bottom:120px}
 </head><body>
 <div id="top"></div>
 <div class="container" id="content"><div class="card" style="margin-top:16px"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div></div>
-<script src="ui.js?v=48"></script>
+<script src="ui.js?v=49"></script>
 <script src="app.js?v=47"></script>
 <script src="marca.js?v=33"></script>
 <script src="pdf.js?v=33"></script>
@@ -239,9 +239,10 @@ async function renderPage(){
         <div class="of-grade">
           <a class="of-btn" href="${smsLink(q.cliente.telefone, msgLink)}">${ic('conversa',20)}<span>SMS</span></a>
           <button type="button" class="of-btn" onclick="abrirEmail()">${ic('email',20)}<span>E-mail</span></button>
-          <button type="button" class="of-btn" onclick="enviarImagem()">${ic('compartilhar',20)}<span>Instagram e outros</span></button>
+          <button type="button" class="of-btn" onclick="enviarImagem()">${ic('instagram',20)}<span>Instagram</span></button>
           <button type="button" class="of-btn" onclick="copiarLink(this)">${ic('copiar',20)}<span>Copiar link</span></button>
           <button type="button" class="of-btn" onclick="gerarPdf()">${ic('documento',20)}<span>PDF / imprimir</span></button>
+          <button type="button" class="of-btn" onclick="enviarImagem()">${ic('compartilhar',20)}<span>Outros apps</span></button>
         </div>
         <div id="form-email" style="display:none;margin-top:12px">
           <label style="margin-top:0">E-mail do cliente</label>
