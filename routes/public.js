@@ -26,6 +26,18 @@ function isLikelyBot(req) {
   return BOT_UA.test(ua);
 }
 
+
+// Nota verificada: só clientes com orçamento aprovado avaliam (1 por orçamento)
+function nomeCurto(n) { const p = String(n || '').trim().split(/\s+/).filter(Boolean); return p.length ? p[0] + (p.length > 1 ? ' ' + p[p.length - 1][0] + '.' : '') : 'Cliente'; }
+async function resumoAvaliacoes(userId) {
+  const r = await query('SELECT COUNT(*)::int AS n, AVG(nota)::float AS media FROM avaliacoes WHERE user_id = $1', [userId]);
+  const d = await query(`SELECT nota, comentario, nome_cliente FROM avaliacoes WHERE user_id = $1 AND nota >= 4 AND comentario IS NOT NULL AND length(comentario) >= 8
+                         ORDER BY created_at DESC LIMIT 3`, [userId]);
+  const n = r.rows[0].n;
+  return { nota: n ? Math.round(r.rows[0].media * 10) / 10 : null, avaliacoes: n,
+           depoimentos: d.rows.map(x => ({ nome: nomeCurto(x.nome_cliente), texto: x.comentario, nota: x.nota })) };
+}
+
 async function handle(req, res) {
   const url = new URL(req.url, 'http://x');
   const path = url.pathname;
@@ -54,6 +66,35 @@ async function handle(req, res) {
     const buf = Buffer.from(m[2], 'base64');
     res.writeHead(200, { 'Content-Type': m[1], 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=3600' });
     res.end(buf); return true;
+  }
+
+  // GET/POST /api/public/avaliar/:token — o cliente avalia o serviço (só orçamento aprovado, 1 vez)
+  const avlMatch = path.match(/^\/api\/public\/avaliar\/([A-Za-z0-9_-]+)$/);
+  if (avlMatch && (req.method === 'GET' || req.method === 'POST')) {
+    const r = await query(`SELECT q.id, q.user_id, q.status, q.servico, c.nome AS cliente_nome, u.nome_empresa, u.nome AS prestador_nome, u.logo IS NOT NULL AS tem_logo
+                           FROM quotes q JOIN clients c ON c.id = q.client_id JOIN users u ON u.id = q.user_id WHERE q.public_token = $1`, [avlMatch[1]]);
+    const q = r.rows[0];
+    if (!q) return notFound(res, 'Orçamento não encontrado.');
+    const ja = await query('SELECT nota FROM avaliacoes WHERE quote_id = $1', [q.id]);
+    const empresa = q.nome_empresa || q.prestador_nome;
+    if (req.method === 'GET') {
+      return ok(res, { empresa, servico: q.servico, cliente: String(q.cliente_nome || '').split(' ')[0], podeAvaliar: q.status === STATUS.APROVADO, jaAvaliou: !!ja.rows[0],
+        logo: q.tem_logo ? `/api/public/logo/${avlMatch[1]}.png` : null });
+    }
+    if (q.status !== STATUS.APROVADO) return badRequest(res, 'Só dá para avaliar depois que o orçamento foi aprovado.');
+    if (ja.rows[0]) return badRequest(res, 'Este serviço já foi avaliado. Obrigado!');
+    if (await isOwner(req, q.user_id)) return forbidden(res, 'O próprio prestador não pode avaliar o próprio serviço.');
+    if (!(await rateLimit('avaliar:' + ip, 5, 60 * 60_000))) return json(res, 429, { error: 'Muitas tentativas. Tente mais tarde.' });
+    let b; try { b = await readBody(req, 5_000); } catch { return badRequest(res); }
+    const nota = parseInt(b.nota, 10);
+    if (!(nota >= 1 && nota <= 5)) return badRequest(res, 'Escolha de 1 a 5 estrelas.');
+    const com = String(b.comentario || '').trim().replace(/\s+/g, ' ').slice(0, 300) || null;
+    const ins = await query('INSERT INTO avaliacoes (quote_id, user_id, nota, comentario, nome_cliente, ip) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (quote_id) DO NOTHING RETURNING id',
+      [q.id, q.user_id, nota, com, q.cliente_nome, ip.slice(0, 64)]);
+    if (ins.rows[0]) {
+      try { push.notificarSilencioso(q.user_id, { titulo: `${'★'.repeat(nota)} Nova avaliação`, texto: `${String(q.cliente_nome || 'Cliente').split(' ')[0]} avaliou: ${q.servico}`, url: '/conta.html#vitrine', tag: 'avaliacao' }); } catch {}
+    }
+    return ok(res, { obrigado: true });
   }
 
   // GET /api/public/quote/:token — dados públicos do orçamento
@@ -97,8 +138,8 @@ async function handle(req, res) {
         whatsapp: (quote.whatsapp || '').replace(/\D/g, ''), documento: quote.documento || '', instagram: quote.instagram || '',
       },
       vitrine: {
-        nota: quote.google_nota != null ? Number(quote.google_nota) : null, avaliacoes: quote.google_avaliacoes,
-        diferenciais: quote.diferenciais || [], depoimentos: quote.depoimentos || [],
+        ...(await resumoAvaliacoes(quote.user_id)),
+        diferenciais: quote.diferenciais || [],
         fotos: Array.from({ length: Number(quote.n_fotos) || 0 }, (_, i) => `/api/public/foto/${token}/${i}`),
       },
       pacotes: pacs.rows,

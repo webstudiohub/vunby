@@ -5,7 +5,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/>
 <link rel="manifest" href="manifest.json"/><meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=51"/>
+<link rel="stylesheet" href="style.css?v=52"/>
 <style>
 /* Barra fixa de salvar enquanto edita: o botão fica sempre à vista */
 .ed-barra{position:fixed;left:0;right:0;bottom:0;z-index:300;background:#fff;border-top:1px solid var(--gray2);box-shadow:0 -4px 16px rgba(0,0,0,.1);padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
@@ -17,8 +17,8 @@ body.editando{padding-bottom:120px}
 </head><body>
 <div id="top"></div>
 <div class="container" id="content"><div class="card" style="margin-top:16px"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div></div>
-<script src="ui.js?v=51"></script>
-<script src="app.js?v=51"></script>
+<script src="ui.js?v=52"></script>
+<script src="app.js?v=52"></script>
 <script src="marca.js?v=33"></script>
 <script src="pdf.js?v=33"></script>
 <script src="imagem.js?v=43"></script>
@@ -310,11 +310,11 @@ async function renderPage(){
     </div>
 
     ${q.status==='Aprovado'?`<div class="card" style="border:1.5px solid #F5C000">
-      <h3>${ic('estrela',20)} Avaliação no Google</h3>
-      ${q.avaliacaoWhatsApp?`
-        <p class="muted" style="font-size:var(--fs-sm);margin-bottom:10px">${q.avaliacao_pedida_em?`Pedido enviado em ${new Date(q.avaliacao_pedida_em).toLocaleDateString('pt-BR')}.`:'Serviço aprovado! Peça a avaliação de 2 a 48 horas depois de terminar — é quando o cliente mais responde.'}</p>
-        <a href="${esc(q.avaliacaoWhatsApp)}" target="_blank" rel="noopener" onclick="pediuAvaliacao()"><button class="btn-primary btn-gold">${q.avaliacao_pedida_em?'Pedir de novo pelo WhatsApp':'Pedir avaliação pelo WhatsApp'}</button></a>`
-      :`<p class="muted" style="font-size:var(--fs-sm)">Cadastre o link de avaliação do seu Google Meu Negócio em <a href="conta.html">Minha Conta</a> para pedir a avaliação com 1 toque.</p>`}
+      <h3>${ic('estrela',20)} Avaliação do cliente</h3>
+      ${q.avaliacaoVunby?`<p style="font-size:var(--fs-md);margin:6px 0"><span style="color:#E4A72A;font-size:20px">${'★'.repeat(q.avaliacaoVunby.nota)}${'☆'.repeat(5-q.avaliacaoVunby.nota)}</span> ${esc(q.cliente.nome.split(' ')[0])} avaliou${q.avaliacaoVunby.comentario?`: “${esc(q.avaliacaoVunby.comentario)}”`:'.'}</p><p class="muted" style="font-size:var(--fs-sm)">Essa nota já aparece nos seus próximos orçamentos.</p>`
+      :`<p class="muted" style="font-size:var(--fs-sm);margin-bottom:10px">Peça de 2 a 48 horas depois de terminar o serviço. A nota fica no topo dos seus orçamentos como <strong>avaliação verificada</strong>.</p>
+        <a href="${esc(q.avaliacaoVunbyWhatsApp)}" target="_blank" rel="noopener"><button class="btn-primary btn-gold">Pedir avaliação pelo WhatsApp</button></a>`}
+      ${q.avaliacaoWhatsApp?`<a href="${esc(q.avaliacaoWhatsApp)}" target="_blank" rel="noopener" onclick="pediuAvaliacao()" style="display:block;text-align:center;margin-top:12px;font-weight:700;color:var(--navy)">${q.avaliacao_pedida_em?'Pedir de novo no Google':'Pedir também no Google'}</a>`:''}
     </div>`:''}
 
     ${pacotesHtml}

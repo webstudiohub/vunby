@@ -360,7 +360,10 @@ async function handle(req, res) {
     if (req.method === 'GET') {
       const r = await query('SELECT google_nota, google_avaliacoes, diferenciais, depoimentos, fotos_trabalhos FROM users WHERE id = $1', [user.id]);
       const v = r.rows[0] || {};
-      return ok(res, { googleNota: v.google_nota != null ? Number(v.google_nota) : null, googleAvaliacoes: v.google_avaliacoes, diferenciais: v.diferenciais || [], depoimentos: v.depoimentos || [], fotos: v.fotos_trabalhos || [] });
+      const av = await query('SELECT COUNT(*)::int AS n, AVG(nota)::float AS media FROM avaliacoes WHERE user_id = $1', [user.id]);
+      const ult = await query('SELECT nota, comentario, nome_cliente, created_at FROM avaliacoes WHERE user_id = $1 ORDER BY created_at DESC LIMIT 5', [user.id]);
+      return ok(res, { diferenciais: v.diferenciais || [], fotos: v.fotos_trabalhos || [],
+        avaliacoes: { total: av.rows[0].n, media: av.rows[0].n ? Math.round(av.rows[0].media * 10) / 10 : null, ultimas: ult.rows } });
     }
     let b; try { b = await readBody(req, 1_600_000); } catch { return badRequest(res, 'Fotos muito grandes. Use fotos menores.'); }
     const limpa = (t, m) => String(t || '').trim().replace(/\s+/g, ' ').slice(0, m);
@@ -371,8 +374,8 @@ async function handle(req, res) {
     const dif = (Array.isArray(b.diferenciais) ? b.diferenciais : []).map(t => limpa(t, 60)).filter(Boolean).slice(0, 3);
     const dep = (Array.isArray(b.depoimentos) ? b.depoimentos : []).map(d => ({ nome: limpa(d && d.nome, 40), texto: limpa(d && d.texto, 240) })).filter(d => d.texto).slice(0, 3);
     const fotos = (Array.isArray(b.fotos) ? b.fotos : []).filter(f => typeof f === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(f) && f.length <= 260_000).slice(0, 6);
-    await query('UPDATE users SET google_nota = $2, google_avaliacoes = $3, diferenciais = $4, depoimentos = $5, fotos_trabalhos = $6 WHERE id = $1',
-      [user.id, nota, qtd, JSON.stringify(dif), JSON.stringify(dep), JSON.stringify(fotos)]);
+    await query('UPDATE users SET diferenciais = $2, fotos_trabalhos = $3 WHERE id = $1',
+      [user.id, JSON.stringify(dif), JSON.stringify(fotos)]);
     return ok(res, { message: 'Vitrine salva.' });
   }
 

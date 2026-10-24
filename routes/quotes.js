@@ -146,9 +146,21 @@ async function handle(req, res) {
       avaliacaoWhatsApp = buildWhatsAppLink(quote.cliente_telefone, texto);
     }
 
+    let avaliacaoVunby = null, avaliacaoVunbyWhatsApp = null;
+    if (quote.status === STATUS.APROVADO) {
+      const av = await query('SELECT nota, comentario, created_at FROM avaliacoes WHERE quote_id = $1', [id]);
+      avaliacaoVunby = av.rows[0] || null;
+      const primeiro = String(quote.cliente_nome || '').trim().split(/\s+/)[0];
+      const empresa = user.nome_empresa || user.nome;
+      const linkAv = `${BASE_URL.replace(/\/$/, '')}/avaliar.html?t=${encodeURIComponent(quote.public_token)}`;
+      avaliacaoVunbyWhatsApp = buildWhatsAppLink(quote.cliente_telefone, `Olá, ${primeiro}! Obrigado por escolher ${empresa}. Pode avaliar nosso serviço? Leva 30 segundos:\n${linkAv}`);
+    }
+
     return ok(res, {
       ...quote,
       expirado,
+      avaliacaoVunby,
+      avaliacaoVunbyWhatsApp,
       avaliacaoWhatsApp,
       temLinkAvaliacao: !!user.google_review_link,
       publicUrl,

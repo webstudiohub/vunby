@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Avaliar o serviço</title>
+<meta name="robots" content="noindex"/>
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/>
+<meta name="theme-color" content="#0F3A8C"/>
+<link rel="stylesheet" href="style.css?v=52"/>
+<style>
+body{background:#EEF2F6}
+.av-wrap{max-width:480px;margin:0 auto;padding:16px}
+.av-card{background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+.av-topo{background:#0F3A8C;color:#fff;text-align:center;padding:28px 20px}
+.av-topo img{width:76px;height:76px;object-fit:contain;background:#fff;border-radius:16px;padding:6px;margin-bottom:10px}
+.av-topo h1{font-size:1.35rem;margin:0;color:#fff}
+.av-topo p{margin:6px 0 0;color:#C9D6F2;font-size:var(--fs-sm)}
+.av-corpo{padding:24px 20px}
+.estrelas{display:flex;justify-content:center;gap:8px;margin:8px 0 6px}
+.estrelas button{background:none;border:none;font-size:44px;line-height:1;cursor:pointer;color:#D5DCE6;padding:0;transition:transform .1s}
+.estrelas button.on{color:#E4A72A}
+.estrelas button:active{transform:scale(.9)}
+.est-rot{text-align:center;font-weight:700;color:#0F3A8C;min-height:24px}
+</style>
+</head><body>
+<div class="av-wrap"><div class="av-card" id="box"><div class="av-corpo"><p class="muted">Carregando…</p></div></div>
+<p class="muted" style="text-align:center;font-size:12px;margin-top:14px">Avaliação verificada pelo VUNBY: só clientes com serviço contratado podem avaliar.</p></div>
+<script>
+const token=new URLSearchParams(location.search).get('t')||'';
+const ROT=['','Muito ruim','Ruim','Regular','Bom','Excelente!'];
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let nota=0;
+function marcar(n){ nota=n; document.querySelectorAll('.estrelas button').forEach((b,i)=>b.classList.toggle('on',i<n)); document.getElementById('rot').textContent=ROT[n]; }
+async function enviar(){
+  const m=document.getElementById('msg'), b=document.getElementById('btn');
+  m.textContent=''; if(!nota){ m.textContent='Toque nas estrelas para dar sua nota.'; return; }
+  b.disabled=true; b.textContent='Enviando…';
+  try{
+    const r=await fetch('/api/public/avaliar/'+encodeURIComponent(token),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nota,comentario:document.getElementById('com').value})});
+    const j=await r.json().catch(()=>({})); if(!r.ok) throw new Error(j.error||'Não foi possível enviar.');
+    document.querySelector('.av-corpo').innerHTML='<h2 style="text-align:center;color:#0F3A8C;margin:6px 0">Obrigado! 🙏</h2><p style="text-align:center" class="muted">Sua avaliação ajuda outras pessoas a escolherem com confiança.</p>';
+  }catch(e){ m.textContent=e.message; b.disabled=false; b.textContent='Enviar avaliação'; }
+}
+(async()=>{
+  const box=document.getElementById('box');
+  try{
+    const r=await fetch('/api/public/avaliar/'+encodeURIComponent(token)); const d=await r.json(); if(!r.ok) throw new Error(d.error||'Link inválido.');
+    document.title='Avaliar '+d.empresa;
+    let corpo;
+    if(d.jaAvaliou) corpo='<h2 style="text-align:center;color:#0F3A8C;margin:6px 0">Este serviço já foi avaliado</h2><p class="muted" style="text-align:center">Obrigado pela sua opinião!</p>';
+    else if(!d.podeAvaliar) corpo='<p class="muted" style="text-align:center">A avaliação fica disponível depois que o orçamento for aprovado.</p>';
+    else corpo=`<p style="text-align:center;margin:0">Olá, ${esc(d.cliente)}! Como foi o serviço de <strong>${esc(d.servico)}</strong>?</p>
+      <div class="estrelas">${[1,2,3,4,5].map(n=>`<button type="button" onclick="marcar(${n})" aria-label="${n} estrela${n>1?'s':''}">★</button>`).join('')}</div>
+      <div class="est-rot" id="rot"></div>
+      <label>Quer contar como foi? (opcional)</label>
+      <textarea id="com" rows="3" maxlength="300" placeholder="Ex.: equipe pontual e cuidadosa"></textarea>
+      <p id="msg" class="error" style="margin-top:8px"></p>
+      <button class="btn-primary" id="btn" style="margin-top:10px" onclick="enviar()">Enviar avaliação</button>`;
+    box.innerHTML=`<div class="av-topo">${d.logo?`<img src="${d.logo}" alt=""/>`:''}<h1>${esc(d.empresa)}</h1><p>Avalie o serviço</p></div><div class="av-corpo">${corpo}</div>`;
+  }catch(e){ box.innerHTML=`<div class="av-corpo"><p class="muted">${esc(e.message)}</p></div>`; }
+})();
+</script>
+</body></html>

@@ -4,7 +4,7 @@
 <title>Orçamento</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2"/>
 <meta name="robots" content="noindex,nofollow"/>
-<link rel="stylesheet" href="style.css?v=51"/>
+<link rel="stylesheet" href="style.css?v=52"/>
 <style>
 .alt-texto{width:100%;padding:12px;border:1.5px solid #CBD2DA;border-radius:10px;font-size:var(--fs-md);margin-bottom:12px;resize:vertical;font-family:inherit}
 .alt-sec{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
@@ -48,7 +48,7 @@ body:has(.it-barra){padding-bottom:96px}
 <div style="max-width:520px;margin:0 auto;padding:0 0 40px">
   <div id="content"><div style="padding:40px;text-align:center"><p class="muted">Carregando orçamento…</p></div></div>
 </div>
-<script src="ui.js?v=51"></script>
+<script src="ui.js?v=52"></script>
 <script src="marca.js?v=33"></script>
 <script src="calc.js?v=33"></script>
 <script>
@@ -195,7 +195,7 @@ async function acao(tipo){
 function seloGoogle(v){
   if(!v||!v.nota) return '';
   const n=Number(v.nota), cheias=Math.round(n);
-  return `<div class="selo-google" title="Nota no Google">${'★'.repeat(cheias)}${'☆'.repeat(5-cheias)} <b>${n.toFixed(1).replace('.',',')}</b>${v.avaliacoes?` · ${Number(v.avaliacoes).toLocaleString('pt-BR')} avaliações no Google`:' no Google'}</div>`;
+  return `<div class="selo-google" title="Avaliações de clientes que contrataram">${'★'.repeat(cheias)}${'☆'.repeat(5-cheias)} <b>${n.toFixed(1).replace('.',',')}</b> · ${Number(v.avaliacoes).toLocaleString('pt-BR')} avaliaç${v.avaliacoes>1?'ões':'ão'} verificada${v.avaliacoes>1?'s':''}</div>`;
 }
 function validadeHtml(q,final){
   if(!q.validade) return '';
@@ -211,7 +211,8 @@ function vitrineHtml(q){
   let h='';
   if((v.diferenciais||[]).length) h+=`<div class="vit-bloco"><h3 class="vit-tit">Por que escolher ${emp}</h3><ul class="vit-dif">${v.diferenciais.map(d=>`<li><span>✓</span>${esc(d)}</li>`).join('')}</ul></div>`;
   if((v.fotos||[]).length) h+=`<div class="vit-bloco"><h3 class="vit-tit">Trabalhos que já fizemos</h3><div class="vit-fotos">${v.fotos.map((f,i)=>`<button type="button" onclick="verFoto('${f}')" aria-label="Ver foto ${i+1}"><img src="${f}" alt="" loading="lazy"/></button>`).join('')}</div></div>`;
-  if((v.depoimentos||[]).length) h+=`<div class="vit-bloco"><h3 class="vit-tit">O que dizem nossos clientes</h3>${v.depoimentos.map(d=>`<figure class="vit-dep"><blockquote>“${esc(d.texto)}”</blockquote>${d.nome?`<figcaption>— ${esc(d.nome)}</figcaption>`:''}</figure>`).join('')}</div>`;
+  if((v.depoimentos||[]).length) h+=`<div class="vit-bloco"><h3 class="vit-tit">O que dizem nossos clientes</h3>${v.depoimentos.map(d=>`<figure class="vit-dep"><div class="vit-est">${'★'.repeat(d.nota||5)}</div><blockquote>“${esc(d.texto)}”</blockquote><figcaption>— ${esc(d.nome)} <span class="vit-verif">✓ cliente verificado</span></figcaption></figure>`).join('')}</div>`;
+  if(q.status==='Aprovado') h+=`<div class="vit-bloco"><a class="vit-avaliar" href="/avaliar.html?t=${encodeURIComponent(token)}">⭐ Já fez o serviço? Avalie ${emp}</a></div>`;
   return h;
 }
 function verFoto(src){
@@ -307,6 +308,9 @@ function verFoto(src){
 .vit-dep{margin:0 0 10px;background:#fff;border:1.5px solid #E5E9F0;border-radius:14px;padding:14px 16px}
 .vit-dep blockquote{margin:0;font-size:var(--fs-md);line-height:1.5;color:#1C1C1E}
 .vit-dep figcaption{margin-top:6px;font-size:var(--fs-sm);color:#6B7280;font-weight:600}
+.vit-est{color:#E4A72A;font-size:15px;letter-spacing:1px;margin-bottom:4px}
+.vit-verif{color:#1F8A55;font-weight:700;font-size:12px;margin-left:6px}
+.vit-avaliar{display:block;text-align:center;padding:14px;border-radius:14px;background:#FFF6E0;color:#8A5A00;font-weight:800;text-decoration:none}
 .vit-zoom{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.9);display:grid;place-items:center;padding:16px}
 .vit-zoom img{max-width:100%;max-height:90vh;border-radius:12px}
 .vit-zoom button{position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:50%;border:none;background:#fff;font-size:20px;cursor:pointer}
