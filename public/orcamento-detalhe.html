@@ -17,7 +17,7 @@ body.editando{padding-bottom:120px}
 </head><body>
 <div id="top"></div>
 <div class="container" id="content"><div class="card" style="margin-top:16px"><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div><div class="skeleton-row"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:35%"></div></div></div></div>
-<script src="ui.js?v=33"></script>
+<script src="ui.js?v=48"></script>
 <script src="app.js?v=47"></script>
 <script src="marca.js?v=33"></script>
 <script src="pdf.js?v=33"></script>
@@ -99,7 +99,23 @@ async function toggleFollowUp(atual){
 }
 
 // PDF feito no próprio aparelho, com logo e dados da empresa (sem servidor)
-let qAtual=null, empresaCache=null, msgWaAtual='';
+let qAtual=null, empresaCache=null, msgWaAtual='', msgLink='';
+// SMS: abre o app de mensagens com o número e o texto (Android usa ?body=, iPhone &body=; "?&body=" serve nos dois)
+function smsLink(tel, texto){ const d=String(tel||'').replace(/\D/g,''); const n=d?('+'+(d.length<=11?'55'+d:d)):''; return 'sms:'+n+'?&body='+encodeURIComponent(texto); }
+function abrirEmail(){ const f=document.getElementById('form-email'); f.style.display=f.style.display==='none'?'block':'none'; if(f.style.display==='block') document.getElementById('email-cli').focus(); }
+async function enviarEmail(){
+  const btn=document.getElementById('btn-email'), msg=document.getElementById('email-msg');
+  msg.textContent=''; msg.style.color='#B45309'; btn.disabled=true; btn.textContent='Enviando…';
+  try{ const r=await api(`/api/quotes/${qid}/enviar-email`,{method:'POST',body:{email:document.getElementById('email-cli').value}});
+    msg.style.color='var(--green)'; msg.textContent='Enviado para '+r.email+'. Peça para o cliente olhar também o spam.'; }
+  catch(e){ msg.textContent=e.message; }
+  btn.disabled=false; btn.textContent='Enviar por e-mail';
+}
+async function copiarLink(b){
+  const url=qAtual.publicUrl||(location.origin+'/orcamento.html?token='+encodeURIComponent(qAtual.public_token));
+  try{ await navigator.clipboard.writeText(url); } catch{ prompt('Copie o link:', url); return; }
+  const s=b.querySelector('span'); const t=s.textContent; s.textContent='Copiado!'; setTimeout(()=>{ s.textContent=t; },2000);
+}
 // Itens para o PDF: aprovado → só o que o cliente escolheu (registro congelado); antes → todos, com opcionais marcados
 function dadosItensPdf(q){
   if(q.status==='Aprovado'&&q.aprovacao){
@@ -207,6 +223,7 @@ async function renderPage(){
       <button class="btn-primary" onclick="abrirEdicao();document.getElementById('form-edicao').scrollIntoView({behavior:'smooth'})">Ajustar o orçamento</button>
       <p class="muted" style="font-size:var(--fs-sm);margin-top:8px">Ao salvar, o link do cliente mostra a versão nova e este aviso some.</p></div>`:'';
   const msgWa=`Olá! Segue seu orçamento para ${q.servico}:\n${q.publicUrl||(location.origin+'/orcamento.html?token='+encodeURIComponent(q.public_token))}`;
+  msgLink=`Olá, ${String(q.cliente.nome||'').split(' ')[0]}! Segue seu orçamento de ${q.servico}. Para ver os detalhes e aprovar, acesse: ${q.publicUrl||(location.origin+'/orcamento.html?token='+encodeURIComponent(q.public_token))}`;
   msgWaAtual=`Olá! Segue seu orçamento para ${q.servico}. Para ver os detalhes e aprovar, é só tocar no link:\n${q.publicUrl||(location.origin+'/orcamento.html?token='+encodeURIComponent(q.public_token))}`;
   const enviarCard=final?'':`<div class="card" id="card-enviar" style="border:2px solid #157A4A">
       <h3 style="margin-bottom:6px">Enviar para ${esc(q.cliente.nome)}</h3>
@@ -217,6 +234,23 @@ async function renderPage(){
       <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;color:var(--navy);padding:6px 0">Enviar só o link (direto na conversa)</summary>
         <div style="margin-top:10px">${botoesWhatsApp(q.cliente.telefone, msgWa)}</div>
       </details>
+      <div class="outras-formas">
+        <p class="of-tit">Cliente sem WhatsApp? Outras formas de enviar</p>
+        <div class="of-grade">
+          <a class="of-btn" href="${smsLink(q.cliente.telefone, msgLink)}">${ic('conversa',20)}<span>SMS</span></a>
+          <button type="button" class="of-btn" onclick="abrirEmail()">${ic('email',20)}<span>E-mail</span></button>
+          <button type="button" class="of-btn" onclick="enviarImagem()">${ic('compartilhar',20)}<span>Instagram e outros</span></button>
+          <button type="button" class="of-btn" onclick="copiarLink(this)">${ic('copiar',20)}<span>Copiar link</span></button>
+          <button type="button" class="of-btn" onclick="gerarPdf()">${ic('documento',20)}<span>PDF / imprimir</span></button>
+        </div>
+        <div id="form-email" style="display:none;margin-top:12px">
+          <label style="margin-top:0">E-mail do cliente</label>
+          <input id="email-cli" type="email" inputmode="email" maxlength="120" value="${esc(q.cliente.email||'')}" placeholder="cliente@email.com"/>
+          <button type="button" class="btn-primary" id="btn-email" style="margin-top:10px" onclick="enviarEmail()">Enviar por e-mail</button>
+          <p class="muted" style="font-size:var(--fs-sm);margin-top:6px">O e-mail sai com o nome e a logo da sua empresa. Se o cliente responder, a resposta chega no seu e-mail.</p>
+          <p id="email-msg" style="font-size:var(--fs-sm);margin:6px 0 0"></p>
+        </div>
+      </div>
     </div>`;
   el.innerHTML=`${altCard}${enviarCard}
     <div class="card">
@@ -310,4 +344,11 @@ async function renderPage(){
   }
 })();
 </script>
+<style>
+.outras-formas{margin-top:14px;border-top:1px solid #E5E7EB;padding-top:12px}
+.of-tit{font-weight:700;font-size:var(--fs-sm);color:var(--muted);margin:0 0 10px}
+.of-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.of-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:72px;padding:8px 6px;border:1.5px solid var(--gray2);border-radius:12px;background:#fff;color:var(--navy);font-weight:700;font-size:13px;text-align:center;text-decoration:none;cursor:pointer;font-family:inherit;line-height:1.2}
+.of-btn:active{background:#EEF4FA}
+</style>
 </body></html>

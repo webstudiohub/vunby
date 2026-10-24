@@ -236,6 +236,32 @@ async function handle(req, res) {
     return ok(res, r.rows[0]);
   }
 
+  // POST /api/quotes/:id/enviar-email { email } — manda o orçamento por e-mail para o cliente (com a marca da empresa)
+  const emMatch = path.match(/^\/api\/quotes\/(\d+)\/enviar-email$/);
+  if (req.method === 'POST' && emMatch) {
+    const { rateLimit } = require('../lib/rateLimit');
+    if (!(await rateLimit('emailcli:' + user.id, 20, 60 * 60_000))) return json(res, 429, { error: 'Muitos e-mails em pouco tempo. Tente mais tarde.' });
+    const id = parseInt(emMatch[1], 10);
+    const quote = await getQuoteForUser(id, user.id);
+    if (!quote) return notFound(res, 'Orçamento não encontrado.');
+    let body; try { body = await readBody(req, 5_000); } catch { return badRequest(res); }
+    const email = String(body.email || quote.cliente_email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 120) return badRequest(res, 'E-mail do cliente inválido.');
+    if (email !== String(quote.cliente_email || '').toLowerCase()) await query('UPDATE clients SET email = $1 WHERE id = $2 AND user_id = $3', [email, quote.client_id, user.id]);
+    const base = BASE_URL.replace(/\/$/, '');
+    const link = `${base}/orcamento.html?token=${encodeURIComponent(quote.public_token)}`;
+    const valor = Number(quote.valor || 0);
+    const valorTxt = valor > 0 ? 'R$ ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '';
+    const temLogo = await query('SELECT (logo IS NOT NULL) AS t FROM users WHERE id = $1', [user.id]);
+    const r = await require('../lib/email').sendOrcamentoCliente({
+      to: email, replyTo: user.email, empresa: user.nome_empresa || user.nome,
+      logoUrl: temLogo.rows[0] && temLogo.rows[0].t ? `${base}/api/public/logo/${quote.public_token}.png` : null,
+      cliente: quote.cliente_nome, servico: quote.servico, valorTxt, link, whatsapp: user.whatsapp,
+    });
+    if (!r.ok) return json(res, 502, { error: 'Não foi possível enviar o e-mail agora. Tente de novo.' });
+    return ok(res, { enviado: true, email });
+  }
+
   // POST /api/quotes/:id/avaliacao — registra que o prestador pediu a avaliação no Google
   const avMatch = path.match(/^\/api\/quotes\/(\d+)\/avaliacao$/);
   if (req.method === 'POST' && avMatch) {

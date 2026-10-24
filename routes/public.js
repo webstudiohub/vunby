@@ -32,6 +32,18 @@ async function handle(req, res) {
   // IP real (Render atrás da Cloudflare): guardado só no registro da aprovação
   const ip = req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
 
+  // GET /api/public/logo/:token.png — logo da empresa dona do orçamento (para o e-mail do cliente)
+  const logoMatch = path.match(/^\/api\/public\/logo\/([A-Za-z0-9_-]+)\.(png|jpg)$/);
+  if (req.method === 'GET' && logoMatch) {
+    const r = await query('SELECT u.logo FROM quotes q JOIN users u ON u.id = q.user_id WHERE q.public_token = $1', [logoMatch[1]]);
+    const l = r.rows[0] && r.rows[0].logo;
+    const m = l && /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(l);
+    if (!m) return notFound(res, 'Sem logo.');
+    const buf = Buffer.from(m[2], 'base64');
+    res.writeHead(200, { 'Content-Type': m[1], 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=86400' });
+    res.end(buf); return true;
+  }
+
   // GET /api/public/quote/:token — dados públicos do orçamento
   const viewMatch = path.match(/^\/api\/public\/quote\/([A-Za-z0-9_-]+)$/);
   if (req.method === 'GET' && viewMatch) {
