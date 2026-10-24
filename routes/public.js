@@ -44,12 +44,25 @@ async function handle(req, res) {
     res.end(buf); return true;
   }
 
+  // GET /api/public/foto/:token/:i — foto de trabalho da empresa (vitrine)
+  const fotoMatch = path.match(/^\/api\/public\/foto\/([A-Za-z0-9_-]+)\/(\d)$/);
+  if (req.method === 'GET' && fotoMatch) {
+    const r = await query(`SELECT u.fotos_trabalhos->>($2::int) AS f FROM quotes q JOIN users u ON u.id = q.user_id WHERE q.public_token = $1`, [fotoMatch[1], Number(fotoMatch[2])]);
+    const f = r.rows[0] && r.rows[0].f;
+    const m = f && /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(f);
+    if (!m) return notFound(res, 'Foto não encontrada.');
+    const buf = Buffer.from(m[2], 'base64');
+    res.writeHead(200, { 'Content-Type': m[1], 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=3600' });
+    res.end(buf); return true;
+  }
+
   // GET /api/public/quote/:token — dados públicos do orçamento
   const viewMatch = path.match(/^\/api\/public\/quote\/([A-Za-z0-9_-]+)$/);
   if (req.method === 'GET' && viewMatch) {
     const token = viewMatch[1];
     const qRes = await query(
-      `SELECT q.*, c.nome as cliente_nome, u.nome as prestador_nome, u.nome_empresa, u.logo, u.profissao, u.cidade, u.whatsapp, u.documento, u.instagram
+      `SELECT q.*, c.nome as cliente_nome, u.nome as prestador_nome, u.nome_empresa, u.logo, u.profissao, u.cidade, u.whatsapp, u.documento, u.instagram,
+              u.google_nota, u.google_avaliacoes, u.diferenciais, u.depoimentos, jsonb_array_length(COALESCE(u.fotos_trabalhos,'[]'::jsonb)) AS n_fotos
        FROM quotes q
        JOIN clients c ON c.id = q.client_id
        JOIN users u ON u.id = q.user_id
@@ -82,6 +95,11 @@ async function handle(req, res) {
         nome: quote.nome_empresa || quote.prestador_nome, logo: quote.logo || null,
         profissao: quote.profissao || '', cidade: quote.cidade || '',
         whatsapp: (quote.whatsapp || '').replace(/\D/g, ''), documento: quote.documento || '', instagram: quote.instagram || '',
+      },
+      vitrine: {
+        nota: quote.google_nota != null ? Number(quote.google_nota) : null, avaliacoes: quote.google_avaliacoes,
+        diferenciais: quote.diferenciais || [], depoimentos: quote.depoimentos || [],
+        fotos: Array.from({ length: Number(quote.n_fotos) || 0 }, (_, i) => `/api/public/foto/${token}/${i}`),
       },
       pacotes: pacs.rows,
       usaItens: !!quote.usa_itens,

@@ -353,6 +353,29 @@ async function handle(req, res) {
     return ok(res, { message: 'Dados da empresa salvos.' });
   }
 
+  // GET/PUT /api/auth/vitrine — o que aparece na página do orçamento para "vender" a empresa
+  if (path === '/api/auth/vitrine' && (req.method === 'GET' || req.method === 'PUT')) {
+    const user = await requireAuth(req, res);
+    if (!user) return true;
+    if (req.method === 'GET') {
+      const r = await query('SELECT google_nota, google_avaliacoes, diferenciais, depoimentos, fotos_trabalhos FROM users WHERE id = $1', [user.id]);
+      const v = r.rows[0] || {};
+      return ok(res, { googleNota: v.google_nota != null ? Number(v.google_nota) : null, googleAvaliacoes: v.google_avaliacoes, diferenciais: v.diferenciais || [], depoimentos: v.depoimentos || [], fotos: v.fotos_trabalhos || [] });
+    }
+    let b; try { b = await readBody(req, 1_600_000); } catch { return badRequest(res, 'Fotos muito grandes. Use fotos menores.'); }
+    const limpa = (t, m) => String(t || '').trim().replace(/\s+/g, ' ').slice(0, m);
+    let nota = b.googleNota === '' || b.googleNota == null ? null : Number(String(b.googleNota).replace(',', '.'));
+    if (nota != null && !(nota >= 1 && nota <= 5)) return badRequest(res, 'A nota do Google vai de 1 a 5.');
+    let qtd = b.googleAvaliacoes === '' || b.googleAvaliacoes == null ? null : parseInt(b.googleAvaliacoes, 10);
+    if (qtd != null && !(qtd >= 0 && qtd < 1000000)) return badRequest(res, 'Número de avaliações inválido.');
+    const dif = (Array.isArray(b.diferenciais) ? b.diferenciais : []).map(t => limpa(t, 60)).filter(Boolean).slice(0, 3);
+    const dep = (Array.isArray(b.depoimentos) ? b.depoimentos : []).map(d => ({ nome: limpa(d && d.nome, 40), texto: limpa(d && d.texto, 240) })).filter(d => d.texto).slice(0, 3);
+    const fotos = (Array.isArray(b.fotos) ? b.fotos : []).filter(f => typeof f === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(f) && f.length <= 260_000).slice(0, 6);
+    await query('UPDATE users SET google_nota = $2, google_avaliacoes = $3, diferenciais = $4, depoimentos = $5, fotos_trabalhos = $6 WHERE id = $1',
+      [user.id, nota, qtd, JSON.stringify(dif), JSON.stringify(dep), JSON.stringify(fotos)]);
+    return ok(res, { message: 'Vitrine salva.' });
+  }
+
   // POST /api/auth/resend-verification
   if (req.method === 'POST' && path === '/api/auth/resend-verification') {
     if (!(await rateLimit(`resend-verification:${ip}`, 3, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');

@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=50"/>
+<link rel="stylesheet" href="style.css?v=51"/>
 </head><body>
 <div id="top"></div>
 <div class="container">
@@ -54,6 +54,32 @@
     </div>
     <div id="msg-marca" class="error"></div>
     <div id="ok-marca" class="success" style="display:none"></div>
+  </div>
+
+  <!-- Vitrine -->
+  <div class="card anim anim-2" id="vitrine">
+    <h3><i data-ic="estrela"></i> Sua vitrine no orçamento</h3>
+    <p class="muted" style="font-size:var(--fs-sm);margin:4px 0 12px">Aparece para o cliente na página do orçamento e ajuda ele a confiar e fechar com você. Tudo opcional.</p>
+    <label style="margin-top:0">Nota no Google</label>
+    <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px">
+      <input id="v-nota" inputmode="decimal" maxlength="3" placeholder="Ex.: 4,8"/>
+      <input id="v-qtd" inputmode="numeric" maxlength="7" placeholder="Nº de avaliações"/>
+    </div>
+    <p class="muted" style="font-size:var(--fs-sm);margin-top:4px">Use a nota real do seu Perfil da Empresa no Google.</p>
+    <div style="display:none">
+    </div>
+    <label>Por que escolher você (até 3)</label>
+    <input id="v-d0" maxlength="60" placeholder="Ex.: Equipe treinada e uniformizada"/>
+    <input id="v-d1" maxlength="60" placeholder="Ex.: Embalagem e montagem inclusas" style="margin-top:8px"/>
+    <input id="v-d2" maxlength="60" placeholder="Ex.: Pontualidade garantida" style="margin-top:8px"/>
+    <label>Fotos de trabalhos feitos (até 6)</label>
+    <div id="v-fotos" class="v-fotos"></div>
+    <label class="btn-outline btn-sm" style="margin-top:8px;text-transform:none;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:44px">+ Adicionar fotos<input id="v-foto-in" type="file" accept="image/*" multiple style="display:none"/></label>
+    <label>Depoimentos de clientes (até 3)</label>
+    <div id="v-deps"></div>
+    <div style="margin-top:var(--sp-5)"><button class="btn-primary" id="btn-vitrine" onclick="salvarVitrine()">Salvar vitrine</button></div>
+    <div id="msg-vitrine" class="error"></div>
+    <div id="ok-vitrine" class="success" style="display:none">Vitrine salva! Já aparece nos seus orçamentos.</div>
   </div>
 
   <!-- Assinatura -->
@@ -117,10 +143,10 @@
   </div>
 </div>
 <div id="nav"></div>
-<script src="ui.js?v=50"></script>
+<script src="ui.js?v=51"></script>
 <script src="instalar.js?v=36"></script>
 <script src="push.js?v=33"></script>
-<script src="app.js?v=50"></script>
+<script src="app.js?v=51"></script>
 <script>if(window.VunbyInstalar) VunbyInstalar.itemConta(document.getElementById('instalar-conta'));
 if(window.VunbyPush) VunbyPush.itemConta(document.getElementById('push-conta'));</script>
 <script>
@@ -315,4 +341,55 @@ async function enviarSugestao(){
 </style>
 <script src="/senha.js?v=1"></script>
 <script src="/cortar.js?v=1"></script>
+<style>
+.v-fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.v-foto{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;background:var(--gray)}
+.v-foto img{width:100%;height:100%;object-fit:cover}
+.v-foto button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;cursor:pointer}
+.v-dep{display:grid;gap:6px;margin-top:8px;padding:10px;background:var(--gray);border-radius:12px}
+</style>
+<script>
+// ─── Vitrine ───
+let VFOTOS=[];
+function desenharFotosV(){
+  document.getElementById('v-fotos').innerHTML=VFOTOS.map((f,i)=>`<div class="v-foto"><img src="${f}" alt=""/><button type="button" onclick="VFOTOS.splice(${i},1);desenharFotosV()" aria-label="Remover foto">✕</button></div>`).join('')||'<p class="muted" style="font-size:var(--fs-sm);margin:0">Nenhuma foto ainda.</p>';
+}
+function reduzirFoto(file){
+  return new Promise((ok,er)=>{ const img=new Image(); const u=URL.createObjectURL(file);
+    img.onload=()=>{ const max=900, s=Math.min(1,max/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(u); let q=.78, d=c.toDataURL('image/jpeg',q); while(d.length>250000&&q>.4){ q-=.1; d=c.toDataURL('image/jpeg',q); } ok(d); };
+    img.onerror=()=>er(new Error('Imagem inválida')); img.src=u; });
+}
+document.addEventListener('change',async e=>{
+  if(e.target.id!=='v-foto-in') return;
+  for(const f of [...e.target.files]){ if(VFOTOS.length>=6) break; try{ VFOTOS.push(await reduzirFoto(f)); }catch{} }
+  e.target.value=''; desenharFotosV();
+});
+function depsHtml(deps){
+  return [0,1,2].map(i=>`<div class="v-dep"><input id="v-dn${i}" maxlength="40" placeholder="Nome do cliente" value="${esc((deps[i]||{}).nome||'')}"/><textarea id="v-dt${i}" rows="2" maxlength="240" placeholder="O que ele falou do seu serviço">${esc((deps[i]||{}).texto||'')}</textarea></div>`).join('');
+}
+async function carregarVitrine(){
+  try{ const v=await api('/api/auth/vitrine');
+    document.getElementById('v-nota').value=v.googleNota!=null?String(v.googleNota).replace('.',','):'';
+    document.getElementById('v-qtd').value=v.googleAvaliacoes!=null?v.googleAvaliacoes:'';
+    [0,1,2].forEach(i=>document.getElementById('v-d'+i).value=(v.diferenciais||[])[i]||'');
+    VFOTOS=v.fotos||[]; desenharFotosV();
+    document.getElementById('v-deps').innerHTML=depsHtml(v.depoimentos||[]);
+  }catch{ document.getElementById('v-deps').innerHTML=depsHtml([]); desenharFotosV(); }
+}
+async function salvarVitrine(){
+  const msg=document.getElementById('msg-vitrine'), okEl=document.getElementById('ok-vitrine'), btn=document.getElementById('btn-vitrine');
+  msg.textContent=''; okEl.style.display='none'; btn.disabled=true; btn.textContent='Salvando…';
+  try{
+    await api('/api/auth/vitrine',{method:'PUT',body:{
+      googleNota:document.getElementById('v-nota').value, googleAvaliacoes:document.getElementById('v-qtd').value.replace(/\D/g,''),
+      diferenciais:[0,1,2].map(i=>document.getElementById('v-d'+i).value),
+      depoimentos:[0,1,2].map(i=>({nome:document.getElementById('v-dn'+i).value,texto:document.getElementById('v-dt'+i).value})),
+      fotos:VFOTOS }});
+    okEl.style.display='block';
+  }catch(e){ msg.textContent=e.message; }
+  btn.disabled=false; btn.textContent='Salvar vitrine';
+}
+carregarVitrine();
+</script>
 </body></html>
