@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=43"/>
+<link rel="stylesheet" href="style.css?v=50"/>
 </head><body>
 <div id="top"></div>
 <div class="container">
@@ -17,6 +17,13 @@
   </div>
 
   <div id="aviso-plano"></div>
+  <div id="hero-mes" class="hero-mes anim"><div class="hm-rot">Fechado este mês</div><div class="hm-val">—</div><div class="hm-graf"></div></div>
+  <nav class="atalhos anim anim-1" aria-label="Atalhos">
+    <a href="novo-orcamento.html"><span class="ico"><i data-ic="mais" data-tam="24"></i></span>Novo orçamento</a>
+    <a href="novo-orcamento.html#novo-cliente"><span class="ico"><i data-ic="pessoa" data-tam="24"></i></span>Novo cliente</a>
+    <a href="tabela.html"><span class="ico"><i data-ic="preco" data-tam="24"></i></span>Minha tabela</a>
+    <a href="radar.html"><span class="ico"><i data-ic="alvo" data-tam="24"></i></span>Radar</a>
+  </nav>
   <div id="aviso-empresa"></div>
   <div id="aviso-instalar"></div>
 
@@ -33,15 +40,16 @@
   </div>
 </div>
 <div id="nav"></div>
-<script src="ui.js?v=33"></script>
+<script src="ui.js?v=50"></script>
 <script src="instalar.js?v=36"></script>
-<script src="app.js?v=47"></script>
+<script src="app.js?v=50"></script>
 <script>
 (async()=>{
   const session=await requireSession(); if(!session)return;
   document.getElementById('top').innerHTML=topbar('dashboard.html');
   document.getElementById('nav').innerHTML=bottomNav('dashboard.html');
   wireLogout();
+  if(window.VUI&&VUI.hidratar) VUI.hidratar(document.querySelector('.atalhos'));
   if(window.VunbyInstalar) VunbyInstalar.banner(document.getElementById('aviso-instalar'));
 
   const primeiroNome=(session.nome||'').split(' ')[0];
@@ -61,46 +69,51 @@
   const vis=(s['Visualizado']||{count:0});
   const apr=(s['Aprovado']||{count:0});
 
+  // Cabeçalho: quanto fechou no mês (aprovados) + orçamentos enviados nos últimos 7 dias
+  const agora=new Date(), mesIni=new Date(agora.getFullYear(),agora.getMonth(),1), mesAntIni=new Date(agora.getFullYear(),agora.getMonth()-1,1);
+  const dataAprov=q=>new Date(q.responded_at||q.updated_at||q.created_at);
+  const aprovados=quotes.filter(q=>q.status==='Aprovado');
+  const doMes=aprovados.filter(q=>dataAprov(q)>=mesIni), doAnt=aprovados.filter(q=>{const d=dataAprov(q);return d>=mesAntIni&&d<mesIni;});
+  const soma=l=>l.reduce((t,q)=>t+Number(q.valor||0),0);
+  const vMes=soma(doMes), vAnt=soma(doAnt);
+  const nomeMes=agora.toLocaleDateString('pt-BR',{month:'long'});
+  let tend='';
+  if(vAnt>0){ const pct=Math.round((vMes-vAnt)/vAnt*100); tend=`<span class="hm-tend ${pct>=0?'up':'down'}">${pct>=0?'▲':'▼'} ${Math.abs(pct)}%</span> vs mês passado`; }
+  const dias=[...Array(7)].map((_,i)=>{const d=new Date(agora.getFullYear(),agora.getMonth(),agora.getDate()-6+i);return d;});
+  const cont=dias.map(d=>quotes.filter(q=>{const c=new Date(q.created_at);return c.getFullYear()===d.getFullYear()&&c.getMonth()===d.getMonth()&&c.getDate()===d.getDate();}).length);
+  const max=Math.max(1,...cont);
+  const sem=['D','S','T','Q','Q','S','S'];
+  document.getElementById('hero-mes').innerHTML=`
+    <div class="hm-rot">Fechado em ${nomeMes}</div>
+    <div class="hm-val">${brl(vMes)}</div>
+    <div class="hm-sub">${doMes.length} aprovado${doMes.length!==1?'s':''} ${tend?'· '+tend:''}</div>
+    <div class="hm-graf" title="Orçamentos criados nos últimos 7 dias">${cont.map((c,i)=>`<div class="${i===6?'hoje':''}"><b style="height:${Math.round(c/max*100)}%"></b><span>${sem[dias[i].getDay()]}</span></div>`).join('')}</div>
+    <div class="hm-sub" style="margin-top:6px;font-size:12px;color:#AFC3E8">Orçamentos criados nos últimos 7 dias: ${cont.reduce((a,b)=>a+b,0)}</div>`;
+
   document.getElementById('stats-area').innerHTML=`
-    <div class="stat-card accent-navy anim anim-1">
-      <div class="stat-label">Em aberto</div>
+    <a href="radar.html" class="stat-card accent-navy anim anim-1" style="text-decoration:none">
+      <span class="stat-ico">${ic('alvo',18)}</span><div class="stat-label">Em aberto</div>
       <div class="stat-value navy">${brl(dash.valorEmAberto)}</div>
-    </div>
-    <div class="stat-card accent-gold anim anim-2">
-      <div class="stat-label">Follow-ups</div>
+    </a>
+    <a href="radar.html" class="stat-card accent-gold anim anim-2" style="text-decoration:none">
+      <span class="stat-ico">${ic('sino',18)}</span><div class="stat-label">Follow-ups</div>
       <div class="stat-value gold">${dash.pendentesFollowUp}</div>
-    </div>
+    </a>
     <div class="stat-card anim anim-3">
-      <div class="stat-label">Visualizados</div>
+      <span class="stat-ico">${ic('olho',18)}</span><div class="stat-label">Visualizados</div>
       <div class="stat-value">${vis.count}</div>
     </div>
     <div class="stat-card accent-green anim anim-4">
-      <div class="stat-label">Aprovados</div>
+      <span class="stat-ico">${ic('ok',18)}</span><div class="stat-label">Aprovados</div>
       <div class="stat-value green">${apr.count}</div>
     </div>`;
 
   const recentes=quotes.slice(0,5);
   if(!recentes.length){
-    document.getElementById('recent-list').innerHTML=`
-      <div style="text-align:center;padding:var(--sp-6) 0">
-        <div style="font-size:var(--fs-num);margin-bottom:var(--sp-3);color:var(--navy)">${ic('documento',44)}</div>
-        <p style="font-weight:600;color:var(--dark);margin-bottom:var(--sp-2)">Nenhum orçamento ainda</p>
-        <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-5)">Crie o primeiro e comece a fechar negócios.</p>
-        <a href="novo-orcamento.html"><button class="btn-primary btn-gold" style="width:auto;padding:0 var(--sp-6)">Criar primeiro orçamento</button></a>
-      </div>`;
+    document.getElementById('recent-list').innerHTML=vazioHtml('Nenhum orçamento ainda','Crie o primeiro e comece a fechar negócios.','<a href="novo-orcamento.html"><button class="btn-primary btn-gold" style="width:auto;padding:0 var(--sp-6)">Criar primeiro orçamento</button></a>');
     return;
   }
-  document.getElementById('recent-list').innerHTML=recentes.map(q=>`
-    <a href="orcamento-detalhe.html?id=${q.id}" class="quote-row">
-      <div class="quote-row-left">
-        <div class="quote-row-title">${esc(q.servico)}</div>
-        <div class="quote-row-meta">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
-      </div>
-      <div class="quote-row-right">
-        <div class="quote-row-valor">${brl(q.valor)}</div>
-        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">'+ic('lapis',14)+' pediu alteração</span>':''}
-      </div>
-    </a>`).join('');
+  document.getElementById('recent-list').innerHTML=recentes.map(q=>linhaOrcamento(q)).join('');
 })();
 </script>
 </body></html>

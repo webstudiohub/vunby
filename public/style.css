@@ -864,3 +864,35 @@ html body .auth-body{flex:none;width:100%;max-width:440px;background:var(--gray)
 .af-barra i{display:block;height:100%;background:#F5C451;border-radius:99px}
 .af-vagas{font-size:var(--fs-sm,.85rem);color:#DCE7FA;margin-top:4px}
 .af-botao{display:block;text-align:center;background:#F5C451;color:#0B2A66;font-weight:800;border-radius:12px;padding:14px;margin-top:8px;font-size:var(--fs-md)}
+/* ── Redesign 24/10: avatar, etapas, hero, atalhos, vazios ── */
+.quote-row{align-items:center;gap:12px}
+.avatar{flex-shrink:0;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:.02em}
+.etapas{display:flex;gap:4px;margin-top:7px;max-width:96px}
+.etapas i{flex:1;height:4px;border-radius:4px;background:#E5E9F0}
+.etapas i.on{background:#0F3A8C}
+.etapas i.on:nth-child(3){background:#1F8A55}
+.etapas.rec i.on:nth-child(3){background:#C0392B}
+.hero-mes{background:linear-gradient(135deg,#0B2A66,#1B57C4);color:#fff;border-radius:20px;padding:20px 20px 16px;margin-bottom:var(--sp-4);box-shadow:0 10px 28px rgba(15,58,140,.22)}
+.hero-mes .hm-rot{font-size:var(--fs-sm);color:#C9D6F2;font-weight:600}
+.hero-mes .hm-val{font-size:2.1rem;font-weight:800;line-height:1.1;margin:4px 0 2px;color:#fff}
+.hero-mes .hm-sub{font-size:var(--fs-sm);color:#DCE7FA;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.hm-tend{display:inline-flex;align-items:center;gap:2px;font-weight:800;border-radius:20px;padding:2px 8px;font-size:12px}
+.hm-tend.up{background:rgba(110,231,160,.18);color:#8EF0B6}.hm-tend.down{background:rgba(255,140,120,.18);color:#FFB4A6}
+.hm-graf{display:flex;align-items:flex-end;gap:6px;height:56px;margin-top:14px}
+.hm-graf div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.hm-graf b{display:block;width:100%;border-radius:5px 5px 2px 2px;background:rgba(255,255,255,.28);min-height:3px}
+.hm-graf div.hoje b{background:#E4C677}
+.hm-graf span{font-size:10px;color:#AFC3E8}
+.atalhos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:var(--sp-4)}
+.atalhos a{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none;color:var(--dark);font-size:12.5px;font-weight:600;text-align:center;line-height:1.2}
+.atalhos a span.ico{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:#fff;border:1px solid #E5E9F0;color:var(--navy);box-shadow:0 2px 8px rgba(15,23,42,.05)}
+.atalhos a:first-child span.ico{background:#E4C677;border-color:#E4C677;color:#0B2A66}
+.stat-card .stat-ico{float:right;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#EEF4FA;color:var(--navy);margin:-2px -4px 0 4px}
+.stat-card.accent-gold .stat-ico{background:#FDF3DC;color:#8A6100}
+.stat-card.accent-green .stat-ico{background:#E3F2EA;color:#1F7A4D}
+.vazio{text-align:center;padding:var(--sp-5) var(--sp-2)}
+.vazio .ilus-vazia{display:block;margin:0 auto 10px}
+.vazio-t{font-weight:700;color:var(--dark);margin:0 0 4px;font-size:var(--fs-lg)}
+.vazio-x{color:var(--muted);font-size:var(--fs-sm);margin:0 0 var(--sp-4)}
+.quote-row .quote-row-title{white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
+.quote-row .quote-row-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

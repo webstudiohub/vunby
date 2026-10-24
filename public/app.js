@@ -314,3 +314,55 @@ function botoesWhatsApp(telefone, mensagem) {
   </div>`;
 }
 
+
+// ─── Componentes visuais compartilhados (redesign 24/10) ───────
+// Avatar com as iniciais do cliente (cor fixa por nome, sempre a mesma para o mesmo cliente)
+const AV_CORES = [['#E8EEF9','#0F3A8C'],['#FDF3DC','#8A6100'],['#E3F2EA','#1F7A4D'],['#F3E8F7','#6B2E8A'],['#FDE8E4','#B4412A'],['#E6F4F7','#16697A']];
+function avatarCliente(nome) {
+  const partes = String(nome || '?').trim().split(/\s+/).filter(Boolean);
+  const ini = ((partes[0] || '?')[0] + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase();
+  let h = 0; for (const ch of String(nome || '')) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const [bg, fg] = AV_CORES[h % AV_CORES.length];
+  return `<span class="avatar" style="background:${bg};color:${fg}" aria-hidden="true">${esc(ini)}</span>`;
+}
+// Etapas do orçamento: Enviado → Visto → Aprovado (ou Recusado)
+function etapasOrc(status) {
+  const n = { 'Enviado': 1, 'Sem resposta': 1, 'Visualizado': 2, 'Aprovado': 3, 'Recusado': 3 }[status] || 1;
+  const rec = status === 'Recusado';
+  return `<span class="etapas${rec ? ' rec' : ''}" aria-hidden="true">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+}
+function linhaOrcamento(q, opc) {
+  opc = opc || {};
+  const alt = q.alteracao_texto && !q.alteracao_resolvida && !['Aprovado', 'Recusado'].includes(q.status)
+    ? '<span class="flag-followup" style="background:#FFE7A3">' + ic('lapis', 14) + ' pediu alteração</span>' : '';
+  const fu = opc.followup && q.precisa_follow_up ? '<span class="flag-followup">follow-up</span>' : '';
+  return `<a href="orcamento-detalhe.html?id=${q.id}" class="quote-row">
+    ${avatarCliente(q.cliente_nome)}
+    <div class="quote-row-left">
+      <div class="quote-row-title">${esc(q.servico)}${fu}</div>
+      <div class="quote-row-meta">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
+      ${etapasOrc(q.status)}
+    </div>
+    <div class="quote-row-right">
+      <div class="quote-row-valor">${brl(q.valor)}</div>
+      <span class="${badgeClass(q.status)}">${q.status}</span>${alt}
+    </div>
+  </a>`;
+}
+// Ilustração leve para telas vazias (marca do VUNBY: azul e dourado)
+function ilustracaoVazia() {
+  return `<svg class="ilus-vazia" width="140" height="110" viewBox="0 0 140 110" aria-hidden="true">
+    <ellipse cx="70" cy="100" rx="50" ry="6" fill="#E8EEF9"/>
+    <rect x="34" y="12" width="64" height="80" rx="10" fill="#fff" stroke="#C9D6F2" stroke-width="2"/>
+    <rect x="44" y="26" width="30" height="6" rx="3" fill="#0F3A8C"/>
+    <rect x="44" y="40" width="44" height="4" rx="2" fill="#DCE3EF"/>
+    <rect x="44" y="50" width="38" height="4" rx="2" fill="#DCE3EF"/>
+    <rect x="44" y="60" width="42" height="4" rx="2" fill="#DCE3EF"/>
+    <rect x="44" y="74" width="24" height="7" rx="3.5" fill="#E4C677"/>
+    <circle cx="100" cy="72" r="16" fill="#1F8A55"/>
+    <path d="M92 72l5 5 10-10" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+function vazioHtml(titulo, texto, botao) {
+  return `<div class="vazio">${ilustracaoVazia()}<p class="vazio-t">${titulo}</p><p class="vazio-x">${texto}</p>${botao || ''}</div>`;
+}

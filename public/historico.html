@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=43"/>
+<link rel="stylesheet" href="style.css?v=50"/>
 </head><body>
 <div id="top"></div>
 <div class="container">
@@ -35,8 +35,8 @@
   </div>
 </div>
 <div id="nav"></div>
-<script src="ui.js?v=33"></script>
-<script src="app.js?v=47"></script>
+<script src="ui.js?v=50"></script>
+<script src="app.js?v=50"></script>
 <script>
 let todos=[], filtroStatus='';
 
@@ -57,20 +57,10 @@ function filtrar(){
   );
   const el=document.getElementById('lista');
   if(!items.length){
-    el.innerHTML='<p class="muted">Nenhum orçamento encontrado.</p>';
+    el.innerHTML=(todos.length?'<p class="muted">Nenhum orçamento encontrado.</p>':vazioHtml('Seu histórico está vazio','Todos os orçamentos que você criar ficam guardados aqui.','<a href="novo-orcamento.html"><button class="btn-primary btn-gold" style="width:auto;padding:0 var(--sp-6)">Criar orçamento</button></a>'));
     return;
   }
-  el.innerHTML=items.map(q=>`
-    <a href="orcamento-detalhe.html?id=${q.id}" class="quote-row">
-      <div class="quote-row-left">
-        <div class="quote-row-title">${esc(q.servico)}${q.precisa_follow_up?'<span class="flag-followup">follow-up</span>':''}</div>
-        <div class="quote-row-meta">${esc(q.cliente_nome)} · ${relDate(q.created_at)}</div>
-      </div>
-      <div class="quote-row-right">
-        <div class="quote-row-valor">${brl(q.valor)}</div>
-        <span class="${badgeClass(q.status)}">${q.status}</span>${q.alteracao_texto&&!q.alteracao_resolvida&&!['Aprovado','Recusado'].includes(q.status)?'<span class="flag-followup" style="background:#FFE7A3">'+ic('lapis',14)+' pediu alteração</span>':''}
-      </div>
-    </a>`).join('');
+  el.innerHTML=items.map(q=>linhaOrcamento(q,{followup:true})).join('');
 }
 
 (async()=>{
