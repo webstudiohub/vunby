@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#0F3A8C"/>
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2"/>
-<link rel="stylesheet" href="style.css?v=53"/>
+<link rel="stylesheet" href="style.css?v=54"/>
 <style>.campo-erro{border:2px solid #C62828!important;background:#FFF5F5!important}.campo-erro-msg{color:#C62828;font-weight:700;font-size:var(--fs-md);margin:6px 0 0}</style>
 </head><body>
 <div id="top"></div>
@@ -94,8 +94,8 @@
   </div>
 </div>
 <div id="nav"></div>
-<script src="ui.js?v=53"></script>
-<script src="app.js?v=53"></script>
+<script src="ui.js?v=54"></script>
+<script src="app.js?v=54"></script>
 <script src="calc.js?v=33"></script>
 <script src="itens-editor.js?v=33"></script>
 <script src="montar-tabela.js?v=33"></script>
@@ -209,7 +209,7 @@ function apontarCampo(id,texto){
   c.addEventListener('change',limpar,{once:true}); c.addEventListener('input',limpar,{once:true}); if(c0!==c) c0.addEventListener('change',limpar,{once:true});
 }
 async function criarOrcamento(){
-  const clientId=document.getElementById('q-client').value;
+  let clientId=document.getElementById('q-client').value;
   const servico=document.getElementById('q-servico').value;
   const valor=document.getElementById('q-valor').value;
   const validade=document.getElementById('q-validade').value;
@@ -218,7 +218,12 @@ async function criarOrcamento(){
   const msg=document.getElementById('q-msg');
   const btn=document.querySelector('[onclick="criarOrcamento()"]');
   msg.textContent='';
-  if(!clientId){apontarCampo('q-client','Selecione ou crie um cliente.');return;}
+  if(!clientId && (document.getElementById('nc-nome').value.trim()||document.getElementById('nc-tel').value.trim())){
+    // Preencheu o cliente novo mas não tocou em "Salvar cliente": salva sozinho e segue
+    await criarCliente(); clientId=document.getElementById('q-client').value;
+    if(!clientId) return;
+  }
+  if(!clientId){apontarCampo('q-client','Escolha o cliente na lista ou toque em “+ Novo cliente” para cadastrar.');return;}
   if(!servico){apontarCampo('q-servico','Descreva o serviço.');return;}
   const comItens=editor.quantos()>0;
   if(comItens){ const erro=editor.validar(); if(erro){msg.textContent=erro;return;} }
@@ -251,7 +256,13 @@ async function criarOrcamento(){
     sel.appendChild(opt);
   });
   sel.addEventListener('change',mostrarEditarCliente);
-  if(window.VUI) VUI.buscaSelect(sel,{placeholder:'Buscar cliente pelo nome ou telefone'});
+  if(window.VUI) VUI.buscaSelect(sel,{placeholder:'Buscar cliente pelo nome ou telefone', novo:t=>{
+    const d=document.getElementById('novo-cliente-details'); d.open=true;
+    const soNum=t.replace(/\D/g,'');
+    if(soNum.length>=8&&soNum.length===t.replace(/[\s()+-]/g,'').length){ document.getElementById('nc-tel').value=t; document.getElementById('nc-nome').focus(); }
+    else { document.getElementById('nc-nome').value=t; document.getElementById('nc-tel').focus(); }
+    d.scrollIntoView({behavior:'smooth',block:'center'});
+  }});
   document.getElementById('nc-extras').innerHTML=camposExtrasCliente('nc');
   const d=new Date(); d.setDate(d.getDate()+7);
   document.getElementById('q-validade').value=d.toISOString().split('T')[0];

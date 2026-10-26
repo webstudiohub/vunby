@@ -106,12 +106,13 @@
 .vui-combo{position:relative}
 .vui-combo .vui-cb-campo{position:relative}
 .vui-combo .vui-cb-campo .ic{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#5B6675;pointer-events:none}
-.vui-combo input{padding-left:42px!important;padding-right:40px!important}
+.vui-combo input{padding-left:42px!important;padding-right:40px!important;margin:0!important;display:block;width:100%}
 .vui-cb-limpar{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;background:transparent;color:#5B6675;cursor:pointer;border-radius:8px;display:grid;place-items:center}
 .vui-cb-lista{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:50;background:#fff;border:1px solid #E4E8EE;border-radius:12px;box-shadow:0 14px 34px rgba(15,25,35,.14);max-height:280px;overflow:auto;padding:6px;margin:0;list-style:none}
 .vui-cb-lista li{padding:11px 12px;border-radius:9px;cursor:pointer;font-size:16px;line-height:1.3}
 .vui-cb-lista li small{display:block;color:#5B6675;font-size:14px}
 .vui-cb-lista li[aria-selected="true"],.vui-cb-lista li:hover{background:#E6EEFB}
+.vui-cb-lista .vui-cb-novo{color:#0F3A8C!important;font-weight:700;border-top:1px solid #E5E9F0}
 .vui-cb-lista .vui-cb-vazio{color:#5B6675;cursor:default;background:none!important}
 @media(prefers-reduced-motion:reduce){.vui-toast,.vui-caixa,.vui-fundo{animation:none}}
 `;
@@ -194,9 +195,13 @@
       const q = sem(inp.value), o = sel.selectedOptions[0];
       const atual = o && o.value ? partes(o.textContent)[0] : null;
       filtrados = opcoes().filter(op => !q || (atual && inp.value === atual) || sem(op.textContent).includes(q) || sem(op.textContent).replace(/\D/g, '').includes(q.replace(/\D/g, '') || '§'));
-      lista.innerHTML = filtrados.length ? filtrados.map((op, k) => { const [a, b] = partes(op.textContent);
+      const txtNovo = String(inp.value || '').trim();
+      const podeNovo = opc.novo && txtNovo && !(atual && inp.value === atual) && !filtrados.some(op => sem(partes(op.textContent)[0]) === sem(txtNovo));
+      lista.innerHTML = (filtrados.length ? filtrados.map((op, k) => { const [a, b] = partes(op.textContent);
         return `<li role="option" id="${lid}-${k}" aria-selected="${k === ativo}" data-k="${k}"></li>`; }).join('')
-        : `<li class="vui-cb-vazio" role="option" aria-disabled="true">${opcoes().length ? 'Nenhum cliente encontrado' : 'Nenhum cliente ainda'}</li>`;
+        : (podeNovo ? '' : `<li class="vui-cb-vazio" role="option" aria-disabled="true">${opcoes().length ? 'Nenhum cliente encontrado' : 'Nenhum cliente ainda'}</li>`))
+        + (podeNovo ? `<li role="option" class="vui-cb-novo" data-novo="1"></li>` : '');
+      if (podeNovo) lista.querySelector('[data-novo]').textContent = `+ Cadastrar “${txtNovo}” como novo cliente`;
       filtrados.forEach((op, k) => { const [a, b] = partes(op.textContent); const li = lista.children[k];
         li.textContent = a; if (b) { const sm = document.createElement('small'); sm.textContent = b; li.appendChild(sm); } });
       lista.hidden = false; inp.setAttribute('aria-expanded', 'true');
@@ -212,7 +217,7 @@
       else if (e.key === 'Escape') { fechar(); sync(); }
     });
     lista.addEventListener('mousedown', e => e.preventDefault());
-    lista.addEventListener('click', e => { const li = e.target.closest('li[data-k]'); if (li) escolher(filtrados[Number(li.dataset.k)]); });
+    lista.addEventListener('click', e => { if (e.target.closest('li[data-novo]')) { const t = inp.value.trim(); fechar(); opc.novo(t); return; } const li = e.target.closest('li[data-k]'); if (li) escolher(filtrados[Number(li.dataset.k)]); });
     inp.addEventListener('blur', () => setTimeout(() => { fechar(); sync(); }, 120));
     limpar.addEventListener('click', () => { sel.value = ''; sel.dispatchEvent(new Event('change', { bubbles: true })); inp.value = ''; limpar.hidden = true; inp.focus(); });
     sel.addEventListener('change', sync);
