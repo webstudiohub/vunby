@@ -419,7 +419,8 @@ carregarVitrine();
     };
   }
   const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  function iniciar(){ if(typeof api!=='function') return setTimeout(iniciar,200); api('/api/auth/depoimento').then(desenhar).catch(()=>{ corpo().innerHTML='<p class="muted">Não foi possível carregar agora.</p>'; }); }
+  function focar(){ if(!/[?&]avaliar=1/.test(location.search)) return; const c=document.getElementById('avaliar-vunby'); setTimeout(()=>{ c.scrollIntoView({behavior:'smooth',block:'start'}); c.animate([{boxShadow:'0 0 0 0 rgba(228,167,42,.7)'},{boxShadow:'0 0 0 14px rgba(228,167,42,0)'}],{duration:1200,iterations:2}); },400); }
+  function iniciar(){ if(typeof api!=='function') return setTimeout(iniciar,200); api('/api/auth/depoimento').then(d=>{desenhar(d);focar();}).catch(()=>{ corpo().innerHTML='<p class="muted">Não foi possível carregar agora.</p>'; }); }
   iniciar();
 })();
 </script>
