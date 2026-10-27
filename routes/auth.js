@@ -383,13 +383,11 @@ async function handle(req, res) {
   if (path === '/api/auth/depoimento' && (req.method === 'GET' || req.method === 'PUT')) {
     const user = await requireAuth(req, res);
     if (!user) return true;
-    const orc = await query('SELECT COUNT(*)::int AS n FROM quotes WHERE user_id = $1', [user.id]);
-    const podeAvaliar = orc.rows[0].n > 0;
+    const podeAvaliar = true;
     if (req.method === 'GET') {
       const r = await query('SELECT nota, texto, aprovado FROM vunby_depoimentos WHERE user_id = $1', [user.id]);
       return ok(res, { podeAvaliar, depoimento: r.rows[0] || null });
     }
-    if (!podeAvaliar) return badRequest(res, 'Faça seu primeiro orçamento para poder avaliar o VUNBY.');
     if (!(await rateLimit('depoimento:' + user.id, 10, 3600_000))) return badRequest(res, 'Muitas tentativas. Tente mais tarde.');
     let b; try { b = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
     const nota = parseInt(b.nota, 10);
