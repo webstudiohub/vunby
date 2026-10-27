@@ -365,6 +365,33 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
   </div>
 </section>
 
+<!-- AVALIAÇÕES DO VUNBY (só aparece quando houver avaliação aprovada) -->
+<section id="depoimentos" hidden>
+  <div class="wrap center">
+    <span class="tag">Quem já usa</span>
+    <h2 class="sec-title">O que os prestadores dizem</h2>
+    <p class="sec-sub">Avaliações de quem usa o VUNBY no dia a dia.</p>
+    <div class="dep-grade" id="dep-grade"></div>
+  </div>
+</section>
+<script>
+fetch('/api/public/depoimentos').then(r=>r.ok?r.json():[]).then(l=>{
+  if(!Array.isArray(l)||!l.length) return;
+  const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  document.getElementById('dep-grade').innerHTML=l.map(d=>`<figure class="dep-card"><div class="dep-est">${'★'.repeat(d.nota)}<span>${'★'.repeat(5-d.nota)}</span></div>
+    <blockquote>“${esc(d.texto)}”</blockquote>
+    <figcaption><strong>${esc(d.nome)}</strong>${[d.profissao,d.cidade].filter(Boolean).map(esc).join(' · ')}</figcaption></figure>`).join('');
+  document.getElementById('depoimentos').hidden=false;
+}).catch(()=>{});
+</script>
+<style>
+.dep-grade{display:grid;gap:14px;margin-top:26px;text-align:left;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.dep-card{margin:0;background:#fff;border:1.5px solid #E5E9F0;border-radius:18px;padding:20px;box-shadow:0 6px 20px rgba(15,23,42,.05)}
+.dep-est{color:#E4A72A;font-size:18px;letter-spacing:2px}.dep-est span{color:#D5DCE6}
+.dep-card blockquote{margin:10px 0 12px;font-size:16px;line-height:1.55;color:#1C1C1E}
+.dep-card figcaption{font-size:14px;color:#6B7280}.dep-card figcaption strong{display:block;color:#0F3A8C;font-size:15px}
+</style>
+
 <!-- PREÇO -->
 <section class="preco" id="preco">
   <div class="wrap center">

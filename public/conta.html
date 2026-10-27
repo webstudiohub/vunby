@@ -31,10 +31,17 @@
     <div id="indique-corpo"><p class="muted">Carregando…</p></div>
   </div>
 
+  <!-- Avalie o VUNBY -->
+  <div class="card anim anim-1" id="avaliar-vunby">
+    <h3>⭐ Avalie o VUNBY</h3>
+    <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-3)">Conte o que achou. Sua avaliação pode aparecer no site do VUNBY, com seu primeiro nome e sua profissão.</p>
+    <div id="av-corpo"><p class="muted">Carregando…</p></div>
+  </div>
+
   <!-- Marca no orçamento -->
   <div class="card anim anim-2">
     <h3>Sua marca no orçamento</h3>
-    <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-3)">Aparece no topo do orçamento que o seu cliente recebe. Grátis, sem marca do VUNBY.</p>
+    <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-3)">Aparece no topo do orçamento que o seu cliente recebe. O VUNBY aparece só num rodapé pequeno, no final.</p>
     <label style="margin-top:0">Nome da empresa (opcional)</label>
     <input id="m-empresa" maxlength="80" placeholder="Ex: Silva Reformas"/>
     <label>Logo</label>
@@ -387,4 +394,38 @@ async function salvarVitrine(){
 }
 carregarVitrine();
 </script>
+<script>
+(function(){
+  let nota=0;
+  const corpo=()=>document.getElementById('av-corpo');
+  function estrelas(){ return [1,2,3,4,5].map(n=>`<button type="button" class="av-est ${n<=nota?'on':''}" data-n="${n}" aria-label="${n} estrela${n>1?'s':''}">★</button>`).join(''); }
+  function desenhar(d){
+    if(!d.podeAvaliar){ corpo().innerHTML='<p style="margin:0">Faça seu primeiro orçamento e depois volte aqui para avaliar. 😉</p><a href="novo-orcamento.html"><button class="btn-outline" style="margin-top:12px">Fazer meu primeiro orçamento</button></a>'; return; }
+    const dep=d.depoimento; if(dep) nota=dep.nota;
+    corpo().innerHTML=`${dep?`<p class="muted" style="font-size:var(--fs-sm);margin:0 0 8px">${dep.aprovado?'✅ Sua avaliação está no site. Obrigado!':'⏳ Recebemos sua avaliação. Ela aparece no site depois de revisada.'}</p>`:''}
+      <div class="av-estrelas">${estrelas()}</div>
+      <label>O que o VUNBY mudou no seu trabalho?</label>
+      <textarea id="av-texto" rows="3" maxlength="300" placeholder="Ex.: Meus orçamentos ficaram profissionais e os clientes respondem mais rápido.">${dep?esc(dep.texto):''}</textarea>
+      <p id="av-msg" style="font-size:var(--fs-sm);margin:8px 0 0"></p>
+      <button class="btn-primary" id="av-btn" style="margin-top:10px">${dep?'Atualizar avaliação':'Enviar avaliação'}</button>`;
+    corpo().querySelectorAll('.av-est').forEach(b=>b.onclick=()=>{ nota=+b.dataset.n; corpo().querySelectorAll('.av-est').forEach(x=>x.classList.toggle('on',+x.dataset.n<=nota)); });
+    document.getElementById('av-btn').onclick=async()=>{
+      const m=document.getElementById('av-msg'), btn=document.getElementById('av-btn'); m.style.color='#B45309';
+      if(!nota){ m.textContent='Toque nas estrelas para dar sua nota.'; return; }
+      btn.disabled=true;
+      try{ const r=await api('/api/auth/depoimento',{method:'PUT',body:{nota,texto:document.getElementById('av-texto').value}}); m.style.color='#157A4A'; m.textContent=r.message; }
+      catch(e){ m.textContent=e.message; }
+      btn.disabled=false;
+    };
+  }
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function iniciar(){ if(typeof api!=='function') return setTimeout(iniciar,200); api('/api/auth/depoimento').then(desenhar).catch(()=>{ corpo().innerHTML='<p class="muted">Não foi possível carregar agora.</p>'; }); }
+  iniciar();
+})();
+</script>
+<style>
+.av-estrelas{display:flex;gap:6px;margin-bottom:4px}
+.av-est{background:none;border:none;font-size:38px;line-height:1;color:#D5DCE6;cursor:pointer;padding:0;min-height:0}
+.av-est.on{color:#E4A72A}
+</style>
 </body></html>

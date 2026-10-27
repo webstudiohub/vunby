@@ -97,6 +97,17 @@ function listaSaidas() {
   return `<div class="adm-lista">${resumo ? `<div class="adm-item"><strong>Motivos mais comuns</strong><div style="margin-top:8px">${resumo}</div></div>` : ''}${itens || '<p class="muted">Ninguém saiu ainda.</p>'}</div>`;
 }
 
+function listaDepoimentos() {
+  const itens = (D.depoimentos || []).map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${esc(x.profissao || '')} ${x.cidade ? '· ' + esc(x.cidade) : ''} · ${x.orcamentos} orçamento(s) · ${dth(x.updated_at)}</small></div>
+    <span class="adm-tag ${x.aprovado ? 'adm-tag-ok' : 'adm-tag-alerta'}">${'★'.repeat(x.nota)} · ${x.aprovado ? 'no site' : 'aguardando'}</span></div>
+    <p style="margin-top:6px;white-space:pre-wrap">“${esc(x.texto)}”</p>
+    <div class="adm-acoes"><button class="btn-outline btn-sm" onclick="aprovarDep(${x.id}, ${!x.aprovado})">${x.aprovado ? 'Tirar do site' : 'Mostrar no site'}</button></div></div>`).join('');
+  return `<div class="adm-lista">${itens || '<p class="muted">Nenhuma avaliação do VUNBY ainda. Os usuários avaliam pela tela Conta.</p>'}</div>`;
+}
+async function aprovarDep(id, aprovado) {
+  try { await api('/api/admin/depoimento', { method: 'POST', body: { id, aprovado } }); VUI.toast(aprovado ? 'Aparece no site' : 'Tirado do site', 'ok'); carregar(); } catch (e) { VUI.toast(e.message, 'erro'); }
+}
+
 function listaPix() {
   return `<div class="adm-lista">` + (D.pix.map(x => `<div class="adm-item"><div class="adm-item-topo"><div><strong>${esc(x.nome)}</strong><small>${esc(x.email)} · ${dth(x.criado_em)}</small></div><span class="adm-tag ${x.status === 'approved' ? 'adm-tag-ok' : ''}">${dinheiro(x.valor)} · ${x.status === 'approved' ? 'pago' : esc(x.status)}</span></div></div>`).join('') || '<p class="muted">Nenhum Pix ainda.</p>') + `</div>`;
 }
@@ -152,8 +163,8 @@ function listaSite() {
 }
 
 function desenhar() {
-  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['saidas', 'Saídas'], ['pix', 'Pix'], ['indicacoes', 'Indicações'], ['site', 'Site']];
-  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, saidas: listaSaidas, pix: listaPix, indicacoes: listaIndicacoes, site: listaSite }[aba]();
+  const abas = [['usuarios', 'Usuários'], ['opinioes', 'Opiniões'], ['sugestoes', 'Sugestões'], ['saidas', 'Saídas'], ['depoimentos', 'Depoimentos'], ['pix', 'Pix'], ['indicacoes', 'Indicações'], ['site', 'Site']];
+  const corpo = { usuarios: listaUsuarios, opinioes: listaOpinioes, sugestoes: listaSugestoes, saidas: listaSaidas, depoimentos: listaDepoimentos, pix: listaPix, indicacoes: listaIndicacoes, site: listaSite }[aba]();
   document.getElementById('conteudo').innerHTML = numeros() +
     `<div class="adm-abas">${abas.map(([k, r]) => `<button class="${k === aba ? 'on' : ''}" onclick="aba='${k}';desenhar()">${r}</button>`).join('')}</div>` + corpo;
 }

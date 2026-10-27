@@ -379,6 +379,30 @@ async function handle(req, res) {
     return ok(res, { message: 'Vitrine salva.' });
   }
 
+  // GET/PUT /api/auth/depoimento — o prestador avalia o VUNBY (aparece na página inicial depois de aprovado no painel)
+  if (path === '/api/auth/depoimento' && (req.method === 'GET' || req.method === 'PUT')) {
+    const user = await requireAuth(req, res);
+    if (!user) return true;
+    const orc = await query('SELECT COUNT(*)::int AS n FROM quotes WHERE user_id = $1', [user.id]);
+    const podeAvaliar = orc.rows[0].n > 0;
+    if (req.method === 'GET') {
+      const r = await query('SELECT nota, texto, aprovado FROM vunby_depoimentos WHERE user_id = $1', [user.id]);
+      return ok(res, { podeAvaliar, depoimento: r.rows[0] || null });
+    }
+    if (!podeAvaliar) return badRequest(res, 'Faça seu primeiro orçamento para poder avaliar o VUNBY.');
+    if (!(await rateLimit('depoimento:' + user.id, 10, 3600_000))) return badRequest(res, 'Muitas tentativas. Tente mais tarde.');
+    let b; try { b = await readBody(req); } catch { return badRequest(res, 'Dados inválidos'); }
+    const nota = parseInt(b.nota, 10);
+    if (!(nota >= 1 && nota <= 5)) return badRequest(res, 'Escolha de 1 a 5 estrelas.');
+    const texto = String(b.texto || '').trim().replace(/\s+/g, ' ').slice(0, 300);
+    if (texto.length < 10) return badRequest(res, 'Conte um pouco mais (pelo menos uma frase).');
+    // Ao editar, volta para aprovação
+    await query(`INSERT INTO vunby_depoimentos (user_id, nota, texto) VALUES ($1, $2, $3)
+                 ON CONFLICT (user_id) DO UPDATE SET nota = EXCLUDED.nota, texto = EXCLUDED.texto, aprovado = FALSE, updated_at = NOW()`,
+      [user.id, nota, texto]);
+    return ok(res, { message: 'Obrigado! Sua avaliação vai aparecer no site depois de revisada.' });
+  }
+
   // POST /api/auth/resend-verification
   if (req.method === 'POST' && path === '/api/auth/resend-verification') {
     if (!(await rateLimit(`resend-verification:${ip}`, 3, 60_000))) return badRequest(res, 'Muitas tentativas. Aguarde um minuto.');

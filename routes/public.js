@@ -60,6 +60,18 @@ async function handle(req, res) {
   // IP real (Render atrás da Cloudflare): guardado só no registro da aprovação
   const ip = req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '';
 
+  // GET /api/public/depoimentos — avaliações do VUNBY feitas por prestadores (só as aprovadas no painel)
+  if (req.method === 'GET' && path === '/api/public/depoimentos') {
+    const r = await query(`SELECT d.nota, d.texto, u.nome, u.nome_empresa, u.profissao, u.cidade
+                             FROM vunby_depoimentos d JOIN users u ON u.id = d.user_id
+                            WHERE d.aprovado ORDER BY d.updated_at DESC LIMIT 12`);
+    const nomeCurto = n => { const p = String(n || '').trim().split(/\s+/); return p.length > 1 ? `${p[0]} ${p[p.length - 1][0].toUpperCase()}.` : (p[0] || ''); };
+    const cap = t => String(t || '').replace(/\b\p{L}/gu, c => c.toUpperCase());
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return ok(res, r.rows.map(x => ({ nota: x.nota, texto: x.texto, nome: cap(nomeCurto(x.nome)),
+      empresa: x.nome_empresa || '', profissao: x.profissao || '', cidade: x.cidade || '' })));
+  }
+
   // GET /api/public/logo/:token.png — logo da empresa dona do orçamento (para o e-mail do cliente)
   const logoMatch = path.match(/^\/api\/public\/logo\/([A-Za-z0-9_-]+)\.(png|jpg)$/);
   if (req.method === 'GET' && logoMatch) {

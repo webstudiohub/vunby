@@ -21,7 +21,7 @@ async function handle(req, res) {
 
   // GET /api/admin/resumo — números, usuários, opiniões, sugestões e pagamentos
   if (req.method === 'GET' && path === '/api/admin/resumo') {
-    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes, siteDias, siteOrig, saidas] = await Promise.all([
+    const [num, usuarios, feedbacks, pulsos, sugestoes, pix, indic, pendentes, siteDias, siteOrig, saidas, depoimentos] = await Promise.all([
       query(`SELECT
           COUNT(*)::int AS total,
           COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days')::int AS novos_7d,
@@ -74,10 +74,13 @@ async function handle(req, res) {
               GROUP BY origem ORDER BY visitantes DESC LIMIT 10`),
       query(`SELECT x.id, x.tipo, x.motivo, x.comentario, x.avisar_melhoria, x.created_at, u.id AS user_id, u.nome, u.email, u.telefone
                FROM saidas x JOIN users u ON u.id = x.user_id WHERE lower(u.email) <> $1 ORDER BY x.created_at DESC LIMIT 100`, [ADMIN_EMAIL]),
+      query(`SELECT d.id, d.nota, d.texto, d.aprovado, d.updated_at, u.nome, u.email, u.profissao, u.cidade,
+                    (SELECT COUNT(*)::int FROM quotes q WHERE q.user_id = u.id) AS orcamentos
+               FROM vunby_depoimentos d JOIN users u ON u.id = d.user_id ORDER BY d.aprovado, d.updated_at DESC LIMIT 100`),
     ]);
     return ok(res, {
       numeros: num.rows[0], usuarios: usuarios.rows, feedbacks: feedbacks.rows,
-      pulsos: pulsos.rows, sugestoes: sugestoes.rows, pix: pix.rows, saidas: saidas.rows,
+      pulsos: pulsos.rows, sugestoes: sugestoes.rows, pix: pix.rows, saidas: saidas.rows, depoimentos: depoimentos.rows,
       indicacoes: indic.rows, mesesPendentes: pendentes.rows,
       site: { dias: siteDias.rows, origens: siteOrig.rows },
     });
@@ -160,6 +163,15 @@ async function handle(req, res) {
     const id = Number(b.userId);
     if (!Number.isInteger(id) || id <= 0) return badRequest(res, 'Dados inválidos.');
     await query('UPDATE users SET meses_gratis_pendentes = GREATEST(meses_gratis_pendentes - 1, 0) WHERE id = $1', [id]);
+    return ok(res, { ok: true });
+  }
+
+  // POST /api/admin/depoimento { id, aprovado } — mostra ou esconde a avaliação do VUNBY na página inicial
+  if (req.method === 'POST' && path === '/api/admin/depoimento') {
+    let b; try { b = await readBody(req, 2_000); } catch { return badRequest(res); }
+    const id = Number(b.id);
+    if (!Number.isInteger(id) || id <= 0) return badRequest(res, 'Dados inválidos.');
+    await query('UPDATE vunby_depoimentos SET aprovado = $2 WHERE id = $1', [id, !!b.aprovado]);
     return ok(res, { ok: true });
   }
 
