@@ -55,6 +55,8 @@ function renderPlano(st){
     topo=`<p style="margin-bottom:var(--sp-3)"><strong>Pago com Pix <span style="color:var(--green)">${ic('ok',18)}</span></strong> Seu acesso vai até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}. Você pode pagar o próximo mês abaixo (os dias se somam).</p>`;
   }else if(st.tipo==='cancelada_com_acesso'){
     topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Sua assinatura foi cancelada. Você continua com acesso até ${new Date(st.acessoAte).toLocaleDateString('pt-BR')}.</p>`;
+  }else if(st.tipo==='expirado'){
+    topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Você está no plano grátis: ${st.gratisUsados||0} de ${st.gratisLimite||5} orçamentos usados este mês. Assinando, você cria sem limite.</p>`;
   }else if(st.tipo==='trial'){
     topo=`<p class="muted" style="margin-bottom:var(--sp-3)">Você está no teste grátis: ${st.diasTrial===1?'último dia':'faltam '+st.diasTrial+' dias'}.</p>`;
   }
@@ -200,7 +202,7 @@ function pagamentoConfirmado(){
   const params=new URLSearchParams(location.search);
   const aviso=document.getElementById('aviso');
   if(params.get('bloqueado')){
-    aviso.innerHTML=`<div class="card aviso-plano aviso-plano-fim"><strong>Seu teste grátis terminou.</strong><p>Seus orçamentos continuam salvos. Para criar novos, assine abaixo.</p></div>`;
+    aviso.innerHTML=`<div class="card aviso-plano aviso-plano-fim"><strong>Você usou os 5 orçamentos grátis deste mês.</strong><p>Seus orçamentos continuam salvos. Assine abaixo para criar sem limite.</p></div>`;
   }
   try{
     if(params.get('retorno')){

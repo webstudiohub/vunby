@@ -33,7 +33,7 @@ function situacao(u) {
   if (u.assinatura_status === 'pix') return acesso > agora ? ['Pix', 'ok', 'até ' + dt(u.acesso_ate)] : ['Pix vencido', 'ruim', dt(u.acesso_ate)];
   if (acesso > agora) return ['Liberado', 'ok', 'até ' + dt(u.acesso_ate)];
   if (trial > agora) return ['Teste', 'alerta', 'até ' + dt(u.trial_ate)];
-  return ['Sem acesso', 'ruim', 'venceu ' + dt(acesso || trial)];
+  return ['Grátis', 'alerta', '5/mês desde ' + dt(acesso || trial)];
 }
 function notaTag(n) { return `<span class="adm-tag ${n >= 9 ? 'adm-tag-ok' : n >= 7 ? 'adm-tag-alerta' : 'adm-tag-ruim'}">${n}/10</span>`; }
 
@@ -43,7 +43,7 @@ function numeros() {
   return `<div class="adm-num">
     ${c('Usuários', n.total, '+' + n.novos_7d + ' em 7 dias')}
     ${c('Pagantes', n.cartao + n.pix, n.cartao + ' cartão · ' + n.pix + ' Pix')}
-    ${c('Em teste', n.em_teste, n.vencidos + ' sem acesso')}
+    ${c('Em teste', n.em_teste, n.vencidos + ' no grátis')}
     ${c('Receita/mês', dinheiro(n.receita_mensal), n.vencendo ? n.vencendo + ' Pix vencendo' : '')}
     ${c('Orçamentos', n.orcamentos, '+' + n.orcamentos_7d + ' em 7 dias')}
     ${c('Notificações', n.aparelhos_push, 'aparelhos')}

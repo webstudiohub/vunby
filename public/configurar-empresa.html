@@ -180,7 +180,9 @@ document.addEventListener('change',async e=>{
   catch(err){ $('msg').textContent=err.message; }
 });
 
-function destino(){ return EDITAR?'conta.html':'dashboard.html'; }
+// Quem chegou pelo "orçamento sem cadastro" segue direto para enviar esse orçamento
+function temPrimeiro(){ try{ return !!localStorage.getItem('vunby:primeiro-orcamento'); }catch{ return false; } }
+function destino(){ return EDITAR?'conta.html':(temPrimeiro()?'novo-orcamento.html':'dashboard.html'); }
 function depois(){ location.href=destino(); }
 
 async function salvar(){
@@ -215,6 +217,7 @@ async function salvar(){
     document.body.classList.add('ce-onboarding');
   }
   $('f-empresa').value=u.nomeEmpresa||'';
+  if(!EDITAR&&!u.nomeEmpresa){ try{ const pr=JSON.parse(localStorage.getItem('vunby:primeiro-orcamento')||'null'); if(pr&&pr.empresa) $('f-empresa').value=pr.empresa; }catch{} }
   $('f-cidade').value=u.cidade||'';
   $('f-documento').value=u.documento||'';
   $('f-instagram').value=u.instagram?'@'+u.instagram:'';

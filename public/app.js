@@ -12,7 +12,7 @@ async function api(path, { method = 'GET', body } = {}) {
     throw new Error('Sem conexão. Verifique sua internet e tente novamente.');
   }
   const data = await res.json().catch(() => ({}));
-  // 402 = teste grátis terminou e a ação exige assinatura
+  // 402 = acabaram os orçamentos do plano grátis no mês e a ação exige assinatura
   if (res.status === 402 && data.bloqueado) { window.location.href = '/planos.html?bloqueado=1'; }
   if (!res.ok) throw new Error(data.error || `Erro ${res.status}`);
   return data;
@@ -35,12 +35,21 @@ function avisoPlano(st) {
   if (!st) return '';
   let html = '';
   if (st.tipo === 'expirado') {
-    html += `<div class="card aviso-plano aviso-plano-fim">
-      <strong>${st.status === 'pix' ? 'Seu mês pago terminou.' : 'Seu teste grátis terminou.'}</strong>
-      <p>Seus orçamentos continuam salvos aqui. Para criar novos, assine o VUNBY.</p>
+    const lim = Number(st.gratisLimite) || 5;
+    const rest = st.gratisRestantes != null ? Number(st.gratisRestantes) : lim;
+    if (rest <= 0) {
+      html += `<div class="card aviso-plano aviso-plano-fim">
+      <strong>Você usou os ${lim} orçamentos grátis deste mês.</strong>
+      <p>Seus orçamentos continuam salvos. Assine o VUNBY para criar sem limite, ou espere o próximo mês.</p>
       <a href="planos.html"><button class="btn-primary btn-gold">Ver planos</button></a>
       <a href="saida.html?tipo=${st.status === 'pix' ? 'nao_renovou' : 'nao_assinou'}" style="font-size:var(--fs-sm);color:var(--muted);text-align:center;margin-top:4px">Não vai continuar? Conta pra gente o motivo</a>
     </div>`;
+    } else {
+      html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">
+        <span>${ic('presente')} Plano grátis: <strong>${rest === 1 ? 'resta 1 orçamento' : 'restam ' + rest + ' orçamentos'}</strong> este mês</span>
+        <span class="aviso-plano-link">Sem limite ›</span>
+      </a>`;
+    }
   } else if (st.tipo === 'pix' && st.acessoAte && new Date(st.acessoAte) - Date.now() < 3 * 86400000) {
     html += `<a href="planos.html" class="card aviso-plano aviso-plano-trial">
       <span>${ic('calendario')} Seu acesso vence dia <strong>${new Date(st.acessoAte).toLocaleDateString('pt-BR')}</strong></span>

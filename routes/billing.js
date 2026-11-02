@@ -96,7 +96,7 @@ async function handle(req, res) {
   // GET /api/billing/status
   if (req.method === 'GET' && path === '/api/billing/status') {
     const u = await B.getBillingUser(user.id);
-    const s = B.situacao(u);
+    const s = await B.situacaoCompleta(u);
     const vagas = await B.vagasFundadorRestantes();
     const precoOferta = B.valorPara(u, u.fundador || vagas > 0);
     return ok(res, {
@@ -225,7 +225,7 @@ async function handle(req, res) {
     }
     const row2 = await query('SELECT status, creditado FROM pix_pagamentos WHERE id = $1', [mPix[1]]);
     const u2 = await B.getBillingUser(user.id);
-    return ok(res, { pago: !!row2.rows[0].creditado, status: row2.rows[0].status, situacao: B.situacao(u2) });
+    return ok(res, { pago: !!row2.rows[0].creditado, status: row2.rows[0].status, situacao: await B.situacaoCompleta(u2) });
   }
 
   // POST /api/billing/sync — chamado na volta do pagamento (não depende só do webhook)
@@ -237,7 +237,7 @@ async function handle(req, res) {
       }
     }
     const u2 = await B.getBillingUser(user.id);
-    return ok(res, B.situacao(u2));
+    return ok(res, await B.situacaoCompleta(u2));
   }
 
   // POST /api/billing/cancel — cancelar em 1 clique; o acesso continua até o fim do mês pago
@@ -253,7 +253,7 @@ async function handle(req, res) {
     }
     await B.aplicarPreapproval(r.data);
     const u2 = await B.getBillingUser(user.id);
-    return ok(res, B.situacao(u2));
+    return ok(res, await B.situacaoCompleta(u2));
   }
 
   // POST /api/feedback — respostas da pesquisa de opinião
@@ -352,12 +352,12 @@ async function rodarTarefas(sendEmail) {
     const nome = escHtml(String(u.nome || '').split(' ')[0]);
     await sendEmail({
       to: u.email,
-      subject: 'Seu teste grátis do VUNBY terminou',
+      subject: 'Seu teste do VUNBY terminou: você agora está no plano grátis',
       html: layout({
-        preheader: 'Seus orçamentos continuam salvos. Assine para continuar criando novos.',
+        preheader: 'Você continua com 5 orçamentos grátis por mês. Assine para criar sem limite.',
         titulo: `${nome}, seu teste grátis terminou`,
-        corpo: p('Seus <strong>14 dias de teste</strong> acabaram. Fique tranquilo: <strong>seus orçamentos continuam salvos</strong> e você pode vê-los quando quiser.') +
-          p('Para continuar criando orçamentos, assine o VUNBY. Os <strong>100 primeiros assinantes</strong> pagam <strong>R$29,90/mês para sempre</strong> (preço normal R$49,90).') +
+        corpo: p('Seus <strong>14 dias de teste</strong> acabaram. Fique tranquilo: <strong>seus orçamentos continuam salvos</strong> e você entrou no <strong>plano grátis, com 5 orçamentos por mês</strong>.') +
+          p('Para criar orçamentos sem limite, assine o VUNBY. Os <strong>100 primeiros assinantes</strong> pagam <strong>R$29,90/mês para sempre</strong> (preço normal R$49,90).') +
           botao(base + '/planos.html', 'Ver planos') +
           p('<span style="color:#6B7280;font-size:14px">Sem fidelidade: cancele quando quiser, em 1 clique.</span>') +
           p('<span style="color:#6B7280;font-size:14px">Não vai assinar agora? <a href="' + base + '/saida.html?tipo=nao_assinou" style="color:#0F3A8C">Conta pra gente o motivo em 30 segundos</a> — é assim que o VUNBY melhora.</span>'),

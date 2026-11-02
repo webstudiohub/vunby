@@ -63,7 +63,7 @@ async function handle(req, res) {
   // POST /api/quotes — modo rápido
   if (req.method === 'POST' && path === '/api/quotes') {
     if (!(await podeCriarOrcamento(user.id))) {
-      return json(res, 402, { error: 'Seu teste grátis terminou. Seus orçamentos continuam salvos; para criar novos, assine o VUNBY.', bloqueado: true });
+      return json(res, 402, { error: 'Você usou os 5 orçamentos grátis deste mês. Assine o VUNBY para criar orçamentos sem limite (ou espere o próximo mês).', bloqueado: true });
     }
     let body; try { body = await readBody(req); } catch { return badRequest(res); }
     const { clientId, servico, valor, validade, observacoes, pacoteIds, precisaFollowUp } = body;

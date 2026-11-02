@@ -95,7 +95,10 @@ if(window.VunbyRef&&VunbyRef.codigo()){var ra=document.getElementById('ref-aviso
 // Página para onde ir depois de entrar: só endereços internos do VUNBY
 function destinoAposLogin(){
   const v=new URLSearchParams(location.search).get('volta')||'';
-  return /^\/[A-Za-z0-9-]+(\.html)?(\?[\w=&%.-]*)?$/.test(v)&&!v.startsWith('//')?v:'/dashboard.html';
+  if(/^\/[A-Za-z0-9-]+(\.html)?(\?[\w=&%.-]*)?$/.test(v)&&!v.startsWith('//')) return v;
+  // Veio do "orçamento sem cadastro": vai direto enviar esse orçamento
+  try{ if(localStorage.getItem('vunby:primeiro-orcamento')) return '/novo-orcamento.html'; }catch{}
+  return '/dashboard.html';
 }
 async function login(){
   const email=document.getElementById('l-email').value;
