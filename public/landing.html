@@ -3,7 +3,7 @@
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>VUNBY — Orçamentos que fecham negócio</title>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/><link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2"/>
-<meta name="description" content="Monte orçamentos bonitos em minutos, envie pelo WhatsApp e saiba quando o cliente abriu. 14 dias grátis, sem cartão."/>
+<meta name="description" content="Monte orçamentos bonitos em minutos, envie pelo WhatsApp e saiba quando o cliente abriu. 14 dias com tudo liberado, depois 5 orçamentos grátis por mês. Sem cartão."/>
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="VUNBY — Orçamentos que fecham negócio"/>
 <meta property="og:description" content="Envie orçamentos pelo WhatsApp, acompanhe em tempo real e nunca perca um cliente."/>
@@ -118,7 +118,12 @@ section{padding:72px 0}
 /* preço */
 .preco{background:radial-gradient(120% 100% at 50% 0%,#2D64BE 0%,var(--navy) 45%,var(--navy-3) 100%);color:#fff}
 .preco .sec-sub{color:rgba(255,255,255,.8)}
-.pcard{max-width:420px;margin:36px auto 0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:22px;padding:30px 26px;text-align:left}
+.pcards{display:grid;gap:20px;max-width:880px;margin:36px auto 0;align-items:start}
+@media(min-width:820px){.pcards{grid-template-columns:1fr 1fr}}
+.pcards .pcard{margin:0}
+.pcard-free{background:rgba(255,255,255,.04)}
+.pcard .fund-free{background:rgba(255,255,255,.14);color:#fff}
+.pcard{max-width:420px;width:100%;justify-self:center;margin:36px auto 0;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.18);border-radius:22px;padding:30px 26px;text-align:left}
 .pcard .fund{display:inline-block;background:var(--chrome-gold);color:#1C1C1E;font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase;padding:6px 12px;border-radius:8px;margin-bottom:16px}
 .pcard .de{text-decoration:line-through;opacity:.7;font-size:17px}
 .pcard .valor{font-size:56px;font-weight:800;line-height:1;margin:4px 0 6px}
@@ -225,9 +230,9 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
       <p class="lead">Monte orçamentos profissionais em minutos, envie pelo WhatsApp e acompanhe cada cliente até fechar. Feito para quem presta serviço.</p>
       <div class="ctas">
         <a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a>
-        <a href="/experimentar" class="btn btn-ghost">Fazer um orçamento agora, sem cadastro</a>
+        <a href="/experimentar" class="btn btn-ghost">Montar um orçamento agora, sem cadastro</a>
       </div>
-      <div class="mini"><span>Sem cartão de crédito</span><span>Funciona no celular</span><span>Cancele em 1 clique</span></div>
+      <div class="mini"><span>Sem cartão de crédito</span><span>5 orçamentos grátis por mês, para sempre</span><span>Funciona no celular</span></div>
     </div>
   </div>
   <div class="notif hero-notif" aria-hidden="true"><div class="dot"><svg class="ic" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div><div>Carlos abriu seu orçamento<br><span style="color:var(--muted);font-weight:500">agora mesmo · R$ 1.850</span></div></div>
@@ -279,7 +284,7 @@ footer nav{display:flex;flex-wrap:wrap;gap:8px 20px}
     <h2 class="sec-title">Seu primeiro orçamento em 5 minutos</h2>
     <p class="sec-sub">Não precisa entender de tecnologia. É assim:</p>
     <div class="passos cinco" style="text-align:left">
-      <div class="passo"><h3>Crie a conta</h3><p>Nome, e-mail e WhatsApp. Pronto: 14 dias grátis, sem cartão.</p></div>
+      <div class="passo"><h3>Crie a conta</h3><p>Nome, e-mail e WhatsApp. Pronto: 14 dias com tudo liberado, sem cartão.</p><div class="dica">Quer ver antes? <a href="/experimentar">Monte um orçamento sem cadastro</a>.</div></div>
       <div class="passo"><h3>Coloque sua marca</h3><p>Nome da empresa, profissão, cidade e logo. Aparecem em todo orçamento.</p></div>
       <div class="passo"><h3>Monte sua tabela</h3><p>Escolha o modelo da sua profissão e ajuste os preços.</p><div class="dica">Faz uma vez só e usa sempre.</div></div>
       <div class="passo"><h3>Faça o orçamento</h3><p>Escolha o cliente, toque nos itens e marque o que é opcional. O total sai sozinho.</p></div>
@@ -396,14 +401,27 @@ fetch('/api/public/depoimentos').then(r=>r.ok?r.json():[]).then(l=>{
 <section class="preco" id="preco">
   <div class="wrap center">
     <h2 class="sec-title">Um preço simples. Para sempre.</h2>
-    <p class="sec-sub">Teste 14 dias grátis. Se gostar, garanta o preço de fundador.</p>
+    <p class="sec-sub">Comece grátis. Quando precisar de mais, garanta o preço de fundador.</p>
+    <div class="pcards">
+    <div class="pcard pcard-free">
+      <span class="fund fund-free">Plano grátis</span>
+      <div class="valor"><small>R$</small>0 <span>/mês</span></div>
+      <div class="obs">Para sempre. Sem cartão.</div>
+      <ul>
+        <li>14 dias com tudo liberado e orçamentos sem limite</li>
+        <li>Depois, 5 orçamentos por mês</li>
+        <li>Todos os recursos do app</li>
+        <li>Seus orçamentos ficam sempre salvos</li>
+      </ul>
+      <a href="/cadastro" class="btn btn-ghost">Criar minha conta grátis</a>
+    </div>
     <div class="pcard">
       <span class="fund">Preço de fundador</span>
       <div class="de">de R$ 49,90/mês</div>
       <div class="valor"><small>R$</small>29,90 <span>/mês</span></div>
       <div class="obs">Para sempre, para os 100 primeiros assinantes.</div>
       <ul>
-        <li>Orçamentos ilimitados</li>
+        <li>Orçamentos sem limite</li>
         <li>Radar de vendas e lembretes de follow-up</li>
         <li>Saiba quando o cliente abriu</li>
         <li>Itens, opcionais e tabela de preços</li>
@@ -411,7 +429,8 @@ fetch('/api/public/depoimentos').then(r=>r.ok?r.json():[]).then(l=>{
         <li>Sem fidelidade: cancele em 1 clique</li>
       </ul>
       <a href="/cadastro" class="btn btn-gold">Começar meus 14 dias grátis</a>
-      <div class="pag">Depois do teste, pague com Pix ou cartão. Não quer assinar? Fica no plano grátis, com 5 orçamentos por mês.</div>
+      <div class="pag">Pague com Pix ou cartão. Assine quando quiser, até durante o teste.</div>
+    </div>
     </div>
   </div>
 </section>
@@ -422,7 +441,9 @@ fetch('/api/public/depoimentos').then(r=>r.ok?r.json():[]).then(l=>{
     <span class="tag">Dúvidas</span>
     <h2 class="sec-title">Perguntas frequentes</h2>
     <div class="faq" style="text-align:left">
-      <details><summary>Preciso colocar cartão para testar?</summary><p>Não. Você cria a conta e usa grátis por 14 dias, sem cartão. Só paga se quiser continuar.</p></details>
+      <details><summary>Preciso colocar cartão para testar?</summary><p>Não. Você cria a conta e usa tudo liberado por 14 dias, sem cartão. Depois continua grátis com 5 orçamentos por mês. Só paga se quiser criar sem limite.</p></details>
+      <details><summary>Dá para testar sem criar conta?</summary><p>Dá. Em <a href="/experimentar">vunby.com.br/experimentar</a> você monta um orçamento e vê na hora como o cliente recebe. Para enviar ao cliente, aí sim você cria a conta, e o orçamento já fica pronto lá dentro.</p></details>
+      <details><summary>O plano grátis acaba?</summary><p>Não. Os 5 orçamentos voltam todo mês, para sempre. A assinatura é só para quem precisa de mais.</p></details>
       <details><summary>O que acontece quando o teste acaba?</summary><p>Você entra no plano grátis: continua com 5 orçamentos por mês, para sempre, e todos os seus orçamentos ficam salvos. Para criar sem limite, é só assinar.</p></details>
       <details><summary>Meu cliente precisa baixar algum aplicativo?</summary><p>Não. Ele recebe um link pelo WhatsApp e abre direto no celular. Pode aprovar ou pedir alteração ali mesmo.</p></details>
       <details><summary>Funciona no celular?</summary><p>Sim, foi feito para o celular. Funciona no Android e no iPhone, direto pelo navegador.</p></details>
@@ -440,7 +461,7 @@ fetch('/api/public/depoimentos').then(r=>r.ok?r.json():[]).then(l=>{
   <div class="wrap">
     <div class="box">
       <h2>Seu próximo cliente pode estar esperando um orçamento.</h2>
-      <p>Faça o primeiro em menos de 5 minutos.</p>
+      <p>Faça o primeiro em menos de 5 minutos. Grátis.</p>
       <a href="/cadastro" class="btn btn-gold">Testar grátis por 14 dias</a>
     </div>
   </div>

@@ -412,7 +412,7 @@ async function rodarTarefas(sendEmail) {
       html: layout({
         preheader: 'Pague o próximo mês pelo Pix para não perder o acesso.',
         titulo: `${nome}, seu acesso vence dia ${dia}`,
-        corpo: p('Seu mês pago com <strong>Pix</strong> está terminando. Para continuar criando orçamentos, pague o próximo mês. Leva menos de 1 minuto.') +
+        corpo: p('Seu mês pago com <strong>Pix</strong> está terminando. Pague o próximo mês para continuar com orçamentos sem limite (sem pagar, sua conta volta para o plano grátis, com 5 por mês). Leva menos de 1 minuto.') +
           botao(base + '/planos.html', 'Pagar com Pix') +
           p('<span style="color:#6B7280;font-size:14px">Prefere não lembrar todo mês? Assine no cartão e a cobrança é automática.</span>'),
       }),
