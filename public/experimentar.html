@@ -73,6 +73,17 @@
 .kit-grupo{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 2px}
 .kit-pe{padding:14px 20px;border-top:1px solid #EEF0F3;display:grid;gap:8px}
 .kit-nota{font-size:13px;color:var(--muted);margin:0}
+/* Tutorial passo a passo */
+.tt-luz{position:absolute;z-index:60;border-radius:14px;box-shadow:0 0 0 9999px rgba(8,18,40,.62);pointer-events:none;transition:all .25s ease}
+.tt-bloq{position:fixed;inset:0;z-index:59}
+.tt-bal{position:absolute;z-index:61;background:#fff;border-radius:16px;padding:18px 18px 14px;box-shadow:0 14px 40px rgba(0,0,0,.35);width:min(340px,calc(100vw - 32px));transition:top .25s ease,left .25s ease}
+.tt-bal h4{margin:0 0 6px;font-size:var(--fs-lg);color:#0F3A8C}
+.tt-bal p{margin:0 0 14px;font-size:var(--fs-md);line-height:1.45;color:#1B2433}
+.tt-pe{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tt-pe small{color:var(--muted);font-weight:700}
+.tt-pe .tt-bt{display:flex;gap:8px}
+.tt-pe button{width:auto;padding:10px 16px;min-height:0;font-size:15px}
+.xp-tut{display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:#EEF4FA;color:#0F3A8C;border:none;border-radius:999px;padding:8px 16px;font-weight:700;font-size:15px;cursor:pointer;width:auto;min-height:0}
 </style>
 </head><body>
 <header class="xp-top">
@@ -84,6 +95,7 @@
     <span class="xp-selo">Sem cadastro · leva 1 minuto</span>
     <h1>Monte seu orçamento agora. Sem cadastro.</h1>
     <p>Preencha e veja na hora como o seu cliente vai receber.</p>
+    <button type="button" class="xp-tut" onclick="tutorial(0)">▶ Ver como funciona (1 min)</button>
   </div>
 
   <div class="xp-grid">
@@ -264,5 +276,47 @@ try{
 editor=ItensEditor($('itens-editor'),salvo&&salvo.itens,()=>prever(),{ferramentas:[{rotulo:'Itens prontos da minha profissão',acao:abrirKits}]});
 document.addEventListener('input',e=>{ if(e.target.id==='x-tel') e.target.value=mascara(e.target.value); if(!e.target.closest('#itens-editor')) prever(); });
 prever();
+
+// ─── Tutorial passo a passo ───
+const PASSOS=[
+  {el:'#x-empresa',t:'Seu nome',d:'Escreva o nome da sua empresa (ou o seu). Ele aparece no topo do orçamento que o cliente recebe.'},
+  {el:'#x-cliente',t:'O cliente',d:'Coloque o nome e o WhatsApp do cliente. É pra esse número que o orçamento vai.'},
+  {el:'#x-servico',t:'O serviço',d:'Descreva rapidinho o que vai fazer. Ex.: "Mudança 2 quartos, Tijuca → Barra".'},
+  {el:'.ie-ferramenta',t:'Itens prontos',d:'Toque aqui, escolha sua profissão e marque os itens. Eles entram com preço de exemplo e você muda o valor depois.'},
+  {el:'[data-acao="adicionar"]',t:'Item do seu jeito',d:'Quer algo que não está na lista? Toque aqui e escreva o item, a quantidade e o valor. O total soma sozinho.'},
+  {el:'#itens-editor',t:'Incluído, Recomendado ou Opcional',d:'Em cada item você escolhe: Incluído (sempre entra), Recomendado (vem marcado, o cliente pode tirar) ou Opcional (o cliente escolhe se quer). Pra mudar o valor, é só tocar no campo "Valor".'},
+  {el:'.ie-extras',t:'Desconto, taxa e sinal',d:'Aqui você dá desconto, cobra deslocamento ou pede uma entrada (ex.: 30%) pra reservar a data.'},
+  {el:'.xp-prev',t:'Como o cliente vê',d:'Tudo que você faz aparece aqui na hora, igualzinho chega no celular do cliente. Ele aprova com 1 toque.'},
+  {el:'#btn-enviar',t:'Enviar',d:'Terminou? Toque aqui. Você cria sua conta grátis em segundos e o orçamento já fica pronto lá dentro pra mandar no WhatsApp.'},
+];
+let ttN=-1;
+function ttFechar(){ ['tt-luz','tt-bal','tt-bloq'].forEach(id=>{ const e=$(id); if(e) e.remove(); }); ttN=-1; try{ localStorage.setItem('vunby:tutorial-visto','1'); }catch{} }
+function tutorial(n){
+  if(n>=PASSOS.length||n<0){ ttFechar(); return; }
+  const p=PASSOS[n], alvo=document.querySelector(p.el);
+  if(!alvo){ tutorial(n+1); return; }
+  ttN=n;
+  if(!$('tt-bloq')){ const b=document.createElement('div'); b.id='tt-bloq'; b.className='tt-bloq'; b.onclick=()=>tutorial(ttN+1); document.body.appendChild(b); }
+  let luz=$('tt-luz'); if(!luz){ luz=document.createElement('div'); luz.id='tt-luz'; luz.className='tt-luz'; document.body.appendChild(luz); }
+  let bal=$('tt-bal'); if(!bal){ bal=document.createElement('div'); bal.id='tt-bal'; bal.className='tt-bal'; bal.setAttribute('role','dialog'); document.body.appendChild(bal); }
+  bal.innerHTML=`<h4>${p.t}</h4><p>${p.d}</p><div class="tt-pe"><small>${n+1} de ${PASSOS.length}</small><div class="tt-bt">
+    <button class="btn-outline" onclick="ttFechar()">Pular</button>
+    <button class="btn-primary" onclick="tutorial(${n+1})">${n===PASSOS.length-1?'Começar':'Próximo'}</button></div></div>`;
+  alvo.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>{
+    const r=alvo.getBoundingClientRect(), sx=window.scrollX, sy=window.scrollY, m=8;
+    Object.assign(luz.style,{top:(r.top+sy-m)+'px',left:(r.left+sx-m)+'px',width:(r.width+2*m)+'px',height:(r.height+2*m)+'px'});
+    const bh=bal.offsetHeight, bw=bal.offsetWidth, vw=document.documentElement.clientWidth;
+    let top=r.bottom+sy+16; if(r.bottom+16+bh>window.innerHeight&&r.top-16-bh>0) top=r.top+sy-16-bh;
+    if(r.height>window.innerHeight*.6) top=sy+window.innerHeight-bh-16;
+    const left=Math.max(16,Math.min(vw-bw-16,r.left+sx+r.width/2-bw/2));
+    Object.assign(bal.style,{top:top+'px',left:left+'px'});
+    bal.querySelector('.btn-primary').focus({preventScroll:true});
+  },380);
+}
+addEventListener('resize',()=>{ if(ttN>=0) tutorial(ttN); });
+document.addEventListener('keydown',e=>{ if(ttN<0) return; if(e.key==='Escape') ttFechar(); if(e.key==='ArrowRight') tutorial(ttN+1); if(e.key==='ArrowLeft') tutorial(ttN-1); });
+// Primeira visita: mostra o tutorial sozinho
+try{ if(!localStorage.getItem('vunby:tutorial-visto')) setTimeout(()=>tutorial(0),700); }catch{}
 </script>
 </body></html>
