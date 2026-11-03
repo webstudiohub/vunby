@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>VUNBY — Faça seu orçamento agora</title>
+<title>VUNBY — Monte seu orçamento agora</title>
 <meta name="description" content="Monte um orçamento profissional em 1 minuto, sem cadastro. Veja como o seu cliente vai receber no WhatsApp."/>
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png?v=2"/>
 <meta name="theme-color" content="#0F3A8C"/>
@@ -43,6 +43,36 @@
 .passo-tit{display:flex;align-items:center;gap:10px}
 .passo-tit b{width:28px;height:28px;border-radius:9px;background:#0F3A8C;color:#fff;display:grid;place-items:center;font-size:14px;flex-shrink:0}
 .campo-erro{border:2px solid #C62828!important;background:#FFF5F5!important}
+/* Itens na prévia (igual à página que o cliente recebe) */
+.it-titulo{font-size:var(--fs-md);font-weight:700;color:#0F1923;margin:4px 0 8px}
+.it-ajuda{font-size:var(--fs-sm);color:#5B6675;margin:0 0 8px;line-height:1.45}
+.it-lista{border:1.5px solid #E5E5EA;border-radius:12px;overflow:hidden;margin-bottom:12px}
+.it-linha{display:flex;align-items:flex-start;gap:10px;padding:12px;border-bottom:1px solid #EEF0F3;margin:0;text-transform:none;letter-spacing:0;font-weight:400;color:inherit;cursor:default}
+.it-linha:last-child{border-bottom:none}
+.it-opc{cursor:pointer}
+.it-off{background:#FAFAFB}.it-off .it-desc,.it-off .it-val{color:#5B6675}
+.it-check{-webkit-appearance:checkbox;appearance:auto;width:22px!important;height:22px!important;min-height:0!important;padding:0!important;margin:1px 0 0!important;flex-shrink:0;accent-color:#0F3A8C}
+.it-ok{width:22px;flex-shrink:0;text-align:center;color:#2DB56D;font-weight:800}
+.it-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.it-desc{font-size:var(--fs-md);font-weight:600;color:#0F1923;line-height:1.3;word-break:break-word}
+.it-det{font-size:13px;color:#5B6675}
+.it-tag{font-size:12px;font-weight:700;color:#0F3A8C;background:#EEF4FA;align-self:flex-start;padding:2px 8px;border-radius:10px}
+.it-tag-rec{color:#8A6100;background:#FFF3CC}
+.it-val{font-size:var(--fs-md);font-weight:700;color:#0F3A8C;white-space:nowrap}
+.xp-res{display:flex;justify-content:space-between;font-size:var(--fs-sm);color:#3A4550;padding:2px 0}
+/* Itens prontos por profissão */
+.kit-fundo{position:fixed;inset:0;background:rgba(10,20,40,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.kit-caixa{background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:20px 20px 0 0;display:flex;flex-direction:column}
+@media(min-width:600px){.kit-fundo{align-items:center}.kit-caixa{border-radius:20px}}
+.kit-cab{padding:18px 20px 10px;border-bottom:1px solid #EEF0F3}
+.kit-cab h3{margin:0 0 10px;font-size:var(--fs-lg)}
+.kit-lista{overflow:auto;padding:8px 20px;flex:1}
+.kit-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #F1F3F6;margin:0;text-transform:none;letter-spacing:0;font-weight:500;font-size:var(--fs-md);color:#1B2433;cursor:pointer}
+.kit-item input{-webkit-appearance:checkbox;appearance:auto;width:22px!important;height:22px!important;min-height:0!important;padding:0!important;margin:0!important;flex-shrink:0;accent-color:#0F3A8C}
+.kit-item span{flex:1}.kit-item b{color:#0F3A8C;white-space:nowrap}
+.kit-grupo{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 2px}
+.kit-pe{padding:14px 20px;border-top:1px solid #EEF0F3;display:grid;gap:8px}
+.kit-nota{font-size:13px;color:var(--muted);margin:0}
 </style>
 </head><body>
 <header class="xp-top">
@@ -71,13 +101,21 @@
         <input id="x-tel" type="tel" maxlength="20" inputmode="tel" placeholder="(21) 99999-9999"/>
       </div>
       <div class="card">
-        <h3 class="passo-tit"><b>3</b> Serviço e valor</h3>
+        <h3 class="passo-tit"><b>3</b> Serviço</h3>
         <label style="margin-top:0" for="x-servico">Serviço</label>
         <input id="x-servico" maxlength="300" placeholder="Ex: Mudança residencial — 2 quartos"/>
-        <label for="x-valor">Valor total (R$)</label>
-        <input id="x-valor" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00"/>
         <label for="x-obs">Observações (opcional)</label>
         <textarea id="x-obs" rows="3" maxlength="3000" placeholder="Ex: Inclui desmontagem e montagem dos móveis."></textarea>
+      </div>
+      <div class="card">
+        <h3 class="passo-tit"><b>4</b> Itens do orçamento</h3>
+        <p class="muted" style="font-size:var(--fs-sm);margin-bottom:var(--sp-4)">Cada item com quantidade e valor; o total soma sozinho. Marque como <strong>Opcional</strong> o que o cliente pode escolher.</p>
+        <div id="itens-editor"></div>
+        <div id="valor-fechado">
+          <label for="x-valor">Ou só o valor total (R$)</label>
+          <input id="x-valor" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0,00"/>
+          <p class="muted" style="font-size:var(--fs-sm);margin-top:4px">Use se não quiser detalhar em itens.</p>
+        </div>
       </div>
     </div>
 
@@ -91,9 +129,12 @@
         <div class="xp-prev-body">
           <p class="rot" id="p-ola">Olá!</p>
           <p class="serv" id="p-servico">Descreva o serviço</p>
+          <div id="p-itens"></div>
           <div class="xp-total">
+            <div id="p-resumo"></div>
             <p class="rot">Total</p>
             <div class="v" id="p-valor">R$ 0,00</div>
+            <p class="rot" id="p-sinal" style="margin-top:4px"></p>
             <p class="rot" id="p-validade" style="margin-top:6px"></p>
           </div>
           <p class="xp-obs" id="p-obs"></p>
@@ -106,6 +147,7 @@
         <div id="x-msg" class="error" role="alert"></div>
         <p>Para enviar, crie sua conta grátis em segundos. Seu orçamento já fica pronto lá dentro.</p>
         <ul class="xp-beneficios">
+          <li>Sua tabela de preços salva: monta o próximo em segundos</li>
           <li>Você vê quando o cliente abriu</li>
           <li>O cliente aprova com 1 toque</li>
           <li>14 dias com tudo liberado, sem cartão</li>
@@ -115,6 +157,10 @@
     </div>
   </div>
 </div>
+<div id="kit-modal"></div>
+<script src="calc.js?v=33"></script>
+<script src="itens-editor.js?v=33"></script>
+<script src="kits.js?v=36"></script>
 <script>
 'use strict';
 const CHAVE='vunby:primeiro-orcamento';
@@ -127,35 +173,96 @@ function mascara(v){
   if(d.length<=10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
   return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
 }
-function ler(){ return { empresa:$('x-empresa').value.trim(), cliente:$('x-cliente').value.trim(), tel:$('x-tel').value.trim(), servico:$('x-servico').value.trim(), valor:$('x-valor').value, obs:$('x-obs').value.trim() }; }
+const esc=t=>String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let editor=null; const escolhidos=new Set();
+function ler(){ return { empresa:$('x-empresa').value.trim(), cliente:$('x-cliente').value.trim(), tel:$('x-tel').value.trim(), servico:$('x-servico').value.trim(), valor:$('x-valor').value, obs:$('x-obs').value.trim(), itens:editor?editor.estado():null }; }
+function salvar(){ try{ localStorage.setItem(CHAVE,JSON.stringify({...ler(),ts:Date.now()})); }catch{} }
+// Itens no formato do cálculo (igual ao app e à página do cliente)
+function itensCalc(){
+  if(!editor) return null;
+  const st=editor.estado(), C=VCalc;
+  const itens=st.itens.map((i,k)=>({id:String(k),descricao:i.descricao,unidade:i.unidade,tipo:i.tipo,qtd:C.numeroBR(i.qtd)||0,preco_cents:C.centavos(i.preco)||0}));
+  return {st,q:{itens,desconto_cents:C.centavos(st.desconto)||0,taxa_cents:C.centavos(st.taxa)||0,sinal_pct:C.numeroBR(st.sinalPct)||0}};
+}
+function marcarItem(id,on){ if(on) escolhidos.add(id); else escolhidos.delete(id); prever(); }
 function prever(){
-  const d=ler();
+  const d=ler(), C=VCalc;
   const t=(id,txt,vazio)=>{ const el=$(id); el.textContent=txt||vazio; el.classList.toggle('xp-vazio',!txt); };
   t('p-empresa',d.empresa,'Sua empresa');
   $('p-ola').textContent=d.cliente?`Olá, ${d.cliente.split(' ')[0]}!`:'Olá!';
   t('p-servico',d.servico,'Descreva o serviço');
-  $('p-valor').textContent=brl(d.valor);
+  const ic=itensCalc();
+  const usaItens=ic&&ic.q.itens.length>0;
+  $('valor-fechado').style.display=usaItens?'none':'';
+  if(usaItens){
+    // Recomendado começa marcado; opcional, desmarcado (o cliente escolhe)
+    const sel=new Set([...escolhidos].filter(id=>ic.q.itens[id]));
+    ic.q.itens.forEach(i=>{ if(i.tipo==='recomendado'&&!vistos.has(i.id)){ sel.add(i.id); escolhidos.add(i.id); } vistos.add(i.id); });
+    const r=C.calcular(ic.q,new Set(ic.q.itens.filter(i=>i.tipo==='incluido'||sel.has(i.id)).map(i=>i.id)));
+    const temOpc=ic.q.itens.some(i=>i.tipo!=='incluido');
+    $('p-itens').innerHTML=`<div class="it-titulo">Itens do orçamento</div>${temOpc?'<p class="it-ajuda">Os itens com caixinha são opcionais: marque ou desmarque e o total muda na hora.</p>':''}<div class="it-lista">${ic.q.itens.map(i=>{
+      const opc=i.tipo!=='incluido', on=!opc||sel.has(i.id);
+      const ctl=opc?`<input type="checkbox" class="it-check" ${on?'checked':''} onchange="marcarItem('${i.id}',this.checked)" aria-label="Incluir ${esc(i.descricao)}"/>`:'<span class="it-ok" aria-hidden="true">✓</span>';
+      const tag=opc?`<span class="it-tag ${i.tipo==='recomendado'?'it-tag-rec':''}">${i.tipo==='recomendado'?'Recomendado · pode tirar':'Opcional · '+(on?'incluído':'toque para adicionar')}</span>`:'';
+      return `<label class="it-linha${on?'':' it-off'}${opc?' it-opc':''}">${ctl}<span class="it-txt"><span class="it-desc">${esc(i.descricao)||'<span class=xp-vazio>Item sem nome</span>'}</span><span class="it-det">${C.qtdBR(i.qtd)} × ${C.reais(i.preco_cents)} por ${C.nomeUnidade(i.unidade)}</span>${tag}</span><span class="it-val">${opc&&!on?'+ ':''}${C.reais(C.linhaCents(i))}</span></label>`;
+    }).join('')}</div>`;
+    const lin=(a,b)=>`<div class="xp-res"><span>${a}</span><span>${b}</span></div>`;
+    $('p-resumo').innerHTML=(r.desconto||r.taxa)?lin('Itens',C.reais(r.itens))+(r.desconto?lin('Desconto','− '+C.reais(r.desconto)):'')+(r.taxa?lin(esc(ic.st.taxaNome||'Taxa'),C.reais(r.taxa)):''):'';
+    $('p-valor').textContent=C.reais(r.total);
+    $('p-sinal').textContent=r.sinal?`Sinal para reservar: ${C.reais(r.sinal)}`:'';
+  }else{
+    $('p-itens').innerHTML=''; $('p-resumo').innerHTML=''; $('p-sinal').textContent='';
+    $('p-valor').textContent=brl(d.valor);
+  }
   const val=new Date(); val.setDate(val.getDate()+7);
   $('p-validade').textContent='Válido até '+val.toLocaleDateString('pt-BR');
   $('p-obs').textContent=d.obs;
-  try{ localStorage.setItem(CHAVE,JSON.stringify({...d,ts:Date.now()})); }catch{}
+  salvar();
 }
+const vistos=new Set();
 function marcar(id){ const c=$(id); c.classList.add('campo-erro'); c.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=>c.focus({preventScroll:true}),300); c.addEventListener('input',()=>c.classList.remove('campo-erro'),{once:true}); }
 function continuar(){
   const d=ler(), msg=$('x-msg'); msg.textContent='';
   if(!d.cliente){ msg.textContent='Coloque o nome do cliente.'; return marcar('x-cliente'); }
   if(d.tel.replace(/\D/g,'').length<10){ msg.textContent='Coloque o WhatsApp do cliente com DDD.'; return marcar('x-tel'); }
   if(!d.servico){ msg.textContent='Descreva o serviço.'; return marcar('x-servico'); }
-  if(!(Number(d.valor)>0)){ msg.textContent='Coloque o valor do orçamento.'; return marcar('x-valor'); }
-  try{ localStorage.setItem(CHAVE,JSON.stringify({...d,ts:Date.now()})); }catch{}
+  if(editor.quantos()>0){ const erro=editor.validar(); if(erro){ msg.textContent=erro; $('itens-editor').scrollIntoView({behavior:'smooth',block:'center'}); return; } }
+  else if(!(Number(d.valor)>0)){ msg.textContent='Adicione os itens ou coloque o valor total.'; return marcar('x-valor'); }
+  salvar();
   location.href='/cadastro?volta='+encodeURIComponent('/novo-orcamento.html');
 }
+// ─── Itens prontos por profissão (os mesmos modelos da "Minha tabela de preços") ───
+let kitAtual=null;
+function abrirKits(){
+  const K=VKits.KITS;
+  if(!kitAtual) kitAtual=Object.keys(K)[0];
+  const itens=K[kitAtual].itens.filter(i=>Number(i[3])>0);
+  let grupo='';
+  $('kit-modal').innerHTML=`<div class="kit-fundo" onclick="if(event.target===this)fecharKits()"><div class="kit-caixa" role="dialog" aria-label="Itens prontos">
+    <div class="kit-cab"><h3>Itens prontos da sua profissão</h3>
+      <select id="kit-sel" onchange="kitAtual=this.value;abrirKits()" aria-label="Profissão">${Object.entries(K).map(([k,v])=>`<option value="${k}"${k===kitAtual?' selected':''}>${esc(v.nome)}</option>`).join('')}</select></div>
+    <div class="kit-lista">${itens.map((i,n)=>{ const g=i[0]!==grupo?`<p class="kit-grupo">${esc(i[0])}</p>`:''; grupo=i[0];
+      return g+`<label class="kit-item"><input type="checkbox" data-n="${n}"/><span>${esc(i[1])}</span><b>${VCalc.reais(Math.round(i[3]*100))}<small style="font-weight:500;color:var(--muted)"> /${esc(VCalc.nomeUnidade(i[2]))}</small></b></label>`; }).join('')}</div>
+    <div class="kit-pe"><p class="kit-nota">Preços de exemplo: você ajusta cada valor depois. Na sua conta, sua tabela fica salva com os seus preços.</p>
+      <button class="btn-primary btn-gold" onclick="adicionarKits()">Adicionar marcados</button>
+      <button class="btn-outline" onclick="fecharKits()">Fechar</button></div>
+  </div></div>`;
+}
+function fecharKits(){ $('kit-modal').innerHTML=''; }
+function adicionarKits(){
+  const itens=VKits.KITS[kitAtual].itens.filter(i=>Number(i[3])>0);
+  const marc=[...document.querySelectorAll('#kit-modal input[data-n]:checked')].map(c=>itens[+c.dataset.n]);
+  if(marc.length) editor.adicionarItens(marc.map(i=>({descricao:i[1],qtd:1,unidade:i[2],preco:i[3],tipo:'incluido'})));
+  fecharKits();
+}
 // Volta com o que já tinha preenchido
+let salvo=null;
 try{
   const s=JSON.parse(localStorage.getItem(CHAVE)||'null');
-  if(s&&Date.now()-(s.ts||0)<7*86400000){ $('x-empresa').value=s.empresa||''; $('x-cliente').value=s.cliente||''; $('x-tel').value=s.tel||''; $('x-servico').value=s.servico||''; $('x-valor').value=s.valor||''; $('x-obs').value=s.obs||''; }
+  if(s&&Date.now()-(s.ts||0)<7*86400000){ salvo=s; $('x-empresa').value=s.empresa||''; $('x-cliente').value=s.cliente||''; $('x-tel').value=s.tel||''; $('x-servico').value=s.servico||''; $('x-valor').value=s.valor||''; $('x-obs').value=s.obs||''; }
 }catch{}
-document.addEventListener('input',e=>{ if(e.target.id==='x-tel') e.target.value=mascara(e.target.value); prever(); });
+editor=ItensEditor($('itens-editor'),salvo&&salvo.itens,()=>prever(),{ferramentas:[{rotulo:'Itens prontos da minha profissão',acao:abrirKits}]});
+document.addEventListener('input',e=>{ if(e.target.id==='x-tel') e.target.value=mascara(e.target.value); if(!e.target.closest('#itens-editor')) prever(); });
 prever();
 </script>
 </body></html>

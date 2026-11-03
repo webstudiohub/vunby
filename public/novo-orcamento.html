@@ -147,7 +147,8 @@ function aplicarPrimeiroOrcamento(d){
     document.getElementById('novo-cliente-details').open=true;
   }
   if(d.servico) document.getElementById('q-servico').value=d.servico;
-  if(Number(d.valor)>0) document.getElementById('q-valor').value=d.valor;
+  if(d.itens&&d.itens.itens&&d.itens.itens.length) iniciarEditor(d.itens);
+  else if(Number(d.valor)>0) document.getElementById('q-valor').value=d.valor;
   if(d.obs) document.getElementById('q-obs').value=d.obs;
   const av=document.getElementById('aviso-rascunho');
   av.innerHTML='<p style="font-size:var(--fs-md);margin:0"><strong>Seu orçamento está pronto.</strong> Confira e toque em <strong>Criar orçamento</strong> para enviar pelo WhatsApp.</p>';
