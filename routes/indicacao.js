@@ -32,7 +32,7 @@ async function handle(req, res) {
   // POST /api/v { p: 'landing'|'cadastro', o: origem } — conta visitas do site (sem cookie, sem guardar IP)
   if (req.method === 'POST' && path === '/api/v') {
     let b; try { b = await readBody(req, 1_000); } catch { return ok(res, {}); }
-    const pagina = ['landing', 'cadastro', 'experimentar'].includes(b.p) ? b.p : null;
+    const pagina = ['landing', 'cadastro', 'experimentar', 'blog'].includes(b.p) ? b.p : null;
     const ua = String(req.headers['user-agent'] || '');
     if (!pagina || /bot|crawl|spider|slurp|preview|headless|lighthouse/i.test(ua)) return ok(res, {});
     const origem = String(b.o || 'direto').toLowerCase().replace(/[^a-z0-9:.-]/g, '').slice(0, 40) || 'direto';
