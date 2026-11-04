@@ -21,7 +21,16 @@ async function api(path, { method = 'GET', body } = {}) {
 // ─── Sessão ───────────────────────────────────────────────────
 async function requireSession() {
   try {
-    return await api('/api/auth/me');
+    const u = await api('/api/auth/me');
+    if (u && u.emailVerificado === false && !document.getElementById('aviso-email')) {
+      const b = document.createElement('a');
+      b.id = 'aviso-email';
+      b.href = '/verificar-email.html?email=' + encodeURIComponent(u.email || '');
+      b.textContent = '📩 Confirme seu e-mail para proteger sua conta. Toque aqui';
+      b.style.cssText = 'display:block;background:#E8B931;color:#0B1E45;font-weight:700;text-align:center;padding:10px 14px;font-size:14px;text-decoration:none';
+      document.body.prepend(b);
+    }
+    return u;
   } catch {
     // Depois do login, volta para a página que a pessoa tentou abrir (ex.: link do e-mail)
     window.location.href = '/entrar?volta=' + encodeURIComponent(location.pathname + location.search);

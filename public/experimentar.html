@@ -241,6 +241,7 @@ function continuar(){
   if(editor.quantos()>0){ const erro=editor.validar(); if(erro){ msg.textContent=erro; $('itens-editor').scrollIntoView({behavior:'smooth',block:'center'}); return; } }
   else if(!(Number(d.valor)>0)){ msg.textContent='Adicione os itens ou coloque o valor total.'; return marcar('x-valor'); }
   salvar();
+  try{ if(window.VunbyVisita) VunbyVisita('exp-enviar'); }catch(e){}
   location.href='/cadastro?volta='+encodeURIComponent('/novo-orcamento.html');
 }
 // ─── Itens prontos por profissão (os mesmos modelos da "Minha tabela de preços") ───

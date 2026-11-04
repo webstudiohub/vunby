@@ -117,8 +117,9 @@ async function handle(req, res) {
     );
     const userId = result.rows[0].id;
     await sendNewEmailCode({ id: userId, email: email.trim().toLowerCase() });
-
-    return created(res, { message: 'Conta criada. Verifique seu e-mail.', requiresVerification: true });
+    // Já entra direto (menos atrito): a confirmação do e-mail fica pra depois, com um aviso no app
+    await createSession(res, userId);
+    return created(res, { message: 'Conta criada.', requiresVerification: false });
   }
 
   // GET /api/auth/google/config — o ID público do app no Google (para o botão "Continuar com Google")
@@ -239,12 +240,8 @@ async function handle(req, res) {
     if (!ok2) return unauthorized(res, 'E-mail ou senha incorretos.');
     await resetLimit(`login-email:${emailNorm}`);
     // E-mail ainda não confirmado: não cria sessão; reenvia o código (no máx. 3 por 10 min) e manda verificar
-    if (!user.email_verificado) {
-      if (await rateLimit(`login-resend:${emailNorm}`, 3, 10 * 60_000)) await sendNewEmailCode(user);
-      return json(res, 403, { error: 'Confirme seu e-mail para entrar. Enviamos um código para você.', emailVerificado: false });
-    }
     await createSession(res, user.id);
-    return ok(res, { message: 'Login realizado.', nome: user.nome, emailVerificado: true });
+    return ok(res, { message: 'Login realizado.', nome: user.nome, emailVerificado: !!user.email_verificado });
   }
 
   // POST /api/auth/logout
@@ -265,7 +262,7 @@ async function handle(req, res) {
   if (req.method === 'GET' && path === '/api/auth/me') {
     const user = await getSession(req);
     if (!user) return unauthorized(res);
-    return ok(res, { id: user.id, nome: user.nome, email: user.email, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, profissao: user.profissao || '', cidade: user.cidade || '', whatsapp: user.whatsapp || '', documento: user.documento || '', instagram: user.instagram || '', perfilCompleto: perfilCompleto(user), emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido, admin: require('./admin').ehAdmin(user) });
+    return ok(res, { id: user.id, nome: user.nome, email: user.email, emailVerificado: user.email_verificado !== false, telefone: user.telefone, nomeEmpresa: user.nome_empresa || '', googleReviewLink: user.google_review_link || '', temLogo: !!user.tem_logo, profissao: user.profissao || '', cidade: user.cidade || '', whatsapp: user.whatsapp || '', documento: user.documento || '', instagram: user.instagram || '', perfilCompleto: perfilCompleto(user), emailVerificado: user.email_verificado, telefoneVerificado: user.telefone_verificado, trialConcedido: user.trial_concedido, admin: require('./admin').ehAdmin(user) });
   }
 
   // GET /api/auth/logo — logo do próprio usuário (para a tela de Conta)
